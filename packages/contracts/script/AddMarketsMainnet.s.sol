@@ -75,9 +75,24 @@ contract AddMarketsMainnet is Script, MarketLister {
         require(limits.maxPriceAge >= 1 hours && limits.maxPriceAge <= 72 hours, "MAX_PRICE_AGE_HOURS must be 1 to 72");
     }
 
+    /// @dev Only a `tradeable` entry is listed on chain. A `quoted` or `listed` entry (REFERENCE.md
+    /// Section 2) is display only and carries no Chainlink feed, so listing one would either revert on a
+    /// zero feed address or, worse, open a leveraged market with no price source. The tier is the same
+    /// field the config package reads, and an entry with no `tier` key is treated as `tradeable` so that
+    /// an older market file still lists exactly as it did before.
+    function _isTradeable(string memory list, string memory p) internal view returns (bool) {
+        string memory key = string.concat(p, ".tier");
+        if (!vm.keyExistsJson(list, key)) return true;
+        return keccak256(bytes(vm.parseJsonString(list, key))) == keccak256(bytes("tradeable"));
+    }
+
     function _listOne(Stack memory stack, string memory list, uint256 i, Limits memory limits) internal {
         string memory p = string.concat(".markets[", vm.toString(i), "]");
         string memory symbol = vm.parseJsonString(list, string.concat(p, ".symbol"));
+        if (!_isTradeable(list, p)) {
+            console.log("skip", symbol, "not tier tradeable: display only, never listed on chain");
+            return;
+        }
         bytes32 id = bytes32(bytes(symbol));
         try stack.marketRegistry.getMarket(id) returns (MarketConfig memory) {
             console.log("skip", symbol, "already listed");

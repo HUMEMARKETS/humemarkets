@@ -140,9 +140,16 @@ export function resolveAddresses(
 
 /// The protocol token of a chain, when one exists. It is not a contract of this stack: `BuybackModule`
 /// takes it through `setProtocolToken`, and nothing here reads it on chain. The mainnet token was created
-/// outside this repository (name "Hume", 18 decimals, 1,000,000,000 supply, checked on chain on
-/// 2026-09-25), so it is recorded here as a display fact, not a deployment. A web build may override both
-/// values with `NEXT_PUBLIC_PROTOCOL_TOKEN_ADDRESS` and `NEXT_PUBLIC_PROTOCOL_TOKEN_SYMBOL`.
+/// outside this repository (18 decimals, 1,000,000,000 supply), so it is recorded here as a display fact,
+/// not a deployment. A web build may override both values with `NEXT_PUBLIC_PROTOCOL_TOKEN_ADDRESS` and
+/// `NEXT_PUBLIC_PROTOCOL_TOKEN_SYMBOL`.
+///
+/// **This token still carries the retired brand on chain.** Read at block 79379560 on 2026-10-04:
+/// `symbol()` is "ALPHA" and `name()` is the retired venue name — an earlier version of this comment
+/// claimed the name was "Hume", which was never true. The values are immutable, so no rename is
+/// possible; the launch choices are to deploy a fresh token, to leave the buyback module unset, or to
+/// display the overridden symbol everywhere. Recorded in `docs/evidence/phase-2.md` for the operator.
+/// `scripts/check-brand.sh` cannot catch this: the string comes from the chain, not the repository.
 export const protocolTokens: Partial<Record<ChainId, { address: Address; symbol: string }>> = {
   [ROBINHOOD_MAINNET_CHAIN_ID]: { address: "0xaf9eb3274b41e372c58b39fabd01e1d1eebc3579", symbol: "ALPHA" },
 };
