@@ -251,7 +251,7 @@ export function HeroMarketCarousel() {
                       color: ink,
                       // Each card glows in its own brand colour, not just the active one — the
                       // elevation shadow stays, a colour-matched halo layers on top of it.
-                      boxShadow: `0 20px 45px -20px rgb(0 0 0 / 0.7), 0 0 55px 4px color-mix(in oklab, ${background} 65%, transparent)`,
+                      boxShadow: `var(--shadow-lift), 0 0 55px 4px color-mix(in oklab, ${background} 65%, transparent)`,
                     }}
                     className={cn(
                       "flex h-[15.5rem] w-[12.5rem] flex-col justify-between rounded-feature border border-line/70 p-5",

@@ -12,6 +12,7 @@
   "scripts": {
     "build": "turbo run build",
     "check:brand": "bash scripts/check-brand.sh",
+    "check:hex": "bash scripts/check-hex.sh",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "test": "turbo run test",

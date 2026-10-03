@@ -8,9 +8,10 @@ Companion files: [`DEVELOPMENT_PHASES.md`](DEVELOPMENT_PHASES.md) is the work se
 [`REFERENCE.md`](REFERENCE.md) holds the measured facts, and [`LAUNCH_MODEL.md`](LAUNCH_MODEL.md) holds
 the scope decisions.
 
-**Still owed by Phase 3:** the page-by-state grid for all 8 pages (the Phase 12 and 13 backlog), the
-Guided/Pro field split per trading surface, and the recomputed contrast table once `globals.css` carries
-the final values.
+**Completed by Phase 3 on 2026-10-04:** `globals.css` carries the Section 4 values, the contrast table
+in Section 4 is recomputed from them, Section 6 holds the page-by-state grid for all 8 pages (the Phase
+12 and 13 backlog), Section 7 holds the Guided/Pro field split per trading surface, and Section 8 sets
+the motion budget. Rule 1 is enforced by `scripts/check-hex.sh` in CI.
 
 ---
 
@@ -88,6 +89,9 @@ Computed from the sRGB relative-luminance formula:
 | **Ivory on Sage** | **3.81:1**  | **FAILS 4.5:1**                              |
 | Charcoal on Sage  | **4.57:1**  | Passes                                       |
 
+Re-measured 2026-10-04 against the values now in `globals.css`. The four brand numbers above are
+unchanged; the derived tokens moved, and Section 4.1 records what moved and why.
+
 **Two findings that are rules, not preferences:**
 
 **1. The primary button takes charcoal ink, never ivory.** Ivory text on a sage fill is 3.81:1 and fails
@@ -108,24 +112,70 @@ own pair, drawn from the palette's warm neutral family rather than a generic exc
 
 Four colours cannot build a dense terminal. These are derived, and nothing beyond this list is allowed:
 
-| Token          | Hex                       | On Charcoal | Role                                   |
-| -------------- | ------------------------- | ----------- | -------------------------------------- |
-| `ground`       | `#0B0B0B` (Charcoal)      | —           | Page                                   |
-| `surface`      | `#141414`                 | 1.07:1      | Panels                                 |
-| `raised`       | `#1E1E1D`                 | 1.18:1      | Inputs, hovered rows, menus            |
-| `line`         | `#2E2E2C`                 | 1.45:1      | Hairlines, table rules                 |
-| `text`         | `#F3F1EA` (Ivory)         | 17.42:1     | Body                                   |
-| `muted`        | `#A8A29A` (Stone, dimmed) | 7.78:1      | Labels, column heads                   |
-| `faint`        | `#8C8780`                 | 5.52:1      | Timestamps, hints. Still above 4.5:1   |
-| `accent`       | `#6B7F6B` (Sage)          | 4.57:1      | Action, selection, focus, price line   |
-| `accent-ink`   | `#0B0B0B`                 | —           | Text **on** a sage fill. See finding 1 |
-| `accent-hover` | `#7D917D`                 | —           | Hover                                  |
-| `accent-press` | `#5A6C5A`                 | —           | Active                                 |
-| `up` / `down`  | `#93BC92` / `#C4705F`     | 9.23 / 5.46 | Direction only, never decoration       |
+| Token          | Hex                       | On ground | On surface | On raised | Role                                   |
+| -------------- | ------------------------- | --------- | ---------- | --------- | -------------------------------------- |
+| `ground`       | `#0B0B0B` (Charcoal)      | —         | —          | —         | Page                                   |
+| `surface`      | `#141414`                 | 1.07:1    | —          | —         | Panels                                 |
+| `raised`       | `#1E1E1D`                 | 1.18:1    | —          | —         | Inputs, hovered rows, menus            |
+| `line`         | `#2E2E2C`                 | 1.45:1    | —          | —         | Hairlines, table rules                 |
+| `text`         | `#F3F1EA` (Ivory)         | 17.42:1   | 16.30:1    | 14.76:1   | Body                                   |
+| `muted`        | `#A8A29A` (Stone, dimmed) | 7.78:1    | 7.28:1     | 6.59:1    | Labels, column heads                   |
+| `faint`        | `#8C8780`                 | 5.52:1    | 5.17:1     | 4.68:1    | Timestamps, hints. Still above 4.5:1   |
+| `accent`       | `#6B7F6B` (Sage)          | 4.57:1    | 4.28:1     | **3.87:1** | Action, selection, focus, price line  |
+| `accent-ink`   | `#0B0B0B`                 | —         | —          | —         | Text **on** a sage fill. See finding 1 |
+| `accent-hover` | `#7D917D`                 | 5.83:1    | 5.46:1     | 4.94:1    | Hover, and accent-coloured text on a lifted surface |
+| `accent-soft`  | `#1C221C`                 | 1.21:1    | —          | —         | The hover fill behind an accent control |
+| `accent-press` | `#748874`                 | 5.17:1    | 4.84:1     | 4.38:1    | Active                                 |
+| `up`           | `#93BC92`                 | 9.23:1    | 8.64:1     | 7.82:1    | Direction only, never decoration       |
+| `down`         | `#C4705F`                 | 5.46:1    | 5.11:1     | 4.63:1    | Direction only, never decoration       |
+| `up-hover` / `up-press`     | `#A6C9A5` / `#7FA87E` | 10.80 / 7.32 | — | — | The up control's states              |
+| `down-hover` / `down-press` | `#D08575` / `#B46554` | 6.84 / 4.62  | — | — | The down control's states            |
+| `up-soft` / `down-soft`     | the up/down colour at 0.12 alpha | — | — | — | The hover fill behind an up/down control |
+| `up-line` / `down-line`     | the up/down colour at 0.35 alpha | — | — | — | Focus ring, the direction twin of `accent-line` |
 
-Every token above clears 4.5:1 on `ground`, `surface` and `raised` wherever it carries text. Phase 3
-re-runs the arithmetic and records it in `docs/UI_CONTRACT.md`; a later change to any value re-runs it
-again rather than assuming.
+### 4.1 What Phase 3 measured, and the three values it changed
+
+The table above is computed from the sRGB relative-luminance formula against the values now in
+`apps/web/src/app/globals.css`. Running it on the originally proposed derived set found three places
+where a value failed WCAG AA **in its own documented use**. Each is changed here, with the measurement:
+
+| Token         | Was       | Now       | Why                                                                                                                                                                  |
+| ------------- | --------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `accent-press` | `#5A6C5A` | `#748874` | The primary button fills with it on `:active` and keeps charcoal ink. Charcoal on `#5A6C5A` is **3.49:1** and fails; on `#748874` it is **5.17:1**. A press therefore *lifts* slightly instead of darkening, and still reads as a press because hover (`#7D917D`, 5.83:1) lifts further. It is also used as link-press text, where `#5A6C5A` was 3.49:1 on ground |
+| `down-press`  | `#AD5F4F` | `#B46554` | The down button fills with it and keeps charcoal ink: **4.24:1** fails, **4.62:1** passes, and it is still visibly darker than `down` at 5.46:1                       |
+| `accent-soft` | `#273027` | `#1C221C` | The hover fill behind accent controls. See the rule below                                                                                                            |
+
+**The sage ceiling, and the rule it forces.** Sage is 4.57:1 on charcoal — it clears AA by 0.07. Any
+surface lighter than the page therefore pushes sage-coloured *text* below the line:
+
+| Sage text on … | Ratio      | Verdict                             |
+| -------------- | ---------- | ----------------------------------- |
+| `ground`       | 4.57:1     | Passes                              |
+| `surface`      | 4.28:1     | **Fails**                           |
+| `raised`       | 3.87:1     | **Fails**                           |
+| `accent-soft`  | 3.76:1     | **Fails**, at any usable soft value |
+
+No choice of `accent-soft` fixes this: at near-black (`#141914`) sage text still reaches only 4.13:1.
+**So the rule is: sage-coloured text belongs on `ground`. On `surface`, `raised` or `accent-soft`, use
+`accent-hover` (#7D917D), which is 5.46:1, 4.94:1 and 4.80:1 respectively.** Phase 3 swept every
+`hover:bg-accent-soft hover:text-accent` pair in `apps/web/src` and `packages/ui/src` to
+`hover:text-accent-hover` for exactly this reason — 10 files.
+
+**The same arithmetic applies to direction.** `down` on a `down-soft` fill was 3.56:1 at the 0.2 alpha
+the outgoing palette used. The soft fills are now 0.12, and an up/down control's hover ink is its
+`*-hover` shade: `down-hover` on `down-soft` is **4.98:1**, `up` on `up-soft` is 6.23:1.
+
+**Ink on every fill, measured:**
+
+| Fill           | Charcoal ink | Ivory ink | Which is used                     |
+| -------------- | ------------ | --------- | --------------------------------- |
+| `accent`       | **4.57:1**   | 3.81:1    | Charcoal — finding 1              |
+| `accent-hover` | **5.83:1**   | 2.99:1    | Charcoal                          |
+| `accent-press` | **5.17:1**   | 3.37:1    | Charcoal                          |
+| `up`           | **9.23:1**   | 1.89:1    | Charcoal                          |
+| `down`         | **5.46:1**   | 3.19:1    | Charcoal                          |
+
+A later change to any value re-runs this arithmetic rather than assuming it still holds.
 
 #### One deliberate use of light
 
@@ -156,3 +206,108 @@ positions cannot. So the borrowings are the **flow and the honesty** — sample 
 signing, itemised costs, labelled simulation — and not the choreography.
 
 ---
+
+## 6. The page-by-state grid
+
+**This grid is the Phase 12 and 13 backlog.** Rule 2 asks every screen for seven states; this is where
+all 8 pages stand on 2026-10-04, read from the components each page renders and from the screenshots in
+`docs/evidence/phase-3/`. Three marks only:
+
+- **pass** — the state renders, in plain words, with a next action where one exists.
+- **partial** — it renders, but it is bare: a sentence with no next action, or only some panels cover it.
+- **missing** — nothing distinguishes the state. The screen renders empty, or as if the data were fine.
+
+| Page           | loading                  | empty                             | error                            | success | paused                     | not-connected                   | sample      |
+| -------------- | ------------------------ | --------------------------------- | -------------------------------- | ------- | -------------------------- | ------------------------------- | ----------- |
+| `/` landing    | partial — the hero carousel shows `Skeleton`s, the ticker and market list do not | partial — "No perpetual markets are listed yet" | partial — a market read failure falls back to the empty copy, so a down RPC reads as "no markets" | pass | **missing** — a paused market is not distinguished in the hero or ticker | n/a — the landing page asks for no wallet | **missing** |
+| `/markets`     | pass — `Skeleton` rows   | pass — "No perpetual markets are listed yet" | pass — "Could not read markets from the chain. Check NEXT_PUBLIC_RPC_URL." | pass | **pass** — a `Paused` chip per row, the only page that has one | n/a — reads are public | **missing** |
+| `/perpetuals`  | pass — chart, list and analytics all skeleton | partial — the market list says so; the ticket does not | pass — the analytics panel names the failure | pass | **missing** — the ticket does not refuse a paused market | pass — `OrderPanel` shows a connect prompt | **missing** |
+| `/options`     | partial — the chain skeletons, positions do not | pass — "No market on the registry has options enabled yet" | pass — the chain names a market read failure | pass | **missing** | pass — `OptionPositions` prompts to connect | **missing** |
+| `/strategies`  | **missing** — the builder renders its form with no price and no skeleton | partial — a prompt to pick a market | partial — a computed-analysis failure prints the thrown message, which is close to a raw error | pass | **missing** | **missing** — the builder reads as usable, then cannot price | **missing** |
+| `/portfolio`   | pass — `Skeleton` on every figure | pass — `Empty` with a next action per tab | pass — a named failure for the summary | pass | **missing** | pass — "Connect a wallet to see your collateral, positions and history." | **missing** |
+| `/activity`    | pass — "Loading funding…", "Loading history…" | pass — "No activity yet for this wallet." | pass — "The transaction history is not available right now." | pass | n/a — history has no paused state | pass — "Connect a wallet to see its transactions and funding payments." | **missing** |
+| `/docs`        | pass — live parameters wait on the chain | n/a — the prose is static | partial — a failed live read leaves the parameter blank rather than saying why | pass | n/a | n/a — the page is public | **missing** |
+
+### What the grid says
+
+| Count | State                                                                                                                       |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------- |
+| 8 of 8 | **`sample` is missing everywhere.** That is expected: Phase 7 builds sample mode, and this grid is its acceptance surface   |
+| 5 of 6 applicable | **`paused` is missing.** Only `/markets` marks a paused market. A paused market can still be opened in the ticket |
+| 3     | `loading` is missing or partial: `/strategies`, `/options` positions, the landing ticker and market list                    |
+| 3     | `error` is partial: the landing page reads a failure as emptiness, `/strategies` prints a thrown message, `/docs` goes blank |
+| 2     | `empty` is partial: `/perpetuals`' ticket and the landing page                                                             |
+| 1     | `not-connected` is missing: `/strategies`                                                                                   |
+
+**Phase 12 takes** the `error` and `empty` column: the landing page distinguishing a failure from an
+empty venue, `/strategies` replacing its thrown message, `/docs` saying why a parameter is blank.
+**Phase 13 takes** the `loading` column and the mobile and keyboard pass over all 8.
+**Phase 7 takes** the `sample` column, all 8 pages.
+**The `paused` column has no phase yet** — it is the one gap this grid turns up that the plan does not
+already own. The cheapest home for it is Phase 6, which already touches every trading surface for
+mainnet, and a paused market reaching a ticket is a real-money failure rather than a cosmetic one.
+
+## 7. The Guided/Pro field split
+
+Rule 6: Guided is the default and Pro is a toggle, remembered per device. **Guided never hides what Pro
+shows; it sequences it.** Phase 8 builds this; Phase 3 decides it, so Phase 8 is execution.
+
+The test for which side a field falls on: *can a first-time user make a wrong-sized, wrong-direction or
+liquidatable trade without it?* If yes, Guided shows it. If it only makes an already-correct trade
+better, Pro shows it.
+
+### 7.1 Perp ticket (`OrderPanel`, `PerpTradeBar`)
+
+| Step            | Guided shows, one step at a time                                            | Pro shows, all at once          |
+| --------------- | --------------------------------------------------------------------------- | -------------------------------- |
+| 1 Direction     | Long or short, as two large controls using `up` / `down`                    | The same, as a segmented control |
+| 2 Size          | Size in USDG, with the balance and the per-market cap stated                | Size, in USDG or in contracts    |
+| 3 Leverage      | A slider with the resulting **liquidation price** updating beside it        | Leverage input, liquidation price in the figures row |
+| 4 Review        | Margin required, liquidation price, funding rate, fees, venue cut, the binding cap, and the worst case in one sentence | The same as a collapsed row above the button |
+| Order type      | Market only                                                                 | Market, limit, stop-loss, take-profit, reduce-only, post-only |
+| Not in Guided   | —                                                                           | Cross vs isolated margin, subaccount selection, RFQ, slippage tolerance, time-in-force |
+
+Guided's step 4 is not optional and not collapsible: rule 3.
+
+### 7.2 Option ticket (`OptionTicket`, `OptionTradeSheet`, `OptionChain`)
+
+| Step          | Guided                                                              | Pro                                    |
+| ------------- | -------------------------------------------------------------------- | --------------------------------------- |
+| 1 View        | "I think it goes up / down", which picks call or put                | Call/put, directly on the chain         |
+| 2 Expiry      | The three proposed expiries, in plain dates                         | Every open series, plus the proposed ladder |
+| 3 Strike      | Three strikes around spot, each labelled with its break-even        | The full ladder with bid, ask and Greeks |
+| 4 Size        | Contracts, with the premium in USDG beside it                       | Contracts, premium, and the quote's TTL  |
+| 5 Review      | Premium paid, **maximum loss**, break-even, expiry in plain words, fees | The same as a collapsed row              |
+| Not in Guided | —                                                                   | Delta, gamma, vega, theta, implied volatility, the quote signature's expiry |
+
+A Greek is a Pro field by this test: it refines a correct trade. **Maximum loss is a Guided field**,
+because without it a first-time buyer does not know what they can lose.
+
+### 7.3 Lending and borrowing (`/lending`, Phase 9)
+
+| Step          | Guided                                                                     | Pro                               |
+| ------------- | --------------------------------------------------------------------------- | ---------------------------------- |
+| 1 Intent      | Supply, or borrow against what you supplied                                 | The pair table, both sides at once |
+| 2 Amount      | Amount, with the resulting **health factor** and liquidation threshold      | Amount, LTV, health factor         |
+| 3 Review      | What you supply, what you can borrow, the liquidation price of the pair, the interest rate now | A collapsed row    |
+| Not in Guided | —                                                                           | Utilisation, the rate curve, the reserve factor, per-pair caps |
+
+### 7.4 What the toggle does not change
+
+The toggle changes **sequence and density, never availability**. Both modes reach every order type
+through the same components; Pro surfaces them immediately, Guided after step 1. And both modes pass
+through the review step before any signature — there is no Pro shortcut past rule 3.
+
+## 8. Motion budget
+
+Set by Phase 3, enforced from here on.
+
+| Surface                       | Budget                                                                 |
+| ----------------------------- | ----------------------------------------------------------------------- |
+| Anything inside the app       | **No animation over 200 ms.** Transitions are 150 ms (`duration-150`), the existing default |
+| Dense data: tables, the chain, the order book | **No animation at all.** Section 5: Zupiter's motion is rejected here |
+| The landing page `/`          | Motion allowed: the hero wipe (1.4 s), the heading wipe (1.1 s), the ticker (70 s loop) |
+| `prefers-reduced-motion`      | Every animation collapses to 0.01 ms and the hero wipes are disabled outright. Already in `globals.css` |
+
+One exception, already in the code and kept: a fill confirmation (`fill-pop`, 350 ms) is a success
+signal a trader waits for, not decoration.

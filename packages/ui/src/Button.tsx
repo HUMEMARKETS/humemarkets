@@ -9,9 +9,9 @@ const variants: Record<ButtonVariant, string> = {
   primary:
     "bg-accent text-accent-ink hover:bg-accent-hover hover:shadow-[0_0_0_3px_var(--color-accent-line)] active:bg-accent-press active:shadow-none disabled:bg-line disabled:text-faint disabled:shadow-none",
   secondary:
-    "border border-line bg-raised text-text hover:border-accent hover:bg-accent-soft hover:text-accent active:border-accent active:bg-accent active:text-accent-ink disabled:border-line disabled:bg-raised disabled:text-faint",
-  up: "bg-up text-ground hover:bg-up-hover hover:shadow-[0_0_0_3px_rgb(114_217_119/0.35)] active:bg-up-press active:shadow-none disabled:bg-line disabled:text-faint disabled:shadow-none",
-  down: "bg-down text-ground hover:bg-down-hover hover:shadow-[0_0_0_3px_rgb(238_112_105/0.35)] active:bg-down-press active:shadow-none disabled:bg-line disabled:text-faint disabled:shadow-none",
+    "border border-line bg-raised text-text hover:border-accent hover:bg-accent-soft hover:text-accent-hover active:border-accent active:bg-accent active:text-accent-ink disabled:border-line disabled:bg-raised disabled:text-faint",
+  up: "bg-up text-ground hover:bg-up-hover hover:shadow-[0_0_0_3px_var(--color-up-line)] active:bg-up-press active:shadow-none disabled:bg-line disabled:text-faint disabled:shadow-none",
+  down: "bg-down text-ground hover:bg-down-hover hover:shadow-[0_0_0_3px_var(--color-down-line)] active:bg-down-press active:shadow-none disabled:bg-line disabled:text-faint disabled:shadow-none",
 };
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {

@@ -219,7 +219,7 @@ export function MarketsTable() {
                       <button
                         type="button"
                         onClick={() => sortBy(column.key)}
-                        className={cn("-mx-1.5 inline-flex h-8 items-center gap-1 whitespace-nowrap rounded-md px-1.5 transition-colors duration-150 hover:bg-accent-soft hover:text-accent active:bg-accent active:text-accent-ink", active ? "text-accent" : "text-muted")}
+                        className={cn("-mx-1.5 inline-flex h-8 items-center gap-1 whitespace-nowrap rounded-md px-1.5 transition-colors duration-150 hover:bg-accent-soft hover:text-accent-hover active:bg-accent active:text-accent-ink", active ? "text-accent" : "text-muted")}
                       >
                         {column.label}
                         <span aria-hidden="true" className="w-2 text-[10px]">

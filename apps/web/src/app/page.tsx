@@ -84,7 +84,7 @@ export default function Landing() {
                             className={cn(
                                 button,
                                 interactive,
-                                'inline-flex items-center border border-text/30 text-text hover:border-accent hover:bg-accent-soft hover:text-accent active:border-accent active:bg-accent active:text-accent-ink',
+                                'inline-flex items-center border border-text/30 text-text hover:border-accent hover:bg-accent-soft hover:text-accent-hover active:border-accent active:bg-accent active:text-accent-ink',
                             )}
                         >
                             Explore markets

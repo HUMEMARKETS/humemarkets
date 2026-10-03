@@ -82,7 +82,7 @@ export function ContractAddressBadge({ className }: { className?: string }) {
                             });
                     }}
                     className={cn(
-                        'shrink-0 rounded-control p-0.5 text-muted transition-colors duration-150 hover:bg-accent-soft hover:text-accent',
+                        'shrink-0 rounded-control p-0.5 text-muted transition-colors duration-150 hover:bg-accent-soft hover:text-accent-hover',
                         copied && 'text-up',
                     )}
                 >
@@ -95,7 +95,7 @@ export function ContractAddressBadge({ className }: { className?: string }) {
                     target="_blank"
                     rel="noreferrer"
                     aria-label="View CA on the explorer"
-                    className="shrink-0 rounded-control p-0.5 text-muted transition-colors duration-150 hover:bg-accent-soft hover:text-accent"
+                    className="shrink-0 rounded-control p-0.5 text-muted transition-colors duration-150 hover:bg-accent-soft hover:text-accent-hover"
                 >
                     <ArrowIcon className="size-3" />
                 </a>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { THEME_ACCENT, THEME_ACCENT_RGB, THEME_GROUND, THEME_GROUND_RGB } from "@/lib/theme-colors";
 
 /// GLSL fbm/simplex "silk" noise field, ported from alphaperp's SilkBackground: a raw WebGL
 /// shader (no library deps) instead of HeroAtmosphere's 2D canvas particle field. Scoped to its
@@ -192,9 +193,11 @@ export function HeroSilkBackground({
     const uIntensity = gl.getUniformLocation(program, "u_intensity");
     const uScale = gl.getUniformLocation(program, "u_scale");
 
-    const rgbColor = hexToRgb(color ?? themeHex("--color-accent", "#3adbd0"), [58, 219, 208]);
+    // The fallbacks come from `theme-colors.ts` rather than being written here, so the canvas cannot
+    // drift from `globals.css` the way it did when it still held the outgoing palette's values.
+    const rgbColor = hexToRgb(color ?? themeHex("--color-accent", THEME_ACCENT), THEME_ACCENT_RGB);
     gl.uniform3f(uColor, rgbColor.r, rgbColor.g, rgbColor.b);
-    const bgRgb = hexToRgb(bgColor ?? themeHex("--color-ground", "#0b1211"), [11, 18, 17]);
+    const bgRgb = hexToRgb(bgColor ?? themeHex("--color-ground", THEME_GROUND), THEME_GROUND_RGB);
     gl.uniform3f(uBgColor, bgRgb.r, bgRgb.g, bgRgb.b);
     gl.uniform1f(uIntensity, intensity);
     gl.uniform1f(uScale, scale);
