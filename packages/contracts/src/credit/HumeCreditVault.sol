@@ -76,10 +76,7 @@ contract HumeCreditVault is Initializable, ERC4626Upgradeable, OwnableUpgradeabl
         uint256 totalWeight = 0;
         for (uint256 i = 0; i < pairs.length; i++) {
             require(pairs[i] != address(0), "Vault: Invalid pair address");
-            allocations.push(MarketAllocation({
-                pairAddress: pairs[i],
-                weightBps: weightsBps[i]
-            }));
+            allocations.push(MarketAllocation({pairAddress: pairs[i], weightBps: weightsBps[i]}));
             totalWeight += weightsBps[i];
             emit AllocationUpdated(pairs[i], weightsBps[i]);
         }

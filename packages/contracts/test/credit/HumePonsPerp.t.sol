@@ -91,7 +91,8 @@ contract PonsPerpTest is Test {
                 new ERC1967Proxy(
                     address(new HumePonsTwapOracle()),
                     abi.encodeCall(
-                        HumePonsTwapOracle.initialize, (owner, address(pm), address(factory), hook, address(ethUsd), weth)
+                        HumePonsTwapOracle.initialize,
+                        (owner, address(pm), address(factory), hook, address(ethUsd), weth)
                     )
                 )
             )
@@ -109,7 +110,8 @@ contract PonsPerpTest is Test {
                 new ERC1967Proxy(
                     address(new HumePonsPerpManager()),
                     abi.encodeCall(
-                        HumePonsPerpManager.initialize, (owner, address(usdg), address(oracle), address(vault), address(factory))
+                        HumePonsPerpManager.initialize,
+                        (owner, address(usdg), address(oracle), address(vault), address(factory))
                     )
                 )
             )
@@ -200,7 +202,8 @@ contract PonsPerpTest is Test {
                 new ERC1967Proxy(
                     address(new HumePonsTwapOracle()),
                     abi.encodeCall(
-                        HumePonsTwapOracle.initialize, (owner, address(pm), address(factory), hook, address(ethUsd), weth)
+                        HumePonsTwapOracle.initialize,
+                        (owner, address(pm), address(factory), hook, address(ethUsd), weth)
                     )
                 )
             )
@@ -268,7 +271,8 @@ contract PonsPerpTest is Test {
                 new ERC1967Proxy(
                     address(new HumePonsPerpManager()),
                     abi.encodeCall(
-                        HumePonsPerpManager.initialize, (owner, address(usdg), address(oracle), address(vault), address(factory))
+                        HumePonsPerpManager.initialize,
+                        (owner, address(usdg), address(oracle), address(vault), address(factory))
                     )
                 )
             )

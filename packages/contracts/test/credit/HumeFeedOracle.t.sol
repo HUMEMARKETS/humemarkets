@@ -55,8 +55,7 @@ contract HumeFeedOracleTest is Test {
 
     function inputs() internal view returns (HumeFeedOracle.FeedInput[] memory values) {
         values = new HumeFeedOracle.FeedInput[](1);
-        values[0] =
-            HumeFeedOracle.FeedInput(address(stock), address(feed), "STOCK / USD", 120, 1e18, 10000e18, true);
+        values[0] = HumeFeedOracle.FeedInput(address(stock), address(feed), "STOCK / USD", 120, 1e18, 10000e18, true);
     }
 
     function setUp() public {

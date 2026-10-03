@@ -118,8 +118,8 @@ contract HumeFeedOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             (uint80 seqRound, int256 status, uint256 startedAt, uint256 seqUpdated, uint80 seqAnswered) =
                 sequencerFeed.latestRoundData();
             if (
-                seqRound == 0 || seqAnswered < seqRound || status != 0 || startedAt == 0
-                    || startedAt > block.timestamp || seqUpdated < startedAt || seqUpdated > block.timestamp
+                seqRound == 0 || seqAnswered < seqRound || status != 0 || startedAt == 0 || startedAt > block.timestamp
+                    || seqUpdated < startedAt || seqUpdated > block.timestamp
                     || block.timestamp - startedAt <= sequencerGracePeriod
             ) {
                 revert SequencerUnavailable();

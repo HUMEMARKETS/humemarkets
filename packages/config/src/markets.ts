@@ -1,0 +1,172 @@
+import {
+  isListingTier,
+  isMarketGroup,
+  LISTING_TIERS,
+  MARKET_GROUPS,
+  tierNeedsFeed,
+  type Address,
+  type ListingTier,
+  type MarketGroup,
+} from "@hume/types";
+import { ROBINHOOD_MAINNET_CHAIN_ID, ROBINHOOD_TESTNET_CHAIN_ID, type ChainId } from "./chains.js";
+
+/// One row of `packages/contracts/deployments/<network>.markets.json`, which is the source of the
+/// market list for the contracts listing script, the services and the web app alike. `group` and
+/// `tier` live in that file and are read through here, so regrouping a market or promoting it between
+/// tiers is a data change — no app code holds a group or a tier as a literal.
+export interface MarketListing {
+  /// Ticker, and the on-chain market id: `MarketRegistry` keys a market by `bytes32(bytes(symbol))`.
+  symbol: string;
+  name: string;
+  /// The tokenized asset. `MarketRegistry.addMarket` checks it is non-zero and then never reads it
+  /// again (`REFERENCE.md` Section 2 Finding 5), so it is the asset's identity, not a settlement path.
+  token: Address;
+  /// The Chainlink feed. **Present if and only if `tier` is `tradeable`** — see `assertTierInvariant`.
+  feed?: Address;
+  maxLeverage: number;
+  maintenanceBps: number;
+  group: MarketGroup;
+  tier: ListingTier;
+}
+
+/// The tier boundary, in one function. A `tradeable` listing settles on chain and must have a feed; a
+/// `quoted` or `listed` one is display only and must have none, so a DexScreener or reference price can
+/// never be mistaken for a settlement price. Asserted in both directions on every listing this package
+/// hands out, at module load, because a silently mis-tagged row is exactly the failure that would let a
+/// display price reach `PriceValidator`.
+export function assertTierInvariant(listing: Pick<MarketListing, "symbol" | "tier" | "feed">): void {
+  const { symbol, tier, feed } = listing;
+  if (!isListingTier(tier)) {
+    throw new Error(`@hume/config: market ${symbol} has unknown tier "${String(tier)}" (expected one of ${LISTING_TIERS.join(", ")})`);
+  }
+  if (tierNeedsFeed(tier) && !feed) {
+    throw new Error(`@hume/config: market ${symbol} is tier "${tier}" but has no feed address; a tradeable market settles on chain and needs a price feed`);
+  }
+  if (!tierNeedsFeed(tier) && feed) {
+    throw new Error(`@hume/config: market ${symbol} is tier "${tier}" but carries feed ${feed}; a display-only tier must have no feed, or its price could reach settlement`);
+  }
+}
+
+function assertListing(listing: MarketListing): MarketListing {
+  if (!isMarketGroup(listing.group)) {
+    throw new Error(`@hume/config: market ${listing.symbol} has unknown group "${String(listing.group)}" (expected one of ${MARKET_GROUPS.join(", ")})`);
+  }
+  assertTierInvariant(listing);
+  return listing;
+}
+
+/// Validates a whole list and returns it. Duplicate symbols are rejected too: the symbol is the
+/// on-chain market id, so two rows sharing one would address the same market.
+export function validateMarkets(listings: readonly MarketListing[]): readonly MarketListing[] {
+  const seen = new Set<string>();
+  for (const listing of listings) {
+    assertListing(listing);
+    if (seen.has(listing.symbol)) {
+      throw new Error(`@hume/config: market ${listing.symbol} is listed twice; the symbol is the on-chain market id`);
+    }
+    seen.add(listing.symbol);
+  }
+  return listings;
+}
+
+/// Mirrors `packages/contracts/deployments/robinhood_mainnet.markets.json`, the same checked-in-literal
+/// arrangement as the addresses above it: regenerate with `pnpm --filter @hume/config sync:markets`
+/// after editing that file, and `markets.test.ts` fails if the two ever drift.
+///
+/// All 32 are `tradeable` and `us-equities`. The 32 are not a shortlist — `REFERENCE.md` Section 2
+/// Finding 1 measured that only 33 of the 194 tokenized assets on this chain have a Chainlink feed at
+/// all, and GLD is the one unused. The `china` group is empty at launch because Section 3.1 cut it to
+/// Phase 18, and the `crypto` group arrives in Phase 11, where a perp needs only a feed (Finding 5).
+const robinhoodMainnetMarkets: readonly MarketListing[] = [
+  { symbol: "NVDA", name: "NVIDIA • Robinhood Token", token: "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC", feed: "0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
+  { symbol: "AAPL", name: "Apple • Robinhood Token", token: "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9", feed: "0x6B22A786bAa607d76728168703a39Ea9C99f2cD0", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
+  { symbol: "TSLA", name: "Tesla • Robinhood Token", token: "0x322F0929c4625eD5bAd873c95208D54E1c003b2d", feed: "0x4A1166a659A55625345e9515b32adECea5547C38", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
+  { symbol: "MSFT", name: "Microsoft • Robinhood Token", token: "0xe93237C50D904957Cf27E7B1133b510C669c2e74", feed: "0x45C3C877C15E6BA2EBB19eA114Ea508d14C1Af2E", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
+  { symbol: "GOOGL", name: "Alphabet Class A • Robinhood Token", token: "0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3", feed: "0xF6f373a037c30F0e5010d854385cA89185AE638b", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
+  { symbol: "AMZN", name: "Amazon • Robinhood Token", token: "0x12f190a9F9d7D37a250758b26824B97CE941bF54", feed: "0xD5a1508ceD74c084eBf3cBe853e2C968fB2a651C", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
+  { symbol: "META", name: "Meta Platforms • Robinhood Token", token: "0xc0D6457C16Cc70d6790Dd43521C899C87ce02f35", feed: "0x7C38C00C30BEe9378381E7B6135d7283356D71b1", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
+  { symbol: "COIN", name: "Coinbase • Robinhood Token", token: "0x6330D8C3178a418788dF01a47479c0ce7CCF450b", feed: "0xA3a468A452940B7D6b69991207B508c609a98Ef2", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
+  { symbol: "MSTR", name: "Strategy Inc. • Robinhood Token", token: "0xec262a75e413fAfD0dF80480274532C79D42da09", feed: "0x396118bdFB181e6240E74D243F266B061c0edc3D", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
+  { symbol: "SPY", name: "SPDR S&P 500 ETF Trust • Robinhood Token", token: "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C", feed: "0x319724394D3A0e3669269846abE664Cd621f9f6A", maxLeverage: 10, maintenanceBps: 500, group: "us-equities", tier: "tradeable" },
+  { symbol: "QQQ", name: "Invesco QQQ • Robinhood Token", token: "0xD5f3879160bc7c32ebb4dC785F8a4F505888de68", feed: "0x80901d846d5D7B030F26B480776EE3b29374C2ae", maxLeverage: 10, maintenanceBps: 500, group: "us-equities", tier: "tradeable" },
+  { symbol: "AMD", name: "AMD • Robinhood Token", token: "0x86923f96303D656E4aa86D9d42D1e57ad2023fdC", feed: "0x943A29E7ae51A4798823ca9eEd2ed533B2A22C72", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
+  { symbol: "ASML", name: "ASML Holding NV • Robinhood Token", token: "0x47F93d52cBeC7C6D2CfC080e154002370a60dAEA", feed: "0xB4106147E8cce40b7d46124090d373A71b70f87D", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
+  { symbol: "BABA", name: "Alibaba • Robinhood Token", token: "0xad25Ac6C84D497db898fa1E8387bf6Af3532a1c4", feed: "0x62Cc8F9b5f56a33c9C8A60c8B92779f523c4E984", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
+  { symbol: "CLSK", name: "CleanSpark • Robinhood Token", token: "0xcBB95BBF36099d34dA091dc6Fa6F49EfA257Cee3", feed: "0x810c12D3a554Bc47fd39597Fe3b3AAC4941F50eF", maxLeverage: 3, maintenanceBps: 1000, group: "us-equities", tier: "tradeable" },
+  { symbol: "CRCL", name: "Circle Internet Group • Robinhood Token", token: "0xdF0992E440dD0be65BD8439b609d6D4366bf1CB5", feed: "0x6652eDf64bA3731C4F2D3ce821A0Fb1f1f6b482a", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
+  { symbol: "CRWV", name: "CoreWeave • Robinhood Token", token: "0x5f10A1C971B69e47e059e1dC91901B59b3fB49C3", feed: "0xe1b3aABCAFAd1c94708dc1367dcfF8Aa4407487C", maxLeverage: 3, maintenanceBps: 1000, group: "us-equities", tier: "tradeable" },
+  { symbol: "EWY", name: "iShares MSCI South Korea fund • Robinhood Token", token: "0x7f0aBeF0C07280F82c6a08ead09dEd6BAE2C13Fc", feed: "0xEFdf54610B62A7753Ec30bDc380847c12D32e1D1", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
+  { symbol: "GME", name: "GameStop • Robinhood Token", token: "0x1b0E319c6A659F002271B69dB8A7df2F911c153E", feed: "0x27C71df6A64fB476468EdF256CF72c038baB5B67", maxLeverage: 3, maintenanceBps: 1000, group: "us-equities", tier: "tradeable" },
+  { symbol: "INTC", name: "Intel • Robinhood Token", token: "0xc72b96e0E48ecd4DC75E1e45396e26300BC39681", feed: "0x3f390C5C24628Ac7C489515402235FeAD71D1913", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
+  { symbol: "IONQ", name: "IonQ • Robinhood Token", token: "0x558378E000D634A36593E338eBacdd6207640EfE", feed: "0x22EfeC4919baf55F360E0EDee4AbEB26DE4971eb", maxLeverage: 3, maintenanceBps: 1000, group: "us-equities", tier: "tradeable" },
+  { symbol: "MU", name: "Micron Technology • Robinhood Token", token: "0xfF080c8ce2E5feadaCa0Da81314Ae59D232d4afD", feed: "0x425EEFdCf05ed6526C3cE61Af99429A228a6d596", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
+  { symbol: "NBIS", name: "Nebius Group • Robinhood Token", token: "0x9D9c6684F596F66a64C030B93A886D51Fd4D7931", feed: "0xE1D87B116Ba0fe898998f1D140339D1fA1E09705", maxLeverage: 3, maintenanceBps: 1000, group: "us-equities", tier: "tradeable" },
+  { symbol: "ORCL", name: "Oracle • Robinhood Token", token: "0xb0992820E760d836549ba69BC7598b4af75dEE03", feed: "0x0e6a64a2B58A6693a531E6c555f3A5d042eEA844", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
+  { symbol: "PLTR", name: "Palantir Technologies • Robinhood Token", token: "0x894E1EC2D74FFE5AEF8Dc8A9e84686acCB964F2A", feed: "0x820ABedFF239034956B7A9d2F0a331f9F075eB4c", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
+  { symbol: "RGTI", name: "Rigetti Computing • Robinhood Token", token: "0x284358abc07F9359f19f4b5b4aC91901Be2597Ba", feed: "0x2A045cF1C49c61c166C036d2f06FA2D2d984f765", maxLeverage: 3, maintenanceBps: 1000, group: "us-equities", tier: "tradeable" },
+  { symbol: "RKLB", name: "Rocket Lab Corporation • Robinhood Token", token: "0x3b14C39E89D60D627b42a1A4CA45b5bb45Fc12e2", feed: "0x045477BF65Aef6f4F2386ad0164579e48381CC74", maxLeverage: 3, maintenanceBps: 1000, group: "us-equities", tier: "tradeable" },
+  { symbol: "SLV", name: "iShares Silver Trust • Robinhood Token", token: "0x411eFb0E7f985935DAec3D4C3ebaEa0d0AD7D89f", feed: "0x209b73908e92Ae021826eD79609845451Ecba2ce", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
+  { symbol: "SNDK", name: "Sandisk Corporation • Robinhood Token", token: "0xB90A19fF0Af67f7779afF50A882A9CfF42446400", feed: "0xfb133Fa4B7b385802B693a293606682Df47109A3", maxLeverage: 3, maintenanceBps: 1000, group: "us-equities", tier: "tradeable" },
+  { symbol: "SPCX", name: "Space Exploration Technologies Corp. Class A Common Stock • Robinhood Token", token: "0x4a0E65A3EcceC6dBe60AE065F2e7bb85Fae35eEa", feed: "0xB265810950ba6c5C0Ff821c9963014a56fD8Bffb", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
+  { symbol: "TSM", name: "Taiwan Semiconductor Manufacturing • Robinhood Token", token: "0x58FfE4a942d3885bAa22D7520691F611EF09e7AA", feed: "0x874cF94aa8eC88Fd9560094dD065f2fB3E41Fc2F", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
+  { symbol: "USO", name: "United States Oil Fund • Robinhood Token", token: "0xa30FA36Db767ad9eD3f7a60fC79526fB4d56D344", feed: "0x75a9c76Ef439e2C7c2E5a34Ab105EcFe3766431c", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
+];
+
+/// No market list is recorded for testnet: `deployments/robinhood_testnet.markets.json` does not
+/// exist, because the testnet stack was listed with mock tokens and mock feeds by `AddMarket.s.sol`
+/// rather than from a file. An empty list is the recorded answer for this chain, not a missing one —
+/// `marketsForChain` still throws for a chain it has never heard of.
+const robinhoodTestnetMarkets: readonly MarketListing[] = [];
+
+export const markets: Record<ChainId, readonly MarketListing[]> = {
+  [ROBINHOOD_TESTNET_CHAIN_ID]: validateMarkets(robinhoodTestnetMarkets),
+  [ROBINHOOD_MAINNET_CHAIN_ID]: validateMarkets(robinhoodMainnetMarkets),
+};
+
+export function marketsForChain(chainId: ChainId): readonly MarketListing[] {
+  const list = markets[chainId];
+  if (!list) {
+    throw new Error(`@hume/config: no market list recorded for chain ${chainId}`);
+  }
+  return list;
+}
+
+/// Every market in a group, in file order. An unknown group is an error rather than an empty list: a
+/// typo in a group name would otherwise render an empty page that looks like a chain problem. A group
+/// that is known but has no markets yet — `china` and `pons` at launch — correctly returns `[]`.
+export function marketsForGroup(chainId: ChainId, group: MarketGroup): readonly MarketListing[] {
+  if (!isMarketGroup(group)) {
+    throw new Error(`@hume/config: unknown market group "${String(group)}" (expected one of ${MARKET_GROUPS.join(", ")})`);
+  }
+  return marketsForChain(chainId).filter((market) => market.group === group);
+}
+
+/// Every market in a tier, in file order. An unknown tier is an error, for the same reason as a group.
+/// The tier invariant is re-asserted here, so a caller that asks for `tradeable` markets can rely on
+/// every row it gets back having a feed.
+export function marketsForTier(chainId: ChainId, tier: ListingTier): readonly MarketListing[] {
+  if (!isListingTier(tier)) {
+    throw new Error(`@hume/config: unknown listing tier "${String(tier)}" (expected one of ${LISTING_TIERS.join(", ")})`);
+  }
+  const list = marketsForChain(chainId).filter((market) => market.tier === tier);
+  for (const market of list) assertTierInvariant(market);
+  return list;
+}
+
+/// One market by ticker. Absent is `undefined`, so a caller decides whether that is a 404 or a reason
+/// to fall back; nothing here invents a market.
+export function marketForSymbol(chainId: ChainId, symbol: string): MarketListing | undefined {
+  return marketsForChain(chainId).find((market) => market.symbol === symbol);
+}
+
+/// The feed address of a tradeable market. Throws for any other tier, which is the read path's half of
+/// the tier boundary: there is no way to ask a quoted market for a settlement price.
+export function feedForSymbol(chainId: ChainId, symbol: string): Address {
+  const market = marketForSymbol(chainId, symbol);
+  if (!market) throw new Error(`@hume/config: no market "${symbol}" on chain ${chainId}`);
+  assertTierInvariant(market);
+  if (!tierNeedsFeed(market.tier) || !market.feed) {
+    throw new Error(`@hume/config: market ${symbol} is tier "${market.tier}" and has no settlement feed`);
+  }
+  return market.feed;
+}

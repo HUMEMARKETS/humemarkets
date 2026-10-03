@@ -25,11 +25,11 @@ library HumeCreditProxies {
     }
 
     function lendingRouter(address owner) internal returns (HumeCreditRouter) {
-        return HumeCreditRouter(_proxy(address(new HumeCreditRouter()), abi.encodeCall(HumeCreditRouter.initialize, (owner))));
+        return
+            HumeCreditRouter(
+                _proxy(address(new HumeCreditRouter()), abi.encodeCall(HumeCreditRouter.initialize, (owner)))
+            );
     }
-
-
-
 
     function vault(
         IERC20 asset,
@@ -102,5 +102,4 @@ library HumeCreditProxies {
             )
         );
     }
-
 }
