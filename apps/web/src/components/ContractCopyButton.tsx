@@ -31,7 +31,7 @@ export function ContractCopyButton({ address, label }: { address: `0x${string}`;
         });
       }}
       className={cn(
-        "shrink-0 rounded-control p-1 text-muted transition-colors duration-150 hover:bg-accent-soft hover:text-accent",
+        "shrink-0 rounded-control p-1 text-muted transition-colors duration-150 hover:bg-accent-soft hover:text-accent-hover",
         copied && "text-up",
       )}
     >

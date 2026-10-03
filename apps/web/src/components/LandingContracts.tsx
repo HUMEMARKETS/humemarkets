@@ -54,7 +54,7 @@ function ContractCard({
                             target="_blank"
                             rel="noreferrer"
                             aria-label={`View ${label} on the explorer`}
-                            className="shrink-0 rounded-control p-1 text-muted transition-colors duration-150 hover:bg-accent-soft hover:text-accent"
+                            className="shrink-0 rounded-control p-1 text-muted transition-colors duration-150 hover:bg-accent-soft hover:text-accent-hover"
                         >
                             <ArrowIcon className="size-3.5" />
                         </a>

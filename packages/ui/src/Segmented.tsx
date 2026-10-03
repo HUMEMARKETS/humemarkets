@@ -22,9 +22,9 @@ export interface SegmentedProps<T extends string | number> {
 /// colour of what it would select: green for long, red for short, accent for everything else.
 const active = { up: "bg-up text-ground", down: "bg-down text-ground", neutral: "bg-accent text-accent-ink" };
 const idle = {
-  up: "bg-raised text-muted hover:bg-up-soft hover:text-up active:bg-up active:text-ground",
-  down: "bg-raised text-muted hover:bg-down-soft hover:text-down active:bg-down active:text-ground",
-  neutral: "bg-raised text-muted hover:bg-accent-soft hover:text-accent active:bg-accent active:text-accent-ink",
+  up: "bg-raised text-muted hover:bg-up-soft hover:text-up-hover active:bg-up active:text-ground",
+  down: "bg-raised text-muted hover:bg-down-soft hover:text-down-hover active:bg-down active:text-ground",
+  neutral: "bg-raised text-muted hover:bg-accent-soft hover:text-accent-hover active:bg-accent active:text-accent-ink",
 };
 
 export function Segmented<T extends string | number>({ options, value, onChange, label, activeTone, className, size = "md" }: SegmentedProps<T>) {
