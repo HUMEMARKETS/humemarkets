@@ -57,15 +57,36 @@ contract HumePonsPerpManager is Initializable, OwnableUpgradeable, UUPSUpgradeab
     error NotLiquidatable();
 
     event MarketSet(
-        address indexed asset, uint16 maxLeverageBps, uint16 maintenanceMarginBps, uint128 maxPositionSize, uint128 maxOpenInterest
+        address indexed asset,
+        uint16 maxLeverageBps,
+        uint16 maintenanceMarginBps,
+        uint128 maxPositionSize,
+        uint128 maxOpenInterest
     );
-    event ParamsUpdated(uint16 feeBps, uint16 liquidationRewardBps, uint128 minLiquidationReward, uint32 minHoldTime, uint16 maxUtilizationBps);
+    event ParamsUpdated(
+        uint16 feeBps,
+        uint16 liquidationRewardBps,
+        uint128 minLiquidationReward,
+        uint32 minHoldTime,
+        uint16 maxUtilizationBps
+    );
     event OpeningPauseUpdated(bool paused);
     event PositionOpened(
-        uint256 indexed id, address indexed trader, address indexed asset, bool isLong, uint256 collateral, uint256 size, uint256 entryPrice, uint256 fee
+        uint256 indexed id,
+        address indexed trader,
+        address indexed asset,
+        bool isLong,
+        uint256 collateral,
+        uint256 size,
+        uint256 entryPrice,
+        uint256 fee
     );
-    event PositionClosed(uint256 indexed id, address indexed trader, uint256 exitPrice, int256 pnl, uint256 fee, uint256 payout);
-    event PositionLiquidated(uint256 indexed id, address indexed liquidator, uint256 price, uint256 reward, uint256 traderPayout);
+    event PositionClosed(
+        uint256 indexed id, address indexed trader, uint256 exitPrice, int256 pnl, uint256 fee, uint256 payout
+    );
+    event PositionLiquidated(
+        uint256 indexed id, address indexed liquidator, uint256 price, uint256 reward, uint256 traderPayout
+    );
 
     IERC20 public usdg;
     HumePonsTwapOracle public oracle;
@@ -98,8 +119,8 @@ contract HumePonsPerpManager is Initializable, OwnableUpgradeable, UUPSUpgradeab
         initializer
     {
         if (
-            usdg_.code.length == 0 || oracle_.code.length == 0 || vault_.code.length == 0 || ponsFactory_.code.length == 0
-                || HumePonsVault(vault_).asset() != usdg_
+            usdg_.code.length == 0 || oracle_.code.length == 0 || vault_.code.length == 0
+                || ponsFactory_.code.length == 0 || HumePonsVault(vault_).asset() != usdg_
         ) revert InvalidConfiguration();
         __Ownable_init(initialOwner);
         usdg = IERC20(usdg_);

@@ -36,32 +36,20 @@ contract HumeInvariantsTest is Test {
         nvda = new CreditTestToken("NVIDIA Token", "NVDA", 18, 1_000_000e18, admin);
 
         oracle = new CompositeSanityOracle(admin);
-        oracle.setPrice(address(usdg), 1e18);   // $1.00
+        oracle.setPrice(address(usdg), 1e18); // $1.00
         oracle.setPrice(address(nvda), 250e18); // $250.00
 
         registry = HumeCreditProxies.registry(admin);
 
         // Vault for USDG
         vault = HumeCreditProxies.vault(
-            IERC20(address(usdg)),
-            "Hume USDG Vault",
-            "lvUSDG",
-            "hume-usdg-vault-fuzz",
-            "Conservative",
-            admin
+            IERC20(address(usdg)), "Hume USDG Vault", "lvUSDG", "hume-usdg-vault-fuzz", "Conservative", admin
         );
 
         vault.setDepositsPaused(false);
         // Pair: NVDA as Collateral ($250), USDG as Debt ($1)
         marketId = keccak256(abi.encodePacked("nvda-usdg-fuzz", address(nvda), address(usdg)));
-        pair = HumeCreditProxies.pair(
-            marketId,
-            address(nvda),
-            address(usdg),
-            address(oracle),
-            address(registry),
-            admin
-        );
+        pair = HumeCreditProxies.pair(marketId, address(nvda), address(usdg), address(oracle), address(registry), admin);
 
         registry.addMarket(
             "nvda-usdg-fuzz",
@@ -74,7 +62,7 @@ contract HumeInvariantsTest is Test {
             8500, // 85% Liquidation LTV
             20000, // 200% Max Leverage
             10_000_000e18, // Supply Cap
-            10_000_000e18  // Borrow Cap
+            10_000_000e18 // Borrow Cap
         );
 
         // Seed pair with liquidity
@@ -98,7 +86,9 @@ contract HumeInvariantsTest is Test {
      * @notice Invariant: Vault assets must always match or exceed total underlying deposited minus withdrawn.
      * Share redemption should never yield more than the proportional share of totalAssets.
      */
-    function testFuzz_VaultDepositWithdrawSolvency(uint256 depositAlice, uint256 depositBob, uint256 withdrawBps) public {
+    function testFuzz_VaultDepositWithdrawSolvency(uint256 depositAlice, uint256 depositBob, uint256 withdrawBps)
+        public
+    {
         // Bound deposits between 10 USDG and 1,000,000 USDG
         depositAlice = bound(depositAlice, 10e18, 1_000_000e18);
         depositBob = bound(depositBob, 10e18, 1_000_000e18);
@@ -129,7 +119,9 @@ contract HumeInvariantsTest is Test {
             // Asset invariant: assets received must not exceed the expected share value
             assertLe(assetsReceived, depositAlice + 1, "Redemption cannot exceed deposit value");
             // Solvency invariant: vault assets must remain consistent
-            assertEq(vault.totalAssets(), (depositAlice + depositBob) - assetsReceived, "Remaining assets must be exact");
+            assertEq(
+                vault.totalAssets(), (depositAlice + depositBob) - assetsReceived, "Remaining assets must be exact"
+            );
         }
     }
 
@@ -184,7 +176,7 @@ contract HumeInvariantsTest is Test {
     function testFuzz_LiquidationThresholdInvariant(uint256 collateralNvda, uint256 newNvdaPrice) public {
         // 10 NVDA ($2,500 initial collateral)
         collateralNvda = bound(collateralNvda, 10e18, 500e18);
-        
+
         vm.startPrank(alice);
         nvda.approve(address(pair), collateralNvda);
         pair.depositCollateral(collateralNvda);

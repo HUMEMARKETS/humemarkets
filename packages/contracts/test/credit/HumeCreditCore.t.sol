@@ -64,12 +64,7 @@ contract HumeCoreTest is Test {
 
         // 6. Deploy Vault
         vault = HumeCreditProxies.vault(
-            IERC20(address(usdg)),
-            "Hume USDG Yield Vault",
-            "lvUSDG",
-            "hume-usdg-vault-testnet",
-            "Conservative",
-            admin
+            IERC20(address(usdg)), "Hume USDG Yield Vault", "lvUSDG", "hume-usdg-vault-testnet", "Conservative", admin
         );
 
         // 7. Deploy Routers
@@ -159,5 +154,4 @@ contract HumeCoreTest is Test {
         (, uint256 debtRemaining,,) = pair.getPosition(alice);
         assertEq(debtRemaining, 0, "All debt should be liquidated");
     }
-
 }

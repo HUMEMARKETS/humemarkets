@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  */
 contract CompositeSanityOracle is Ownable {
     struct PriceData {
-        uint256 price;       // Scaled by 1e18 (USD price)
+        uint256 price; // Scaled by 1e18 (USD price)
         uint256 lastUpdated; // Timestamp of last valid update
     }
 
@@ -68,10 +68,7 @@ contract CompositeSanityOracle is Ownable {
             require(deviationBps <= maxDeviationBps, "Oracle: Price deviation exceeded boundary");
         }
 
-        prices[asset] = PriceData({
-            price: newPrice,
-            lastUpdated: block.timestamp
-        });
+        prices[asset] = PriceData({price: newPrice, lastUpdated: block.timestamp});
 
         emit PriceUpdated(asset, newPrice, block.timestamp);
     }
@@ -83,10 +80,7 @@ contract CompositeSanityOracle is Ownable {
         require(asset != address(0), "Oracle: Invalid asset address");
         require(newPrice > 0, "Oracle: Price must be greater than zero");
 
-        prices[asset] = PriceData({
-            price: newPrice,
-            lastUpdated: block.timestamp
-        });
+        prices[asset] = PriceData({price: newPrice, lastUpdated: block.timestamp});
 
         emit PriceUpdated(asset, newPrice, block.timestamp);
     }

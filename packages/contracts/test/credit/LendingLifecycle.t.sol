@@ -190,7 +190,6 @@ contract LendingLifecycleTest is Test {
         vm.stopPrank();
     }
 
-
     function testRiskUpdateCannotSetThresholdAboveOneHundredPercent() public {
         vm.expectRevert("Registry: Liquidation LTV cannot exceed 100%");
         registry.updateRiskTier(marketId, HumeCreditRegistry.RiskTier.TierA, 6000, 10001, 25000);

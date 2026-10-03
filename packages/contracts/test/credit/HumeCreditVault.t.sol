@@ -20,12 +20,7 @@ contract HumeCreditVaultTest is Test {
         vm.startPrank(admin);
         usdg = new CreditTestToken("Global Dollar", "USDG", 18, 1_000_000e18, admin);
         vault = HumeCreditProxies.vault(
-            IERC20(address(usdg)),
-            "Hume USDG Yield Vault",
-            "lvUSDG",
-            "hume-usdg-vault-testnet",
-            "Conservative",
-            admin
+            IERC20(address(usdg)), "Hume USDG Yield Vault", "lvUSDG", "hume-usdg-vault-testnet", "Conservative", admin
         );
 
         vault.setDepositsPaused(false);
