@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+dist/
+.next/
+next-env.d.ts
+out/
+build/
+*.tsbuildinfo
+
+# Turborepo
+.turbo/
+
+# Foundry
+packages/contracts/cache/
+packages/contracts/out/
+packages/contracts/broadcast/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# Editors / OS
+.DS_Store
+.vscode/
+.idea/
+
+# Project Requirements
+# DEVELOPMENT_STEPS.md
+# PROJECT_BRIEF.md
+.simulator/
+.vercel
+.env*
+
+__pycache__/
+
+# docs/
