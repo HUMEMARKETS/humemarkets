@@ -50,14 +50,14 @@
   "sideEffects": false,
   "license": "MIT",
   "author": "RubenDev",
-  "homepage": "https://github.com/rubengitdev/hume/tree/main/packages/sdk#readme",
+  "homepage": "https://github.com/HUMEMARKETS/humemarkets/tree/main/packages/sdk#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rubengitdev/hume.git",
+    "url": "git+https://github.com/HUMEMARKETS/humemarkets.git",
     "directory": "packages/sdk"
   },
   "bugs": {
-    "url": "https://github.com/rubengitdev/hume/issues"
+    "url": "https://github.com/HUMEMARKETS/humemarkets/issues"
   },
   "keywords": [
     "hume",
