@@ -32,14 +32,17 @@ you were given, not `main`.
 
 ## Database rules, not negotiable
 
-- **Drizzle owns the schema.** `services/indexer/src/db/schema.ts` is the source of truth. Never
-  create a `supabase/migrations/` directory — two migration systems over one database is how they
-  diverge.
-- **Testnet and mainnet never share a database.** Two Supabase projects, `hume-mainnet` and
-  `hume-testnet`.
-- Runtime connects through the Supabase transaction pooler with **`prepare: false`**. Migrations use
-  `DIRECT_DATABASE_URL`. A missing `prepare: false` works locally and fails on the pooler.
-- Railway runs compute, Supabase runs Postgres. Do not move either.
+- **Drizzle owns the schema.** `services/indexer/src/db/schema.ts` is the source of truth. Never add a
+  second migration system — two over one database is how they diverge.
+- **Testnet and mainnet never share a database.** Two Railway environments, `mainnet` and `testnet`,
+  each with its own Postgres service.
+- **One `DATABASE_URL` per environment**, for runtime and for migrations both. Railway Postgres is a
+  direct connection: no transaction pooler, so `prepare: false` is not needed and there is no
+  `DIRECT_DATABASE_URL`. Keep `transform: postgres.camel` where it already is, in `services/api/src/db.ts`.
+- **Railway runs compute and Postgres.** Hosting moved off Supabase on 2026-10-04, when its project
+  limit was reached. `apps/web` stays on Vercel.
+- **The testnet Postgres does not exist yet, by design.** It is created for the Phase 15 walkthrough and
+  deleted after the recording, to protect the $5-6 budget. Do not assume it is up.
 
 ## Never
 
