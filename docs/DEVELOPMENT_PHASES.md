@@ -10,8 +10,8 @@ can verify.
 - **Launch shape:** a recorded walkthrough on Robinhood testnet (chain ID `46630`) passes first, then
   mainnet opens the same day with caps and real USDG
 - **Audit: skipped. No phase waits on a security review.** Decided 2026-10-03 and confirmed. Section 0.8
-- **Hosting:** a pnpm + Turborepo monorepo (`REFERENCE.md` Section 1.0). **Railway** runs the services,
-  **Supabase** runs Postgres, **Vercel** serves the web app
+- **Hosting:** a pnpm + Turborepo monorepo (`REFERENCE.md` Section 1.0). **Railway** runs the services
+  **and** Postgres, **Vercel** serves the web app. Changed 2026-10-04 — Section 0.1
 - **Budget:** $5–6 total
 - **Repository:** `/home/bennyworkstation/next_project/hume`
 
@@ -104,8 +104,9 @@ Checked rather than assumed. Three items were reported available and measured ot
 
 | Resource                  | Verified state                                                                                                                                                                           | Used by                 |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| Railway CLI               | **OK** — `railway whoami` returns RubenDev. Projects: `levier`, `stableperp-api`; no hume project yet. **Compute only; no Railway Postgres**                                             | Phase 5                 |
-| Supabase                  | **Not set up.** Two projects needed, `hume-mainnet` and `hume-testnet`. The `supabase` CLI is not installed and is not required — Drizzle owns the schema                                | Phase 5                 |
+| Railway CLI               | **Account changed 2026-10-04.** Hume lives in a project on a **second email**, id `fcfcb48b-28fc-4469-8e70-3f3fdae9d235`. Runs compute **and** Postgres                                   | Phase 5                 |
+| Supabase                  | **Dropped 2026-10-04 — project limit reached.** Postgres moved to Railway. No Supabase project, no `supabase` CLI, and nothing in the code ever imported its SDK                         | —                       |
+| Railway MCP in Claude Code | **Needs re-auth.** It is authenticated as the first account and returns `You don't have the required role (viewer)` on the new project. Run `/mcp` in a fresh session before Phase 5     | Phase 5                 |
 | Vercel CLI                | **OK** — logged in as `rubencahyadi504-9120`                                                                                                                                             | Phase 6                 |
 | Mainnet RPC `4663`        | **OK** — reachable, block 79,197,152                                                                                                                                                     | Most phases             |
 | Testnet RPC `46630`       | **OK** — reachable, `eth_chainId` returns `0xb626`                                                                                                                                       | Phase 15                |
@@ -292,7 +293,7 @@ integration suites — is the standing evidence, and `REFERENCE.md` Section 1 re
 | Gas floats for keeper, liquidator, pauser                | ~0.00015 ETH          | Phase 16                                                        |
 | **USDG for pool reserve, credit seed, real test trades** | **$4–5 — NOT FUNDED** | **Section 0.3. The one real blocker**                           |
 | Railway — compute only (indexer, API, pricing, keeper)   | ~$5/month             | Free plan inadequate: the indexer must not sleep                |
-| **Supabase Postgres — two projects**                     | **$0**                | Free tier. Replaces Railway Postgres. Watch the size ceiling    |
+| **Railway Postgres — `mainnet` only**                    | **usage-based**       | Supabase's project limit was reached 2026-10-04. The `testnet` Postgres is created in Phase 15 and deleted after the recording, so only one runs continuously |
 | Vercel (web)                                             | $0                    | Hobby plan. **DNS not pointed yet** — Section 0.1               |
 | Domain                                                   | $0                    | Already held                                                    |
 | Testnet walkthrough, recording and sample mode           | $0                    | Faucet gas; the collateral token has a public `mint`            |
@@ -664,30 +665,33 @@ set on chain, and `check-launch-limits.sh` exits 0.
 ```text
 Run Phase 5 of @docs/DEVELOPMENT_PHASES.md: mainnet backend bring-up.
 
-Railway hosts COMPUTE ONLY. Supabase is the Postgres. Read the Phase 5 body for the connection-string
-table before touching anything.
+Railway runs compute AND Postgres. Supabase was dropped on 2026-10-04 when its project limit was
+reached, so ignore any Supabase instruction you find elsewhere in this file. Read the Phase 5 body
+first.
 
-Create two Supabase projects, hume-mainnet and hume-testnet — never point both environments at one
-database, because the Phase 15 walkthrough writes to the testnet one at the same time.
+PREREQUISITE: the Railway MCP must be authenticated against the account that owns project
+fcfcb48b-28fc-4469-8e70-3f3fdae9d235. If a Railway call returns "You don't have the required role
+(viewer)", stop and say so — the operator runs /mcp to re-authenticate. Do not create a project
+anywhere else.
 
-Then the code change this needs: all three services call postgres.js without prepare: false, and
-prepared statements BREAK on Supabase's transaction pooler on port 6543. Add prepare: false to
-services/indexer/src/db/client.ts, services/risk-monitor/src/db/client.ts and services/api/src/db.ts,
-keeping the existing transform: postgres.camel in the API client. Add DIRECT_DATABASE_URL to
-.env.example and make services/indexer/src/db/migrate.ts prefer it, falling back to DATABASE_URL so
-local development still works with one variable. DATABASE_URL is the pooler on 6543 for runtime;
-DIRECT_DATABASE_URL is the direct connection on 5432 for migrations only.
+In that project, create the mainnet environment with a Postgres service plus services/indexer,
+services/api and services/pricing, deployed from this monorepo with per-service root directories. Do
+NOT create the testnet environment: its Postgres is created in Phase 15 and deleted after the
+recording, to protect the budget.
 
-Create the hume-mainnet Railway environment and deploy services/indexer, services/api and
-services/pricing from this monorepo with per-service root directories. Set CHAIN_ID 4663, RPC_URL,
-both database URLs, INDEXER_START_BLOCK, API_PORT, PRICING_PORT, PRICING_SERVICE_URL, CORS_ORIGINS,
-QUOTER_PRIVATE_KEY and QUOTER_ADDRESS. Run the Drizzle migrations against the direct connection. Start
-the indexer from the deployment block, not genesis. Check the Supabase free-tier size ceiling in the
-dashboard; PRICE_TICK_RETENTION_DAYS already prunes ticks and defaults to 8.
+One DATABASE_URL per environment covers runtime and migrations. Railway Postgres is a direct
+connection, so there is no transaction pooler: prepare: false is NOT needed and DIRECT_DATABASE_URL is
+NOT needed. Keep the existing transform: postgres.camel in services/api/src/db.ts. The three db clients
+already read DATABASE_URL and need no change — confirm that rather than editing them.
+
+Set CHAIN_ID 4663, RPC_URL, DATABASE_URL, INDEXER_START_BLOCK, API_PORT, PRICING_PORT,
+PRICING_SERVICE_URL, CORS_ORIGINS, QUOTER_PRIVATE_KEY and QUOTER_ADDRESS. Run the Drizzle migrations.
+Start the indexer from the deployment block, not genesis. PRICE_TICK_RETENTION_DAYS already prunes
+ticks and defaults to 8; report the Postgres volume size so the operator can see what it costs.
 
 Acceptance: GET /markets returns the listed mainnet markets with live prices;
-indexer_state.last_indexed_block is within 10 blocks of the chain head; all three services connect
-through the pooler with no prepared-statement error; the testnet project is confirmed separate.
+indexer_state.last_indexed_block is within 10 blocks of the chain head; all three services connect to
+Postgres with no error; and the testnet environment is confirmed absent, not misconfigured.
 
 Do NOT commit, push, stage or open a PR — I do that myself. Leave the working tree dirty.
 Report pass, amber or fail, list the paths you changed, then print the Phase 5 Ship block for me to
@@ -707,22 +711,30 @@ git push -u origin phase-05-backend
 
 gh pr create --base main \
   --title "Phase 5 — Mainnet backend" \
-  --body "Railway hosts compute only and Supabase hosts the database. Brings up the indexer, API and pricing services against chain 4663, adds prepare: false for Supabase's transaction pooler, and splits DIRECT_DATABASE_URL out for migrations.
+  --body "Railway hosts compute and Postgres. Brings up the indexer, API and pricing services against chain 4663 in the mainnet environment, with a Railway Postgres service behind a single DATABASE_URL. Supabase was dropped on 2026-10-04 when its project limit was reached; no code change was needed, because nothing ever imported its SDK.
 
 Acceptance: <paste the result Claude reported>.
 Evidence: docs/evidence/phase-5.md"
 ```
 
-**Scope.** **Railway runs the services; Supabase is the Postgres.** Bring up the indexer, API and
-pricing against chain 4663, with their data in a Supabase project.
+**Scope.** **Railway runs the services and Postgres.** Bring up the indexer, API and pricing against
+chain 4663, with their data in a Railway Postgres service in the same project.
 
-**Architecture, decided 2026-10-03.** Railway hosts compute only — no Railway Postgres. Supabase hosts
-the database. **Two Supabase projects, `hume-mainnet` and `hume-testnet`,** because the convention that
-testnet and mainnet never share a database still holds and the Phase 15 walkthrough writes to the
-testnet one at the same time.
+**Architecture, revised 2026-10-04.** The 2026-10-03 decision put Postgres on Supabase and used Railway
+for compute only. **Supabase's project limit was reached, so Postgres moved to Railway.** The project is
+`fcfcb48b-28fc-4469-8e70-3f3fdae9d235`, on a **second email** — see Section 0.1, including the MCP
+re-auth this requires.
 
-**The one code change this needs.** All three services open Postgres with `postgres.js`, which uses
-prepared statements by default:
+**Two environments, `mainnet` and `testnet`, each with its own Postgres service.** The convention that
+testnet and mainnet never share a database still holds. The `levier` project already uses this exact
+environment split, so the pattern is proven on this account.
+
+**Only `mainnet` is created in this phase.** A Railway Postgres is billed on compute and volume while it
+runs, and the whole budget is $5–6 including gas, so the testnet Postgres is created in Phase 15 for the
+walkthrough and deleted after the recording. Phase 15 owns that step.
+
+**No code change is needed, and this is the part worth checking rather than assuming.** All three
+clients already read a single `DATABASE_URL`:
 
 ```
 services/indexer/src/db/client.ts:14      postgres(requireEnv("DATABASE_URL"))
@@ -730,57 +742,60 @@ services/risk-monitor/src/db/client.ts:10 postgres(requireEnv("DATABASE_URL"))
 services/api/src/db.ts:12                 postgres(requireEnv("DATABASE_URL"), { transform: postgres.camel })
 ```
 
-**Prepared statements break on Supabase's transaction-mode pooler (port 6543).** Pass `prepare: false`
-in all three, or the services fail at runtime rather than at deploy. Keep `transform: postgres.camel`
-where it already is.
+`services/indexer/src/db/migrate.ts` calls `getDb()`, so it uses the same variable. Nothing in
+`services/`, `packages/` or `apps/` ever imported a Supabase SDK — verified 2026-10-04, zero matches —
+so dropping Supabase touches documentation and environment variables only.
 
-**Two connection strings, not one.** Supabase gives several; these two have different jobs:
+**One connection string, not two.** Railway Postgres is a direct connection with no transaction-mode
+pooler, so the two things the Supabase plan required are both unnecessary here:
 
-| Variable              | Supabase string                   | Used by                       | Why                                                                         |
-| --------------------- | --------------------------------- | ----------------------------- | --------------------------------------------------------------------------- |
-| `DATABASE_URL`        | Transaction pooler, port **6543** | The three services at runtime | Pooled and IPv4-reachable. Needs `prepare: false`                           |
-| `DIRECT_DATABASE_URL` | Direct or session, port **5432**  | Drizzle migrations only       | DDL belongs on an unpooled connection; migrations run once, not per request |
+| Dropped                | Why it is not needed on Railway                                                        |
+| ---------------------- | -------------------------------------------------------------------------------------- |
+| `prepare: false`       | No transaction pooler, so `postgres.js` prepared statements work as they do locally    |
+| `DIRECT_DATABASE_URL`  | One direct `DATABASE_URL` serves runtime and DDL both; Railway injects it per service  |
 
-Add both to `.env.example`. Point `services/indexer/src/db/migrate.ts` at `DIRECT_DATABASE_URL`,
-falling back to `DATABASE_URL` so local development keeps working with one variable.
+Keep `transform: postgres.camel` in `services/api/src/db.ts` exactly where it is.
 
 **Work.**
 
-1. Create two Supabase projects, `hume-mainnet` and `hume-testnet`. Record the project refs and both
-   connection strings per project. **Never point the two environments at one database.**
-2. Add `prepare: false` to the three clients above, and `DIRECT_DATABASE_URL` to `.env.example` and to
-   `migrate.ts`.
-3. Create the `hume-mainnet` Railway environment for **compute only**. Deploy `services/indexer`,
-   `services/api` and `services/pricing` from this monorepo — Railway builds each service with its own
-   root directory and `pnpm --filter`, so one repository gives three deployments.
-4. Set from `.env.example`: `CHAIN_ID=4663`, `RPC_URL`, `DATABASE_URL`, `DIRECT_DATABASE_URL`,
-   `INDEXER_START_BLOCK`, `API_PORT`, `PRICING_PORT`, `PRICING_SERVICE_URL`, `CORS_ORIGINS`,
-   `QUOTER_PRIVATE_KEY`, `QUOTER_ADDRESS`, plus the `HUME_ADDRESSES` override if any address differs
-   from the recorded file.
-5. Run the Drizzle migrations against the mainnet Supabase project.
+1. Confirm the Railway MCP reaches project `fcfcb48b-28fc-4469-8e70-3f3fdae9d235`. A
+   `You don't have the required role (viewer)` error means it is still authenticated as the first
+   account: **stop and hand back to the operator**, who runs `/mcp`. Do not create a project elsewhere.
+2. Create the `mainnet` environment with a **Postgres service**. Record the service name and the
+   injected `DATABASE_URL` reference — never the resolved string, which is a secret.
+3. Deploy `services/indexer`, `services/api` and `services/pricing` into that environment from this
+   monorepo — Railway builds each service with its own root directory and `pnpm --filter`, so one
+   repository gives three deployments.
+4. Set from `.env.example`: `CHAIN_ID=4663`, `RPC_URL`, `DATABASE_URL`, `INDEXER_START_BLOCK`,
+   `API_PORT`, `PRICING_PORT`, `PRICING_SERVICE_URL`, `CORS_ORIGINS`, `QUOTER_PRIVATE_KEY`,
+   `QUOTER_ADDRESS`, plus the `HUME_ADDRESSES` override if any address differs from the recorded file.
+   Reference the Postgres service's variable rather than pasting a connection string.
+5. Run the Drizzle migrations against that database.
 6. Start the indexer from the deployment block, not genesis (`services/indexer/src/startBlock.ts`).
 7. Bring up `services/api`; confirm `/markets`, `/prices`, `/portfolio`.
 8. Start `services/pricing` for option quotes and Greeks.
-9. **Check the free-tier ceiling in the dashboard.** The append-only `events` table and `price_ticks`
-   grow continuously. `PRICE_TICK_RETENTION_DAYS` already prunes ticks and defaults to 8
-   (`services/indexer/src/index.ts:25`); lower it if the database approaches its limit. Confirm the
-   project's size cap and whether the plan pauses an idle project — the indexer keeps ours active, but
-   the testnet project may idle between walkthroughs.
+9. **Report the Postgres volume size and what it is costing.** The append-only `events` table and
+   `price_ticks` grow continuously, and on Railway that volume is billed rather than capped.
+   `PRICE_TICK_RETENTION_DAYS` already prunes ticks and defaults to 8
+   (`services/indexer/src/index.ts:25`); lower it if the volume grows faster than the budget allows.
+   This replaces the Supabase free-tier size check, which no longer applies.
 
 ```bash
-railway whoami
-railway variables --environment hume-mainnet
-DATABASE_URL="$DIRECT_DATABASE_URL" pnpm --filter @hume/indexer exec tsx src/db/migrate.ts
+railway whoami                                 # must be the account owning fcfcb48b-...
+railway variables --environment mainnet
+pnpm --filter @hume/indexer exec tsx src/db/migrate.ts
 psql "$DATABASE_URL" -c "select count(*) from events;"
 curl -s "$API_URL/markets" | head -c 400
 ```
 
 **Done when.** `GET /markets` returns the listed mainnet markets with live prices;
-`indexer_state.last_indexed_block` is within 10 blocks of the chain head; the three services connect
-through the pooler without a prepared-statement error; and the testnet project is confirmed separate.
+`indexer_state.last_indexed_block` is within 10 blocks of the chain head; the three services connect to
+Postgres without error; and the `testnet` environment is confirmed **absent**, so Phase 15 creates it
+rather than inheriting a half-configured one.
 
-**Cost.** Railway ~$5/month for compute. Supabase free tier $0, which **removes** the Railway Postgres
-line from the budget.
+**Cost.** Railway for three services plus one Postgres, usage-based. This is now the largest recurring
+line in the budget, because Supabase's $0 free tier is gone. Report the measured figure in the evidence
+file rather than an estimate, so Section 1 can be corrected against it.
 
 ### Day 2 — the product a stranger can use
 
@@ -1557,7 +1572,7 @@ for the open, which is why it is cut first.
    banner — so the balance, PNL and leaderboard surfaces carry it too.
 6. **A testnet API that is actually reachable.** Phase 15 stands up a testnet API and database; this
    phase needs it on a public host rather than localhost, which is one more Railway service in the
-   `hume-testnet` environment against the testnet Supabase project from Phase 5.
+   `testnet` environment, against the testnet Railway Postgres that Phase 15 creates.
 
 **Degradation.** If the testnet API is not hosted, ship the toggle disabled with the reason visible
 (not hidden), and record it amber. If the chain-state refactor turns out to touch more of
@@ -1645,9 +1660,11 @@ public `mint`.
 
 **15.1 — Bring up the environment.**
 
-1. Point a testnet web build and a testnet API at the existing chain `46630` deployment
-   (`packages/contracts/deployments/robinhood_testnet.json`, 21 contracts), with **its own Supabase
-   project**, `hume-testnet`. Never the mainnet one.
+1. **Create the `testnet` Railway environment and its own Postgres service** — Phase 5 deliberately did
+   not, because a running Postgres is billed and the budget is $5–6 including gas. Point a testnet web
+   build and a testnet API at the existing chain `46630` deployment
+   (`packages/contracts/deployments/robinhood_testnet.json`, 21 contracts) against **that** database.
+   Never the mainnet one. **Delete this environment after the recording is captured.**
 2. Deploy to testnet what Phase 9 added on mainnet — the credit stack and one credit pair — and add the
    Phase 11 crypto markets, so every launch feature has something to film. Phase 14 added no tables, so
    there is nothing to deploy for copy trading.
@@ -2105,12 +2122,14 @@ P0 Freeze ─► P1 Brand ─► P2 Groups ────────────�
   per screen; no signature without a review; no raw revert strings.
 - **Nothing is hardcoded.** Chain IDs, RPC URLs, addresses, leverage caps, fee percentages and market
   groups stay environment- or registry-driven, as `packages/config` already enforces.
-- **Testnet and mainnet never share a database.** Two Supabase projects, `hume-mainnet` and
-  `hume-testnet`.
-- **Railway runs compute; Supabase runs Postgres.** Runtime connects through the transaction pooler
-  with `prepare: false`; migrations use `DIRECT_DATABASE_URL`.
+- **Testnet and mainnet never share a database.** Two Railway environments, `mainnet` and `testnet`,
+  each with its own Postgres service. Only `mainnet` runs continuously; Phase 15 creates the testnet one
+  and deletes it after the recording.
+- **Railway runs compute and Postgres.** One direct `DATABASE_URL` per environment serves runtime and
+  migrations both — no transaction pooler, so no `prepare: false` and no `DIRECT_DATABASE_URL`. Hosting
+  moved off Supabase on 2026-10-04 when its project limit was reached.
 - **Drizzle owns the schema.** `services/indexer/src/db/schema.ts` is the source of truth. Do not add a
-  `supabase/migrations/` directory — two migration systems over one database is how they diverge.
+  second migration system — two over one database is how they diverge.
 - **A paused market is a shipped market.** It renders, it prices, it refuses trades.
 - **Sample data is always labelled.** No exceptions, no dismissable notices.
 - **Secrets never reach a commit, an evidence file or the transcript.** Addresses only.

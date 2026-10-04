@@ -22,11 +22,12 @@ Node services in `services/`, Next.js in `apps/web`.
   market groups stay in `packages/config` or the environment.
 - **`docs/UI_CONTRACT.md` governs every interface change.** No new colours, radii or fonts. Seven
   states per screen. No signature without a review step. No raw revert strings on screen.
-- **Drizzle owns the schema.** `services/indexer/src/db/schema.ts` is the source of truth. Do not
-  add a `supabase/migrations/` directory.
-- **Testnet and mainnet never share a database.** Two Supabase projects, `hume-mainnet` and
-  `hume-testnet`. Runtime connects through the transaction pooler with `prepare: false`;
-  migrations use `DIRECT_DATABASE_URL`.
+- **Drizzle owns the schema.** `services/indexer/src/db/schema.ts` is the source of truth. Drizzle is
+  the only migration system — do not add a second one.
+- **Testnet and mainnet never share a database.** Railway runs compute *and* Postgres, in two
+  environments, `mainnet` and `testnet`, each with its own Postgres service. One `DATABASE_URL` per
+  environment serves both runtime and migrations: Railway Postgres is a direct connection, so there is
+  no transaction pooler and no second connection string.
 - **Sample data is always labelled.** No exceptions, no dismissable notices.
 - **A paused market is a shipped market.** It renders, it prices, it refuses trades.
 - **Ask only when the answer changes what gets built.** Otherwise state the assumption and keep

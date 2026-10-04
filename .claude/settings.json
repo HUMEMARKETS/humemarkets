@@ -23,11 +23,16 @@
       "Bash(sed -n:*)",
       "Bash(grep:*)",
       "Bash(wc:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Read(./.env.example)"
     ],
     "deny": [
       "Read(./.env)",
-      "Read(./.env.*)",
+      "Read(./.env.local)",
+      "Read(./.env.*.local)",
+      "Read(./.env.mainnet)",
+      "Read(./.env.testnet)",
+      "Read(./packages/contracts/.env)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",

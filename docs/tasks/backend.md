@@ -18,9 +18,13 @@ lines in `docs/DEVELOPMENT_PHASES.md` for the detail — this file is the lane's
 All of it. Phase 6 cannot start until the API answers, so this phase is the critical path for the whole
 remaining plan. Do not add scope to it.
 
-Watch three things that fail silently: `prepare: false` on the pooler, `DIRECT_DATABASE_URL` for
-migrations, and the two separate Supabase projects. Prove each service with a response, not with the
-Railway dashboard.
+Postgres runs on Railway, in the same project as the services but as its own service. One
+`DATABASE_URL` per environment covers runtime and migrations — Railway Postgres is a direct connection,
+so there is no pooler, no `prepare: false` and no `DIRECT_DATABASE_URL`. Prove each service with a
+response, not with the Railway dashboard.
+
+Only the `mainnet` environment exists. The `testnet` Postgres is created in Phase 15 and deleted after
+the recording, so do not configure it here.
 
 ## Phase 10 — leaderboard and PNL card (wave 2, parallel with P7 and P9)
 
