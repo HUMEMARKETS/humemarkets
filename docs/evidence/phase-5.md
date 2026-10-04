@@ -9,10 +9,11 @@ repository gate passes (typecheck 16/16, lint 12/12, test 16/16).
 
 Two acceptance lines do not read green, and neither is a defect in the stack:
 
-1. **The tail sits 49–75 blocks behind the head, not within 10.** Measured, with the reason:
-   one indexer cycle is a round trip to the public RPC and takes 5–7 seconds, while the chain
-   produces 9.88 blocks per second. Ten blocks is 1.01 s of chain — shorter than a single
-   `eth_getLogs` round trip to `rpc.mainnet.chain.robinhood.com`. Section 7 has the numbers.
+1. **The tail's median lag is 55 blocks, not within 10.** Read from the column itself, 40 samples:
+   min -25, p50 55, p90 359, max 449, inside 10 blocks in 4 of them. One indexer cycle is a round
+   trip to the public RPC and takes 5–7 seconds, while the chain produces 9.88 blocks per second;
+   ten blocks is 1.01 s of chain, shorter than a single `eth_getLogs` round trip to
+   `rpc.mainnet.chain.robinhood.com`. Section 7 has the distribution and what sets it.
 2. **"Live prices" cannot be observed on 2026-10-04.** It is a Sunday, the US equity session is
    shut, and `OracleRouter.getIndexPrice` reverts `MarketSessionClosed` for all 32 markets by
    design (Section 8). The session reopens 2026-10-05 13:30 UTC.
@@ -211,8 +212,8 @@ indexer: processed blocks 80100034-80100090     17:06:33
 
 | Environment  | State                                                             |
 | ------------ | ----------------------------------------------------------------- |
-| `production` | pre-existing, holds one service `humemarkets` whose single deploy **FAILED** — the repository root deployed as one service, which Phase 5 forbids. Left untouched; it costs nothing while failed, and deleting it is the operator's call. |
-| `mainnet`    | created in this phase (`c5bd9778-db85-4f55-9fa1-7770cd9d8023`)    |
+| `mainnet`    | created in this phase (`c5bd9778-db85-4f55-9fa1-7770cd9d8023`), the only environment in the project |
+| `production` | **deleted** on the operator's instruction. It was Railway's default environment, holding one leftover service `humemarkets` whose single deploy FAILED — the repository root deployed as one service, which Phase 5 forbids. No volumes, no domains, no variables, no data. |
 | `testnet`    | **absent** — not created, not misconfigured. Phase 15 owns it.    |
 
 Services in `mainnet`:
@@ -273,11 +274,11 @@ Per service, not as shared variables (see Section 5, Cause 1). No secret is reco
 | Variable                    | Value                                                   | Set on            |
 | --------------------------- | ------------------------------------------------------- | ----------------- |
 | `CHAIN_ID`                  | `4663`                                                  | all three         |
-| `RPC_URL`                   | `https://rpc.mainnet.chain.robinhood.com`               | all three         |
+| `RPC_URL`                   | indexer: `https://rpc.mainnet.chain.robinhood.com`; api and pricing: an Alchemy free-tier endpoint (Section 7) | per service |
 | `DATABASE_URL`              | `${{Postgres.DATABASE_URL}}`                            | indexer, api      |
 | `INDEXER_START_BLOCK`       | `71621418`                                              | indexer           |
 | `INDEXER_MAX_BLOCK_RANGE`   | `50000` — safe only with Section 5's fix in place        | indexer           |
-| `INDEXER_POLL_INTERVAL_MS`  | `1000` (default 5000) — see Section 7                   | indexer           |
+| `INDEXER_POLL_INTERVAL_MS`  | `5000`, the default — 1000 was tried and throttled the RPC (Section 7) | indexer |
 | `PRICE_TICK_RETENTION_DAYS` | `8`                                                     | indexer           |
 | `API_PORT` / `PORT`         | `4000`                                                  | api               |
 | `PRICING_PORT` / `PORT`     | `4100`                                                  | pricing           |
@@ -326,25 +327,122 @@ head. Measured after the backfill, from consecutive cycles in the indexer's own 
 | Lag right after a price-sampling round    | up to **484 blocks** (one 54 s gap at 17:04:41 → 17:05:35) |
 | Last indexed / head, read 8 s apart       | 80,100,090 at 17:06:33 / 80,100,255 at 17:06:48 |
 
+Then the column itself was read. 40 samples of `indexer_state.last_indexed_block` against
+`eth_blockNumber`, three seconds apart, each pair read back to back from one script:
+
+| Statistic | Lag in blocks | In seconds of chain |
+| --------- | ------------- | ------------------- |
+| min       | **-25** (the indexer was ahead of the head this reader saw) | — |
+| p50       | **55**        | 5.6 s               |
+| p90       | **359**       | 36 s                |
+| max       | **449**       | 45 s                |
+| within 10 blocks | **4 of 40 samples (10%)** |          |
+
+```
+-25,-5,5,10,15,23,25,27,29,30,31,35,39,40,40,45,49,55,55,55,71,80,84,90,
+120,135,165,180,210,230,260,269,306,314,350,359,395,405,441,449
+```
+
+The shape is a sawtooth: the lag falls to zero or below at the end of each indexing cycle and climbs
+while the price-sampling round holds the loop. So the tail is **inside 10 blocks about a tenth of
+the time and a median 55 blocks otherwise** — not the continuous window the check asks for.
+
 Two things set that floor, and neither is a configuration mistake:
 
 1. **One cycle is one round trip to a public RPC.** Each cycle is an `eth_blockNumber` plus an
    `eth_getLogs` over 20 contract addresses against `rpc.mainnet.chain.robinhood.com`, and that
    costs 5–7 s. Ten blocks of this chain is **1.01 s**, so a 10-block window needs a
    sub-second round trip — faster than the official endpoint answers.
-   `INDEXER_POLL_INTERVAL_MS` was lowered from 5,000 to 1,000 to take the sleep out of the
-   equation; the latency, not the sleep, is what remains.
-2. **The price-sampling round blocks the loop for ~45 s every minute while markets are shut.**
+
+   **Lowering the poll interval was tried and reverted.** `INDEXER_POLL_INTERVAL_MS` was set to
+   1,000 to take the sleep out of the equation. The endpoint then began refusing requests: from
+   17:33:37 every one of the 32 price samples failed with
+   `ContractFunctionExecutionError: HTTP request failed.` and the indexing loop with
+   `indexer: tick failed HttpRequestError: HTTP request failed.`, and `processed blocks` stopped
+   advancing between 17:31:59 and the restart. The endpoint answered a plain `eth_blockNumber`
+   with HTTP 200 throughout, so this is per-client throttling, not an outage. The variable is back
+   at its 5,000 default and the tail has been clean since 17:37:33. **Chasing the 10-block number
+   on this endpoint costs availability, which the indexer cannot trade away.**
+2. **The price-sampling round blocks the loop for ~45 s every minute while markets are shut**, which
+   is the climbing half of the sawtooth above and the whole of the p90 and max figures.
    `sampleIndexPrices` walks all 32 markets in sequence, and today every one of them reverts
    `MarketSessionClosed` (Section 8) at ~1.3 s per market. The indexer catches each revert and
    skips the market, as designed, but the tick still costs the wall time, which is what the 484-block
    gap is. Inside the session these calls return a price instead of reverting.
 
+### What the endpoint actually costs, and the one alternative
+
+Measured against `rpc.mainnet.chain.robinhood.com` on 2026-10-04 17:55 UTC, with the indexer's own
+call shape (20 contract addresses, no topics):
+
+| Call                                   | Latency                                  |
+| -------------------------------------- | ---------------------------------------- |
+| `eth_blockNumber`                      | **1,564 ms**                             |
+| `eth_getLogs` over 60 blocks, 5 runs   | median **1,688 ms** (min 1,449, max 1,822) |
+| `eth_getLogs` over 50,000 blocks       | 1,902 ms, 0 logs                         |
+
+One cycle is both calls, so **~3.2 s of RPC time is the floor** — which is the 5–7 s cycle and the
+55-block median, and why 10 blocks (1.01 s of chain) is out of reach by configuration.
+`docs.robinhood.com/chain/connecting` calls this endpoint "rate-limited and not recommended for
+production use", which matches the throttling above.
+
+### The keyed provider was tried, and it is worse for the indexer
+
+An Alchemy free-tier key was set as `RPC_URL` on all three services. The indexer immediately began
+failing every `eth_getLogs`, with the reason stated outright:
+
+```
+code: -32600
+message: 'Under the Free tier plan, you can make eth_getLogs requests with up to a 10 block range.
+          Based on your parameters, this block range should work: [0x4c6eb3f, 0x4c6eb48].
+          Upgrade to PAYG for expanded block range.'
+```
+
+The cap is 10 blocks per request, confirmed against the live endpoint with and without a `topics`
+filter and at 100-, 50,000- and 6,493-block ranges — every one refused. That is the cap
+`services/indexer/src/index.ts` always documented ("10 fits the Alchemy free tier"). At 10 blocks a
+request and 9.88 blocks a second, the indexer needs one call per second merely to break even, with
+no margin, and the 8,427,153-block backfill would take **847,000 calls** instead of 170.
+
+What Alchemy is good at here is the small `eth_call` reads: the 32-market price round went from
+~45 s on the public endpoint to roughly 2 s, and its per-call latency from ~1,100 ms to ~25-500 ms,
+measured from the sampling log's timestamps.
+
+**So the two endpoints are split by what each is good at**, which needs no code because `RPC_URL`
+is per service:
+
+| Service        | `RPC_URL`                                  | Why |
+| -------------- | ------------------------------------------ | --- |
+| indexer        | `https://rpc.mainnet.chain.robinhood.com`  | wide `eth_getLogs` ranges (100,000 blocks, 10,000 logs) exist only here for free |
+| api, pricing   | Alchemy free tier                          | small `eth_call` reads, 3-40x faster, no range limit applies |
+
+The indexer is therefore back on the public endpoint with `INDEXER_MAX_BLOCK_RANGE=50000` and
+`INDEXER_POLL_INTERVAL_MS=5000`, which is where its 55-block median lag comes from. **Closing the
+10-block line needs Alchemy PAYG, which is a paid plan and the operator's budget decision**, not a
+change in this repository.
+
+**One operational hazard this uncovered.** viem puts the request URL in its error text, so the first
+`eth_getLogs` failure wrote the whole keyed endpoint, API key included, into the Railway deploy log.
+Any RPC error does this. A key used here should be treated as logged, rotated after an incident, and
+never reused anywhere else.
+
+The docs page also lists one endpoint that needs no key, the sequencer. It does not serve reads:
+
+```
+$ curl -X POST .../ -d '{"jsonrpc":"2.0","id":1,"method":"eth_blockNumber","params":[]}' \
+    https://sequencer.mainnet.chain.robinhood.com
+{"jsonrpc":"2.0","id":1,"error":{"code":-32601,"message":"the method eth_blockNumber does not exist/is not available"}}
+```
+
+Every other endpoint on that page — Alchemy `https://robinhood-mainnet.g.alchemy.com/v2/{API_KEY}`,
+Chainstack, QuickNode — needs an account and a key the operator holds. The steady load is about
+**0.4 requests/second**, plus ~170 calls for a one-off backfill, which fits a free tier.
+
 So the indexer **is** caught up and tailing live, within 5–7 seconds of the head, and it recovers to
-that within one cycle after each price round. It is not within 10 blocks, and it cannot be on this
-RPC. Closing that literal number needs a lower-latency endpoint (the Alchemy-style provider
-`packages/config/src/chains.ts` already recommends for anything beyond demos), not a code change
-here.
+that within one cycle after each price round. It touches 10 blocks at the end of a cycle but does not
+hold there, and it cannot on this RPC. Closing that number needs a lower-latency endpoint with a
+higher rate limit (the Alchemy-style provider `packages/config/src/chains.ts` already recommends for
+anything beyond demos), not a code change here.
 
 ## 8. Live prices: the session is shut, and the API answered with a stack trace
 
@@ -405,7 +503,31 @@ SPY   HTTP 200 {"state":"closed","indexPrice":null,"markPrice":null,"lastPrice":
 
 Before the fix the same three calls returned HTTP 500 with viem's stack trace in the body.
 
-## 9. Gates
+## 9. The database, read directly
+
+A Railway TCP proxy was created on the Postgres service, the rows below were read through it, and
+the proxy was deleted in the same session — `list-tcp-proxies` returns empty again, so the database
+has no public endpoint. Read at 2026-10-04 17:42 UTC:
+
+| Read                                 | Value                                      |
+| ------------------------------------ | ------------------------------------------ |
+| `indexer_state.last_indexed_block`   | **80,121,616**, then 80,121,820 four minutes later — advancing |
+| `markets`                            | **32 rows, all 32 `active`**               |
+| `events`                             | **226 rows** — the whole history since the 2026-09-24 deployment |
+| `price_ticks`                        | **0 rows** — every oracle is shut today (Section 8) |
+| `drizzle.__drizzle_migrations`        | **2 applied** — `0000_goofy_arclight`, `0001_clammy_thaddeus_ross` |
+| `pg_database_size`                   | **8,345,279 bytes (8.3 MB)**               |
+
+Table sizes, including indexes: `events` 180 KB, `markets` 64 KB, `indexer_state` 56 KB,
+`price_ticks` 24 KB. So the 105 MB the volume reports is almost entirely Postgres itself; the
+protocol's own data is 8.3 MB, and 226 events is what 8,478,600 blocks of an untraded deployment
+amounts to.
+
+This also settles the acceptance line about connecting to Postgres: the indexer writes, the api
+reads those rows over HTTP, and the migration table confirms Drizzle applied both migrations and
+nothing else.
+
+## 10. Gates
 
 ```
 pnpm typecheck   16 tasks, 16 successful
@@ -413,7 +535,7 @@ pnpm lint        12 tasks, 12 successful
 pnpm test        16 tasks, 16 successful  (@hume/sdk alone: 158 tests, 158 pass)
 ```
 
-## 10. Acceptance
+## 11. Acceptance
 
 | Check                                                              | Result |
 | ------------------------------------------------------------------ | ------ |
@@ -421,13 +543,14 @@ pnpm test        16 tasks, 16 successful  (@hume/sdk alone: 158 tests, 158 pass)
 | …with live prices                                                  | **blocked by the market, not by the stack** — the equity session is shut until 2026-10-05 13:30 UTC and the oracle reverts `MarketSessionClosed` for all 32 (Section 8) |
 | `GET /v1/prices/:symbol` renders a shut market instead of failing  | **pass** — HTTP 200 `{"state":"closed"}` for NVDA, AAPL and SPY (Section 8) |
 | Indexer caught up from the deployment block                        | **pass** — 8,478,600 blocks replayed in ~4 minutes (Section 5) |
-| `indexer_state.last_indexed_block` within 10 blocks of the head    | **amber** — measured 49 to 75 blocks (5 to 7 s of chain), floored by the public RPC's round-trip time; 10 blocks is 1.01 s (Section 7) |
-| All services connect to Postgres with no error                     | **pass** — indexer connects and migrates, api serves rows out of it, pricing needs no database |
-| `markets` populated from chain 4663                                | **pass** — "indexer: 32 market(s) synced from the registry" |
-| Drizzle migrations applied                                         | **pass** — pre-deploy succeeded on `27b55670` |
-| `testnet` environment confirmed absent                             | **pass** — only `production` and `mainnet` exist |
-| Plan, usage, volume growth and retention arithmetic recorded        | **pass** — Sections 1 to 3 |
-| Repository gates                                                   | **pass** — Section 9 |
+| Running image matches the repository                               | **pass** — merged as `b22c92a`; the working tree and `origin/main` are identical for `services/**` and `.env.example`, so the uploaded image's content equals `main` |
+| `indexer_state.last_indexed_block` within 10 blocks of the head    | **amber** — read from the column, 40 samples: min -25, p50 **55**, p90 359, max 449; inside 10 blocks in 4 of 40 samples (Section 7) |
+| All services connect to Postgres with no error                     | **pass** — indexer writes, api serves those rows, `drizzle.__drizzle_migrations` holds 2 (Section 9); pricing needs no database |
+| `markets` populated from chain 4663                                | **pass** — 32 rows, all active, read from the table (Section 9) |
+| Drizzle migrations applied                                         | **pass** — 2 of 2, read from `drizzle.__drizzle_migrations` (Section 9) |
+| `testnet` environment confirmed absent                             | **pass** — `mainnet` is the only environment; `production` was deleted (Section 6) |
+| Plan, usage, volume growth and retention arithmetic recorded        | **pass** — Sections 1 to 3, with the database read in Section 9 |
+| Repository gates                                                   | **pass** — Section 10 |
 
 **Phase 5 is amber and is not ticked.** Everything buildable is built, deployed and measured. Two
 things stand between this and green, and neither is code:
@@ -436,10 +559,13 @@ things stand between this and green, and neither is code:
    starts serving numbers, the indexer starts writing `price_ticks`, and Section 3's 11.1 MB/day can
    be checked against a real slope. Until then "live prices" is unobservable, by design.
 2. **A decision on the 10-block tail, which needs an RPC endpoint rather than a change here.** The
-   indexer is 5 to 7 seconds behind the head on the official public endpoint. Either the check is
-   read as "caught up and tailing", or the operator points `RPC_URL` at a lower-latency provider —
-   which also removes the 429 risk the backfill measured.
+   median lag is 55 blocks, 5.6 s, and the sawtooth dips inside 10 blocks a tenth of the time.
+   A keyed provider was tried: **Alchemy's free tier caps `eth_getLogs` at 10 blocks**, which the
+   indexer cannot work with, so it is back on the public endpoint while api and pricing keep the
+   faster Alchemy reads (Section 7). The public endpoint's own latency — median 1,688 ms per
+   `eth_getLogs` — puts ~3.2 s of RPC time in every cycle, and 10 blocks is 1.01 s of chain. The
+   only remaining route to that number is Alchemy PAYG, a paid plan, against a $5-6 total budget.
+   The alternative is to read the check as "caught up and tailing", which it demonstrably is.
 
-Two variables were changed after the first bring-up and are worth carrying forward:
-`INDEXER_MAX_BLOCK_RANGE=50000` (the fix in Section 5 makes it safe) and
-`INDEXER_POLL_INTERVAL_MS=1000`.
+Everything else the phase asked for is measured and recorded, including the database rows the
+acceptance names.
