@@ -8,9 +8,8 @@ import { LandingTicker } from "./LandingTicker";
 import { OptionExpiryAlerts } from "./OptionExpiryAlerts";
 import { TriggerAlerts } from "./TriggerAlerts";
 import { TxToasts } from "./TxToasts";
-import { UnauditedNotice } from "./UnauditedNotice";
 
-/// The frame every page shares: the unaudited notice, the markets ticker, header, a warning when the RPC is not configured,
+/// The frame every page shares: the markets ticker, header, a warning when the RPC is not configured,
 /// the scrolling page area and the transaction toasts. Pages render only their own content. The ticker
 /// sits above the header on every page, not just the landing page it started on, so the same live
 /// strip of prices is always the first thing on screen — one consistent top of page, not a landing-only
@@ -26,7 +25,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       >
         Skip to content
       </a>
-      <UnauditedNotice />
+
       <LandingTicker />
       <div className="relative flex min-h-0 flex-1 flex-col">
         <Header />

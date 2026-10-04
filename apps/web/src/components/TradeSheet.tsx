@@ -51,9 +51,8 @@ export function TradeSheet({
       <div
         className={cn(
           "min-h-0 lg:block",
-          // top offset: the header's own height (h-20, 5rem), the markets ticker above it (h-11,
-          // 2.75rem) and the unaudited notice above that (h-7, 1.75rem), which never wraps.
-          "max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0 max-lg:top-[9.5rem] max-lg:z-30 max-lg:flex max-lg:flex-col max-lg:bg-surface",
+          // top offset: header (h-20, 5 rem) + markets ticker (h-11, 2.75 rem) = 7.75 rem
+          "max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0 max-lg:top-[7.75rem] max-lg:z-30 max-lg:flex max-lg:flex-col max-lg:bg-surface",
           open ? "" : "max-lg:hidden",
         )}
         role={open ? "dialog" : undefined}
