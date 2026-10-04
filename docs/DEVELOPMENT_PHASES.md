@@ -104,7 +104,7 @@ Checked rather than assumed. Three items were reported available and measured ot
 
 | Resource                  | Verified state                                                                                                                                                                           | Used by                 |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| Railway CLI               | **Account changed 2026-10-04.** Hume lives in a project on a **second email**, id `fcfcb48b-28fc-4469-8e70-3f3fdae9d235`. Runs compute **and** Postgres                                   | Phase 5                 |
+| Railway CLI               | **Account changed 2026-10-04.** Hume lives in a project on a **second email**, id `fcfcb48b-28fc-4469-8e70-3f3fdae9d235`. Runs compute **and** Postgres, on a **free or trial plan** — Phase 5 holds what that constrains                 | Phase 5                 |
 | Supabase                  | **Dropped 2026-10-04 — project limit reached.** Postgres moved to Railway. No Supabase project, no `supabase` CLI, and nothing in the code ever imported its SDK                         | —                       |
 | Railway MCP in Claude Code | **Needs re-auth.** It is authenticated as the first account and returns `You don't have the required role (viewer)` on the new project. Run `/mcp` in a fresh session before Phase 5     | Phase 5                 |
 | Vercel CLI                | **OK** — logged in as `rubencahyadi504-9120`                                                                                                                                             | Phase 6                 |
@@ -292,8 +292,8 @@ integration suites — is the standing evidence, and `REFERENCE.md` Section 1 re
 | Contract deployments (credit, listings, caps, config)    | ~$0 of new spend      | Owner wallet's 0.000375 ETH already buys ~37M gas (Section 0.2) |
 | Gas floats for keeper, liquidator, pauser                | ~0.00015 ETH          | Phase 16                                                        |
 | **USDG for pool reserve, credit seed, real test trades** | **$4–5 — NOT FUNDED** | **Section 0.3. The one real blocker**                           |
-| Railway — compute only (indexer, API, pricing, keeper)   | ~$5/month             | Free plan inadequate: the indexer must not sleep                |
-| **Railway Postgres — `mainnet` only**                    | **usage-based**       | Supabase's project limit was reached 2026-10-04. The `testnet` Postgres is created in Phase 15 and deleted after the recording, so only one runs continuously |
+| Railway — compute (indexer, API, pricing, keeper)        | see Phase 5           | **Free plan carries only $1/month of included usage** and Trial a one-time $5; four always-on containers exceed $1/month, and the indexer must not sleep. Hobby is $5/month with $5 included. Phase 5 reports the measured figure |
+| **Railway Postgres — `mainnet` only**                    | **usage-based**       | Supabase's project limit was reached 2026-10-04. **Free and Trial cap the volume at 0.5 GB**, so `PRICE_TICK_RETENTION_DAYS` is sized against that in Phase 5. The `testnet` Postgres is created in Phase 15 and deleted after the recording, so only one runs continuously |
 | Vercel (web)                                             | $0                    | Hobby plan. **DNS not pointed yet** — Section 0.1               |
 | Domain                                                   | $0                    | Already held                                                    |
 | Testnet walkthrough, recording and sample mode           | $0                    | Faucet gas; the collateral token has a public `mint`            |
@@ -674,10 +674,33 @@ fcfcb48b-28fc-4469-8e70-3f3fdae9d235. If a Railway call returns "You don't have 
 (viewer)", stop and say so — the operator runs /mcp to re-authenticate. Do not create a project
 anywhere else.
 
+This repository is a pnpm + Turborepo MONOREPO. One repository, many deployables: packages/config,
+types, ui, sdk, contracts; services/api, indexer, keeper, pricing, hedger, risk-monitor, simulator;
+apps/web. Railway must build each service with its OWN root directory and pnpm --filter, so one
+repository gives three separate deployments. Each service already carries a railway.json — read it
+before inventing build settings. Never deploy the repository root as one service.
+
 In that project, create the mainnet environment with a Postgres service plus services/indexer,
-services/api and services/pricing, deployed from this monorepo with per-service root directories. Do
-NOT create the testnet environment: its Postgres is created in Phase 15 and deleted after the
-recording, to protect the budget.
+services/api and services/pricing. Do NOT create the testnet environment: its Postgres is created in
+Phase 15 and deleted after the recording, to protect the budget.
+
+THE ACCOUNT IS ON A FREE OR TRIAL PLAN, and this changes what is safe to build. Measured from
+Railway's docs on 2026-10-04: the Free plan carries $0 subscription with only $1 of included usage per
+month, 0.5 GB RAM and 1 replica per service, and a 0.5 GB volume cap. Trial carries a ONE-TIME $5
+grant with 1 GB RAM and the same 0.5 GB volume cap. Resources bill at $10/GB/month RAM, $20/vCPU/month
+CPU and $0.15/GB/month volume. Four always-on containers — indexer, api, pricing, Postgres — cost more
+per month than $1 of included usage, and the indexer must not sleep.
+
+So do three things rather than assume it fits:
+1. Read the plan and the current usage from the Railway account and report both as numbers.
+2. Size PRICE_TICK_RETENTION_DAYS against the 0.5 GB VOLUME CAP, not against a guess. It defaults to 8
+   (services/indexer/src/index.ts:25). Measure the events and price_ticks growth rate per hour after
+   the indexer catches up, extrapolate to the 2026-10-06 open and a week past it, and state the
+   retention value that keeps the volume under 0.5 GB.
+3. Set the smallest RAM that each service actually needs, and report the measured figure.
+
+If the plan cannot carry four always-on services to the open, say so as a number and stop. Do not
+upgrade a plan, add a payment method, or buy credit — that is the operator's decision, not yours.
 
 One DATABASE_URL per environment covers runtime and migrations. Railway Postgres is a direct
 connection, so there is no transaction pooler: prepare: false is NOT needed and DIRECT_DATABASE_URL is
@@ -691,7 +714,9 @@ ticks and defaults to 8; report the Postgres volume size so the operator can see
 
 Acceptance: GET /markets returns the listed mainnet markets with live prices;
 indexer_state.last_indexed_block is within 10 blocks of the chain head; all three services connect to
-Postgres with no error; and the testnet environment is confirmed absent, not misconfigured.
+Postgres with no error; the testnet environment is confirmed absent, not misconfigured; and
+docs/evidence/phase-5.md records the plan, the measured usage, the volume growth rate and the chosen
+PRICE_TICK_RETENTION_DAYS with the arithmetic behind it.
 
 Do NOT commit, push, stage or open a PR — I do that myself. Leave the working tree dirty.
 Report pass, amber or fail, list the paths you changed, then print the Phase 5 Ship block for me to
@@ -732,6 +757,39 @@ environment split, so the pattern is proven on this account.
 **Only `mainnet` is created in this phase.** A Railway Postgres is billed on compute and volume while it
 runs, and the whole budget is $5–6 including gas, so the testnet Postgres is created in Phase 15 for the
 walkthrough and deleted after the recording. Phase 15 owns that step.
+
+**The plan, measured from Railway's docs 2026-10-04.** The operator intends to run this on a free
+account, so these are the numbers the phase has to fit inside:
+
+| Plan      | Subscription | Included usage       | RAM / service | Replicas | Volume cap |
+| --------- | ------------ | -------------------- | ------------- | -------- | ---------- |
+| **Free**  | $0           | **$1 per month**     | 0.5 GB        | 1        | **0.5 GB** |
+| **Trial** | $0           | **$5, one time**     | 1 GB          | 2        | **0.5 GB** |
+| **Hobby** | $5 / month   | $5 per month         | 48 GB         | 6        | 5 GB       |
+
+Resources bill on top: RAM $10/GB/month, CPU $20/vCPU/month, egress $0.05/GB, volume $0.15/GB/month.
+Builds are free.
+
+**Two consequences, and neither is a reason to change the plan without the operator.**
+
+1. **$1 per month of included usage does not cover four always-on containers.** Indexer, API, pricing
+   and Postgres at even 0.15 GB RAM each is 0.6 GB, roughly $6/month in RAM before any CPU, and the
+   indexer must not sleep — there is no idle saving to find. Trial's one-time $5 reaches the
+   2026-10-06 open comfortably; keeping the site up for a month after it does not fit either free plan.
+   This is the operator's call, so the phase reports the number and stops rather than upgrading.
+2. **The 0.5 GB volume cap binds before the credit does, and it applies to Free and Trial alike.**
+   `events` is append-only and `price_ticks` grows continuously.
+
+So `PRICE_TICK_RETENTION_DAYS` stops being a default and becomes a sized number. Measure the growth
+rate per hour once the indexer has caught up, extrapolate to the open and a week past it, and record
+the arithmetic in the evidence file. The default is 8 (`services/indexer/src/index.ts:25`).
+
+**Monorepo deployment, not one service.** This is a pnpm + Turborepo monorepo: `packages/` holds
+config, types, ui, sdk and contracts; `services/` holds api, indexer, keeper, pricing, hedger,
+risk-monitor and simulator; `apps/web` is the Next.js app. Each service carries its own
+`railway.json` — read it rather than inventing build settings. Railway builds each with its own root
+directory and `pnpm --filter`, so one repository gives three separate deployments. Deploying the
+repository root as a single service is wrong and will build everything.
 
 **No code change is needed, and this is the part worth checking rather than assuming.** All three
 clients already read a single `DATABASE_URL`:
@@ -793,9 +851,11 @@ curl -s "$API_URL/markets" | head -c 400
 Postgres without error; and the `testnet` environment is confirmed **absent**, so Phase 15 creates it
 rather than inheriting a half-configured one.
 
-**Cost.** Railway for three services plus one Postgres, usage-based. This is now the largest recurring
-line in the budget, because Supabase's $0 free tier is gone. Report the measured figure in the evidence
-file rather than an estimate, so Section 1 can be corrected against it.
+**Cost.** Railway for three services plus one Postgres, usage-based on top of the plan's included
+usage. This is now the largest recurring line in the budget, because Supabase's $0 free tier is gone.
+Report the **measured** figure in the evidence file — the plan, the current usage, the volume growth
+rate — rather than an estimate, so Section 1 can be corrected against it. The free plans reach the
+open; they do not keep the site up for a month after it.
 
 ### Day 2 — the product a stranger can use
 
