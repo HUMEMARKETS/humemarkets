@@ -3,9 +3,9 @@
 import { Num, Panel, Skeleton, cn } from "@hume/ui";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { usePerpMarket, usePerpMarkets } from "@/hooks/queries";
+import { usePerpMarket, usePerpMarketConfig, usePerpMarkets } from "@/hooks/queries";
 import { fmtBps, fmtPrice } from "@/lib/format";
-import { symbolOf } from "@/lib/market";
+import { symbolOf, tradeBlocker } from "@/lib/market";
 import { useTerminal } from "@/stores/terminal";
 import { Change, useStatsFor } from "./Change";
 
@@ -16,6 +16,7 @@ function MarketRow({ symbol }: { symbol: string }) {
   const selected = useTerminal((state) => state.symbol === symbol);
   const setSymbol = useTerminal((state) => state.setSymbol);
   const { data } = usePerpMarket(symbol);
+  const config = usePerpMarketConfig(symbol);
   const stats = useStatsFor(symbol);
 
   return (
@@ -31,7 +32,12 @@ function MarketRow({ symbol }: { symbol: string }) {
             : "border-transparent bg-transparent hover:border-accent-line hover:bg-accent-soft active:border-accent active:bg-accent-soft",
         )}
       >
-        <span className="font-medium">{symbol}</span>
+        <span className="flex items-baseline gap-1.5 font-medium">
+          {symbol}
+          {tradeBlocker(config?.active) ? (
+            <span className="rounded-sm border border-down px-1 text-[10px] font-normal text-down">Paused</span>
+          ) : null}
+        </span>
         <Num>{data ? fmtPrice(data.markPrice) : <Skeleton className="w-12" />}</Num>
         <Num tone="muted" className="text-xs" title="Funding rate">
           {fmtBps(data?.funding.currentFundingRateBps)}

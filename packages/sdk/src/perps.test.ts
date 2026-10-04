@@ -306,3 +306,12 @@ test("list returns only active perp markets", async () => {
   const paused = setup({}, { ...activeMarket, perpsEnabled: false });
   assert.equal((await paused.perps.list()).length, 0);
 });
+
+test("includePaused keeps a paused market in the list, but never one without perps", async () => {
+  const paused = setup({}, { ...activeMarket, active: false });
+  assert.equal((await paused.perps.list()).length, 0);
+  assert.equal((await paused.perps.list({ includePaused: true })).length, 1);
+
+  const noPerps = setup({}, { ...activeMarket, active: false, perpsEnabled: false });
+  assert.equal((await noPerps.perps.list({ includePaused: true })).length, 0);
+});

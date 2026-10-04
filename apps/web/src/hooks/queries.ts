@@ -5,6 +5,7 @@ import { useAccount } from "wagmi";
 import type { CandleInterval, OpenInterestRange } from "@hume/sdk";
 import type { Address } from "@hume/types";
 import { humeRead } from "@/lib/hume";
+import { symbolOf } from "@/lib/market";
 import { env } from "@/lib/env";
 import { readHistoryAfter } from "@/lib/history";
 import { seriesKey } from "@/lib/options";
@@ -16,10 +17,25 @@ const TICK_MS = 15_000;
 
 // Query definitions are exported next to their hooks so `Prefetch` can warm the same cache entries
 // (same key, same function) before a page asks for them.
-export const perpMarketsQuery = () => ({ queryKey: ["perp-markets"], queryFn: () => humeRead.perps.list(), refetchInterval: 30_000 });
+// Paused markets stay in the list: the terminal shows one, keeps pricing it, and refuses the trade
+// (CLAUDE.md, "a paused market is a shipped market"). Dropping it here would make it vanish instead.
+export const perpMarketsQuery = () => ({
+  queryKey: ["perp-markets"],
+  queryFn: () => humeRead.perps.list({ includePaused: true }),
+  refetchInterval: 30_000,
+});
 
 export function usePerpMarkets() {
   return useQuery(perpMarketsQuery());
+}
+
+/// One market's registry config, taken from the list rather than from `usePerpMarket`. The two
+/// differ in what they can fail on: `perps.get` also reads the oracle, which reverts while the
+/// equity session is shut, so a market would lose its paused badge at exactly the hours a visitor
+/// most needs to know why nothing is priced. The registry answers whatever the session is doing.
+export function usePerpMarketConfig(symbol: string) {
+  const { data } = usePerpMarkets();
+  return data?.find((market) => symbolOf(market.marketId) === symbol);
 }
 
 /// Config, risk parameters, funding and the three live prices for one market.

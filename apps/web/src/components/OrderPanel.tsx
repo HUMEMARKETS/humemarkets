@@ -5,12 +5,13 @@ import { Button, Panel, Row, Segmented, Skeleton, TextField } from "@hume/ui";
 import { toBaseUnits, type OrderType } from "@hume/sdk";
 import { useState } from "react";
 import { useAccount, useSwitchChain } from "wagmi";
-import { usePerpMarket, useSettlementDecimals, useVaultBalances } from "@/hooks/queries";
+import { usePerpMarket, usePerpMarketConfig, useSettlementDecimals, useVaultBalances } from "@/hooks/queries";
 import { useDebounced } from "@/hooks/useDebounced";
 import { useWalletHume } from "@/hooks/useHume";
 import { useTx } from "@/hooks/useTx";
 import { env } from "@/lib/env";
 import { fmtBps, fmtPrice, fmtUsd } from "@/lib/format";
+import { tradeBlocker } from "@/lib/market";
 import { LIMIT_EXPIRIES, limitDirectionNote, limitExpirySeconds, parseLimitPrice, type LimitExpiry } from "@/lib/limit";
 import { humeRead } from "@/lib/hume";
 import { chain } from "@/lib/wagmi";
@@ -76,9 +77,15 @@ export function OrderPanel() {
   });
   const p = validAmount && validLimit ? preview.data : undefined;
 
+  // A paused market refuses every new position, whoever is asking, so it is read before the wallet
+  // is: the ticket must say why it is shut without first demanding a connection and an amount.
+  const paused = tradeBlocker(usePerpMarketConfig(symbol)?.active);
+
   // `problem` is something the person must fix; `waiting` just explains why the button is idle.
   const problem =
-    !isConnected || chainId !== chain.id || !validAmount || !p
+    paused
+      ? paused
+      : !isConnected || chainId !== chain.id || !validAmount || !p
       ? undefined
       : p.violations[0]
         ? errorMessage(p.violations[0])
@@ -86,7 +93,7 @@ export function OrderPanel() {
           ? "Not enough available collateral. Deposit first."
           : undefined;
   const waiting =
-    !isConnected || chainId !== chain.id
+    paused || !isConnected || chainId !== chain.id
       ? undefined
       : !validAmount
         ? "Enter a collateral amount."
@@ -133,7 +140,13 @@ export function OrderPanel() {
     setSubmitting(false);
   }
 
-  const action = !isConnected ? (
+  const action = paused ? (
+    // A paused market refuses the trade before the wallet matters, so the connect prompt would be
+    // a dead end: the button states the refusal instead.
+    <Button variant="down" className="w-full" disabled>
+      Market paused
+    </Button>
+  ) : !isConnected ? (
     <ConnectButton className="w-full" />
   ) : chainId !== chain.id ? (
     <Button variant="down" className="w-full" onClick={() => switchChain({ chainId: chain.id })}>
