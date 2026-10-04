@@ -252,8 +252,19 @@ export function contractNamesByAddress(addresses: ContractAddresses): Map<Addres
   );
 }
 
+/// The settlement token is an external ERC-20 the protocol only *uses*: it emits none of the 49
+/// events above, so every one of its logs is fetched and then dropped by `parseEventLogs`. On
+/// mainnet (USDG `0x5fc5...d168`) that is about 2.4 logs per block of chain-wide transfer traffic,
+/// which both wastes the whole RPC budget and caps `eth_getLogs` at a few thousand blocks per call
+/// against Robinhood's 10,000-log limit — a backfill from the deploy block cannot finish. Deposits
+/// and withdrawals are read from `CollateralDeposited`/`CollateralWithdrawn` on the collateral
+/// manager and the vault, so nothing is lost by not watching the token itself.
+const UNWATCHED_CONTRACTS = new Set(["settlementToken"]);
+
 export function watchedAddresses(addresses: ContractAddresses): Address[] {
-  return definedAddresses(addresses).map(([, address]) => address);
+  return definedAddresses(addresses)
+    .filter(([name]) => !UNWATCHED_CONTRACTS.has(name))
+    .map(([, address]) => address);
 }
 
 /// A deployment made before a contract existed (e.g. no `perpOrderManager` before limit orders)
