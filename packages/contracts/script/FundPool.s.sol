@@ -11,11 +11,13 @@ import {HumeVault} from "../src/core/HumeVault.sol";
 /// larger than the pool (`InsufficientPoolReserves`), so a launch needs it funded first. The tokens are
 /// credited to no account, and there is deliberately no way to take them back out except as payouts.
 ///
-/// Required: AMOUNT (whole settlement tokens). Optional: NETWORK_NAME (default `robinhood_testnet`),
-/// PRIVATE_KEY (the funder; it must hold the tokens).
+/// Required: AMOUNT (whole settlement tokens) or AMOUNT_RAW (base units, for a reserve below one whole
+/// token - the launch pool is a fraction of one USDG). Optional: NETWORK_NAME (default
+/// `robinhood_testnet`), PRIVATE_KEY (the funder; it must hold the tokens).
 ///
 /// Usage:
 ///   AMOUNT=100000 forge script script/FundPool.s.sol --rpc-url $RPC_URL --broadcast
+///   AMOUNT_RAW=150000 forge script script/FundPool.s.sol --rpc-url $RPC_URL --broadcast
 ///
 /// After an upgrade of a vault that already held user balances, run
 /// `vault.bootstrapLiabilities(token)` first (see `docs/RUNBOOK.md`).
@@ -25,7 +27,9 @@ contract FundPool is Script {
             vm.readFile(string.concat("deployments/", vm.envOr("NETWORK_NAME", string("robinhood_testnet")), ".json"));
         HumeVault vault = HumeVault(vm.parseJsonAddress(json, ".vault"));
         IERC20Metadata token = IERC20Metadata(vm.parseJsonAddress(json, ".settlementToken"));
-        uint256 amount = vm.envUint("AMOUNT") * 10 ** token.decimals();
+        uint256 raw = vm.envOr("AMOUNT_RAW", uint256(0));
+        uint256 amount = raw > 0 ? raw : vm.envUint("AMOUNT") * 10 ** token.decimals();
+        require(amount > 0, "set AMOUNT or AMOUNT_RAW");
 
         uint256 key = vm.envOr("PRIVATE_KEY", uint256(0));
         if (key == 0) vm.startBroadcast();

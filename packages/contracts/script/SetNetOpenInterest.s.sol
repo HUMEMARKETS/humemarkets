@@ -11,19 +11,27 @@ import {RiskManager} from "../src/risk/RiskManager.sol";
 /// The vault is the counterparty to that difference, so it bounds what a one-sided price move can cost
 /// the pool. `script/check-launch-limits.sh` checks the result against the pool.
 ///
-/// Required: VALUE (whole settlement tokens). Optional: SYMBOL (one market; every market when unset),
-/// NETWORK_NAME (default `robinhood_testnet`), PRIVATE_KEY (needs `RISK_ADMIN_ROLE`).
+/// Required: VALUE (whole settlement tokens) or VALUE_RAW (base units, for a limit below one whole
+/// token). Optional: SYMBOL (one market; every market when unset), NETWORK_NAME (default
+/// `robinhood_testnet`), PRIVATE_KEY (needs `RISK_ADMIN_ROLE`).
+///
+/// `script/SetLaunchCaps.s.sol` sets this limit together with the position and open-interest caps from
+/// `deployments/<network>.limits.json`; this script stays for changing one market's limit by hand.
 ///
 /// Usage:
 ///   VALUE=50000 forge script script/SetNetOpenInterest.s.sol --rpc-url $RPC_URL --broadcast
+///   VALUE_RAW=8000 SYMBOL=NVDA forge script script/SetNetOpenInterest.s.sol --rpc-url $RPC_URL --broadcast
 contract SetNetOpenInterest is Script {
     function run() external {
         string memory json =
             vm.readFile(string.concat("deployments/", vm.envOr("NETWORK_NAME", string("robinhood_testnet")), ".json"));
         MarketRegistry registry = MarketRegistry(vm.parseJsonAddress(json, ".marketRegistry"));
         RiskManager risk = RiskManager(vm.parseJsonAddress(json, ".riskManager"));
-        uint256 value =
-            vm.envUint("VALUE") * 10 ** IERC20Metadata(vm.parseJsonAddress(json, ".settlementToken")).decimals();
+        uint256 raw = vm.envOr("VALUE_RAW", uint256(0));
+        uint256 value = raw > 0
+            ? raw
+            : vm.envUint("VALUE") * 10 ** IERC20Metadata(vm.parseJsonAddress(json, ".settlementToken")).decimals();
+        require(value > 0, "set VALUE or VALUE_RAW");
         string memory symbol = vm.envOr("SYMBOL", string(""));
 
         uint256 key = vm.envOr("PRIVATE_KEY", uint256(0));
