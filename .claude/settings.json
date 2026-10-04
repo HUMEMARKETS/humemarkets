@@ -1,7 +1,38 @@
 {
   "permissions": {
     "allow": [
-      "mcp__railway__update-service"
+      "mcp__railway__update-service",
+      "Bash(pnpm typecheck:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(pnpm test:*)",
+      "Bash(pnpm build:*)",
+      "Bash(forge build:*)",
+      "Bash(forge test:*)",
+      "Bash(forge fmt --check:*)",
+      "Bash(cast call:*)",
+      "Bash(cast block:*)",
+      "Bash(cast chain-id:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git branch --list:*)",
+      "Bash(git worktree list:*)",
+      "Bash(bash scripts/check-brand.sh)",
+      "Bash(bash scripts/check-hex.sh)",
+      "Bash(bash packages/contracts/script/check-launch-limits.sh)",
+      "Bash(sed -n:*)",
+      "Bash(grep:*)",
+      "Bash(wc:*)",
+      "Bash(ls:*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git tag:*)",
+      "Bash(gh pr create:*)"
     ]
   }
 }

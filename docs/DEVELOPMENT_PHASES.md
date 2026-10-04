@@ -33,12 +33,20 @@ Every phase below carries a **Prompt** block. Paste it and the phase runs — th
 to read, the work, the acceptance check, and the instruction to stop afterwards. No other context is
 needed; the prompts are self-contained on purpose, so a phase can be run in a fresh session.
 
-| Day                  | Prompt order                                             | Hours   |
-| -------------------- | -------------------------------------------------------- | ------- |
-| **Day 1** 2026-10-04 | Phase 0, 1, 2, 3, 4, 5                                   | 12.5    |
-| **Day 2** 2026-10-05 | Phase 6, 7, 8, 9                                         | 11.5    |
-| **Day 3** 2026-10-06 | Phase 10, 11, 12, 13, 14, 15, 16, 17 — open at 21:00 WIB | 13.0    |
-| After                | Phase 18                                                 | ongoing |
+| Day                  | Prompt order                                             |
+| -------------------- | -------------------------------------------------------- |
+| **Day 1** 2026-10-04 | Phase 0, 1, 2, 3, 4, 5                                   |
+| **Day 2** 2026-10-05 | Phase 6, 7, 8, 9                                         |
+| **Day 3** 2026-10-06 | Phase 10, 11, 12, 13, 14, 15, 16, 17 — open at 21:00 WIB |
+| After                | Phase 14b if it was skipped, then Phase 18               |
+
+**No phase carries an hour estimate.** Claude does the work, so the plan is an ordered list, not a
+timetable: run each phase, pass its acceptance check, run the next. The only fixed time in this file is
+the open, 2026-10-06 at 21:00 WIB (Section 3.2), and the only resource that is actually scarce is the
+$5-6 budget (Section 1).
+
+**Phase 14b (the mainnet/testnet toggle) is optional by design.** Nothing waits on it, so it is the first
+phase to skip when the open is near; it then becomes Phase 18 item 1c.
 
 Each phase also carries a **Ship** block: the exact `git` and `gh` commands for its branch, commit, push
 and PR. **The operator runs those, not Claude** (Section 0.6). The prompts enforce it — each one ends
@@ -55,7 +63,7 @@ Ship block instead.
 
 **Before Phase 0's Ship block works, add a git remote** — there is none today. Section 0.7.
 
-**Runnable today without the missing prerequisites:** Phases 0, 1, 2 and 3 — 6.5 hours. Phase 4 needs
+**Runnable today without the missing prerequisites:** Phases 0, 1, 2 and 3. Phase 4 needs
 `.env`; Phase 6 needs DNS or a decision to launch on a Vercel URL. See Section 0.1.
 
 ---
@@ -80,6 +88,7 @@ truth and this table only points at them. `LAUNCH_MODEL.md` Section 1 defines wh
 | +   | Guided review         | 8, 15, 17            | **Live** — hard gate                | 8    |
 | +   | Plain-language states | 12, 15, 17           | **Live** — hard gate                | 12   |
 | +   | Mobile and keyboard   | 13, 15, 17           | **Live** — hard gate                | 13   |
+| +   | Network toggle        | 14b, **18**          | Optional — cut first if time is short | —    |
 
 The four `+` interface rows are not on the original feature list. They are hard gates anyway, because
 shipping markets nobody can use is the failure this plan exists to avoid — see `UI_CONTRACT.md`
@@ -106,8 +115,8 @@ Checked rather than assumed. Three items were reported available and measured ot
 | **Vercel `hume-mainnet`** | **DOES NOT EXIST.** Projects are `alphamarkets`, `leverage-market-web`, `alphaperp-web` and four unrelated. The old README's claim that `hume-mainnet` serves `hume.tech` was never true | **Blocks 6**            |
 | Screen recorder           | `ffmpeg` present; `wf-recorder`, OBS, grim absent. **X11 + XFCE**, so `ffmpeg -f x11grab` or `simplescreenrecorder` works with no install                                                | Phase 15                |
 
-**Consequence.** Phases 0 to 3 need none of the missing items and can run now — 6.5 of Day 1's
-12.5 hours. Phase 4 stops without `.env`. Phase 6 needs either DNS plus a Vercel project, or an explicit
+**Consequence.** Phases 0 to 3 need none of the missing items and can run now. Phase 4 stops without
+`.env`. Phase 6 needs either DNS plus a Vercel project, or an explicit
 decision to launch on a `*.vercel.app` URL and attach the domain afterwards.
 
 **Owed by the operator, in order:**
@@ -295,11 +304,12 @@ the Railway subscription. There is no slack, which is why Section 0.3 degrades r
 
 ## 2. Phases
 
-Hours are working hours. Do not start a phase until its predecessor's acceptance check passes.
+Do not start a phase until its predecessor's acceptance check passes. The order is the plan; there are
+no time estimates.
 
-### Day 1 — foundation, the UI contract, backend (11.5 h)
+### Day 1 — foundation, the UI contract, backend
 
-#### Phase 0 — Freeze and inventory (0.5 h)
+#### Phase 0 — Freeze and inventory
 
 **Prompt.** Paste this to run the phase.
 
@@ -368,12 +378,12 @@ balances with a block number, and the admin-role output.
 
 **Cost.** $0, reads only.
 
-#### Phase 1 — Brand audit (1 h)
+#### Phase 1 — Brand audit
 
 **Prompt.** Paste this to run the phase.
 
 ```text
-Run Phase 1 of docs/DEVELOPMENT_PHASES.md: brand audit.
+Run Phase 1 of @docs/DEVELOPMENT_PHASES.md: brand audit.
 
 No alphamarkets, alpha-market or AlphaMarkets string may ship in code, metadata, the SDK package name
 or UI copy. Run scripts/check-brand.sh, fix what it reports, then extend it to fail on the old names.
@@ -423,12 +433,12 @@ pnpm turbo run lint typecheck
 
 **Cost.** $0.
 
-#### Phase 2 — Market groups in config (2 h)
+#### Phase 2 — Market groups in config
 
 **Prompt.** Paste this to run the phase.
 
 ```text
-Run Phase 2 of docs/DEVELOPMENT_PHASES.md: market groups and listing tiers in config.
+Run Phase 2 of @docs/DEVELOPMENT_PHASES.md: market groups and listing tiers in config.
 
 Read the Phase 2 body and REFERENCE.md Section 2 for the three-tier model.
 
@@ -491,16 +501,16 @@ tier invariant test fails when a `quoted` entry is given a feed address.
 
 **Cost.** $0.
 
-#### Phase 3 — Palette, the UI contract and state inventory (3 h)
+#### Phase 3 — Palette, the UI contract and state inventory
 
 **Prompt.** Paste this to run the phase.
 
 ```text
-Run Phase 3 of docs/DEVELOPMENT_PHASES.md: palette, the UI contract and the state inventory.
+Run Phase 3 of @docs/DEVELOPMENT_PHASES.md: palette, the UI contract and the state inventory.
 
-Read docs/UI_CONTRACT.md in full first — it is the governing document and this phase finishes it.
+Read @docs/UI_CONTRACT.md in full first — it is the governing document and this phase finishes it.
 
-Re-tokenize apps/web/src/app/globals.css to the UI_CONTRACT.md Section 4 palette: charcoal ground,
+Re-tokenize @apps/web/src/app/globals.css to the UI_CONTRACT.md Section 4 palette: charcoal ground,
 ivory text, sage accent, stone secondary, with the derived up/down and elevation tokens. Keep every
 token NAME identical so no component is renamed; this is a values-only change. Two rules that are not
 preferences: a sage fill takes charcoal ink because ivory on sage is 3.81:1 and fails AA, and up/down
@@ -550,7 +560,7 @@ these tokens. (Nothing here is a security review; Section 0.8.)
    `UI_CONTRACT.md` Section 4 tokens: `ground`, `surface`, `raised`, `line`, `text`, `muted`, `faint`, `accent`,
    `accent-ink`, `accent-hover`, `accent-press`, `up`, `down`, plus the soft variants the existing file
    uses. Keep every token **name** identical so no component needs renaming — this is a values-only
-   change, and that is what makes it a 1-hour job instead of a rewrite.
+   change, and that is what keeps it a swap instead of a rewrite.
 2. Re-run the contrast arithmetic on the final values and record the table in `docs/UI_CONTRACT.md`.
    Confirm the two `UI_CONTRACT.md` Section 4 findings hold: the primary button uses `accent-ink` (charcoal) and not
    ivory, and `up` / `down` are never used for decoration.
@@ -575,12 +585,12 @@ the Guided/Pro split is written per surface. Screenshots of all 8 pages before a
 
 **Cost.** $0.
 
-#### Phase 4 — Feed reality and launch caps (2 h)
+#### Phase 4 — Feed reality and launch caps
 
 **Prompt.** Paste this to run the phase.
 
 ```text
-Run Phase 4 of docs/DEVELOPMENT_PHASES.md: feed reality and launch caps.
+Run Phase 4 of @docs/DEVELOPMENT_PHASES.md: feed reality and launch caps.
 
 PREREQUISITE: .env with the owner key must exist, and the owner's USDG balance must be known. If
 either is missing, stop and say so rather than guessing — Section 0.3 holds the degradation path.
@@ -592,7 +602,7 @@ the market reads closed rather than halted. Never widen a limit to make a market
 session. Then size and apply the caps against the ACTUAL USDG balance: per-market open interest,
 per-wallet position, per-market supply, vault pool reserve.
 
-Acceptance: docs/evidence/phase-4.md holds the feed-age table and the chosen numbers; the caps are set
+Acceptance: @docs/evidence/phase-4.md holds the feed-age table and the chosen numbers; the caps are set
 on chain; bash packages/contracts/script/check-launch-limits.sh exits 0.
 
 Do NOT commit, push, stage or open a PR — I do that myself. Leave the working tree dirty.
@@ -647,12 +657,12 @@ set on chain, and `check-launch-limits.sh` exits 0.
 
 **Cost.** A few cents of gas.
 
-#### Phase 5 — Mainnet backend bring-up (4 h)
+#### Phase 5 — Mainnet backend bring-up
 
 **Prompt.** Paste this to run the phase.
 
 ```text
-Run Phase 5 of docs/DEVELOPMENT_PHASES.md: mainnet backend bring-up.
+Run Phase 5 of @docs/DEVELOPMENT_PHASES.md: mainnet backend bring-up.
 
 Railway hosts COMPUTE ONLY. Supabase is the Postgres. Read the Phase 5 body for the connection-string
 table before touching anything.
@@ -772,14 +782,14 @@ through the pooler without a prepared-statement error; and the testnet project i
 **Cost.** Railway ~$5/month for compute. Supabase free tier $0, which **removes** the Railway Postgres
 line from the budget.
 
-### Day 2 — the product a stranger can use (11.5 h)
+### Day 2 — the product a stranger can use
 
-#### Phase 6 — Web on mainnet (3 h)
+#### Phase 6 — Web on mainnet
 
 **Prompt.** Paste this to run the phase.
 
 ```text
-Run Phase 6 of docs/DEVELOPMENT_PHASES.md: web on mainnet.
+Run Phase 6 of @docs/DEVELOPMENT_PHASES.md: web on mainnet.
 
 NOTE: hume.tech does not resolve and no Vercel hume-mainnet project exists (Section 0.1). Either set
 both up first, or confirm launching on a *.vercel.app URL with the domain attached later. Ask once,
@@ -841,7 +851,7 @@ in `docs/evidence/phase-6.md`; or the amber path is recorded.
 
 **Cost.** Gas, plus the USDG used as margin, returned on close.
 
-#### Phase 7 — Sample mode: the product without a wallet (3 h)
+#### Phase 7 — Sample mode: the product without a wallet
 
 **Prompt.** Paste this to run the phase.
 
@@ -919,7 +929,7 @@ it, see the PNL, and view the leaderboard — and every sample surface is marked
 
 **Cost.** $0.
 
-#### Phase 8 — Guided review before every signature (2.5 h)
+#### Phase 8 — Guided review before every signature
 
 **Prompt.** Paste this to run the phase.
 
@@ -995,7 +1005,7 @@ deep link.
 
 **Cost.** $0 in sample mode; a small gas spend for connected mode.
 
-#### Phase 9 — Lending and borrowing live (3 h)
+#### Phase 9 — Lending and borrowing live
 
 **Prompt.** Paste this to run the phase.
 
@@ -1043,7 +1053,7 @@ Acceptance: <paste the result Claude reported>.
 Evidence: docs/evidence/phase-9.md"
 ```
 
-**Scope.** Deploy the ported credit stack and open exactly one pair. Two features in three hours because
+**Scope.** Deploy the ported credit stack and open exactly one pair. Two features in one phase because
 the contracts are ported and Levier proved this lifecycle on this chain.
 
 **Work.**
@@ -1067,12 +1077,12 @@ reads correctly at every step, four hashes recorded; or the amber path is record
 
 **Cost.** ~$0.50 gas. The seed is the owner's and is withdrawable.
 
-### Day 3 — social layer, UI hardening, the recorded walkthrough, open (13 h)
+### Day 3 — social layer, UI hardening, the recorded walkthrough, open
 
 Day 3 ends at **21:00 WIB** with the open, 30 minutes after US equity markets open so the feeds are
 fresh. Section 3.3 maps the phases to clock times.
 
-#### Phase 10 — Leaderboard and PNL card (2 h)
+#### Phase 10 — Leaderboard and PNL card
 
 **Prompt.** Paste this to run the phase.
 
@@ -1148,7 +1158,7 @@ mode.
 
 **Cost.** $0.
 
-#### Phase 11 — The crypto set (1 h)
+#### Phase 11 — The crypto set
 
 **Prompt.** Paste this to run the phase.
 
@@ -1240,7 +1250,7 @@ records a feed-age reading per market.
 
 **Cost.** ~$0.20 gas per listed market, so about $0.80.
 
-#### Phase 12 — Failure and empty states in plain language (1 h)
+#### Phase 12 — Failure and empty states in plain language
 
 **Prompt.** Paste this to run the phase.
 
@@ -1308,7 +1318,7 @@ a fresh account; a deliberately failed order produces a sentence a non-trader ca
 
 **Cost.** $0.
 
-#### Phase 13 — Mobile and keyboard pass (1.5 h)
+#### Phase 13 — Mobile and keyboard pass
 
 **Prompt.** Paste this to run the phase.
 
@@ -1370,7 +1380,7 @@ path completes on keyboard alone. Screenshots in `docs/evidence/phase-13.md`.
 
 **Cost.** $0.
 
-#### Phase 14 — Copy trading: the entry point only (0.5 h)
+#### Phase 14 — Copy trading: the entry point only
 
 **Prompt.** Paste this to run the phase.
 
@@ -1427,8 +1437,8 @@ endpoints, no subaccount, no executor.** The full model and the capped subaccoun
 
 **Why cut rather than half-built.** Copy trading needs leaders with a track record, and on launch day the
 leaderboard is empty — there is nobody to copy. A follow flow that creates on-chain subaccounts for a
-feature that cannot mirror yet is 1.5 hours spent to serve zero users while adding custody surface. A
-label costs 30 minutes and serves the same number of users, honestly.
+feature that cannot mirror yet serves zero users while adding custody surface. A label serves the same
+number of users, honestly, for a fraction of the work.
 
 **Work.**
 
@@ -1451,7 +1461,116 @@ Phase 18 design is written down.
 
 **Cost.** $0.
 
-#### Phase 15 — Testnet acceptance and the recorded walkthrough (3.5 h)
+#### Phase 14b — The mainnet/testnet toggle (optional, cut first if the open is near)
+
+**Prompt.** Paste this to run the phase.
+
+```text
+Run Phase 14b of @docs/DEVELOPMENT_PHASES.md: the mainnet/testnet toggle.
+
+This is NOT a launch gate. If Phase 15 has not started by its slot in Section 3.2, skip this phase and
+move it to Phase 18 item 1c. Say so and stop rather than eating the walkthrough's time.
+
+One deployment serves both chains, switched at runtime: mainnet 4663 and Robinhood testnet 46630. Both
+chain records and both address sets are already in packages/config (chains.ts, deployments.ts), so this
+is a wiring job in apps/web, not new chain config.
+
+The blocker to solve first: apps/web/src/lib/env.ts resolves the chain ONCE at module load from
+NEXT_PUBLIC_CHAIN_ID, and apps/web/src/lib/wagmi.ts builds a single-chain wagmi config from it. Move
+the chain into a client provider that reads the toggle, and derive addresses per chain through
+addressesForChain(chainId) rather than from the per-contract NEXT_PUBLIC_* overrides — those overrides
+are global, so left as they are they would bleed a mainnet address into the testnet view, which is the
+one failure that must not happen. Keep them honoured for the chain they belong to, or ignore them when
+the toggle is on; either way say which in the evidence.
+
+Add to wagmi: both chains in createConfig, a transport per chain, useSwitchChain on the toggle, and a
+wrong-network state for a wallet that refuses to switch. Chain choice persists per browser and is
+shareable as a URL parameter. Testnet needs its own API and RPC values, so add a second set of
+NEXT_PUBLIC_* names rather than reusing one.
+
+Honesty requirement, non-negotiable: while testnet is selected every page carries a persistent label
+saying this is testnet with mock prices and simulated traders, in the same words the simulator README
+requires. A testnet balance, PNL or leaderboard row must never be readable as real money. The mainnet
+unaudited banner from Phase 6 stays in both modes.
+
+Acceptance: docs/evidence/phase-14b.md shows both chains served from one deployment - markets, a
+position and a balance read correctly on each, the wallet switches chain from the toggle, a refusal
+renders the wrong-network state, the testnet label is present on every page in testnet mode and absent
+in mainnet mode, and no mainnet address appears in a testnet read. Screenshots at 375 px and 1440 px
+for both modes.
+
+Do NOT commit, push, stage or open a PR - I do that myself. Leave the working tree dirty.
+Report pass, amber or fail, list the paths you changed, then print the Phase 14b Ship block for me to
+run. Do not start Phase 15.
+```
+
+**Ship.** You run these; Claude does not.
+
+```bash
+git checkout main && git pull
+git checkout -b phase-14b-network-toggle
+
+git add apps/web packages/config .env.example docs/evidence/phase-14b.md
+git commit -m "feat(web): serve mainnet and testnet from one deployment behind a toggle"
+
+git push -u origin phase-14b-network-toggle
+
+gh pr create --base main \
+  --title "Phase 14b — Mainnet/testnet toggle" \
+  --body "Serves chain 4663 and chain 46630 from one web deployment, switched at runtime, with the wallet switching chain from the toggle and a persistent testnet label so testnet numbers can never read as real.
+
+Acceptance: <paste the result Claude reported>.
+Evidence: docs/evidence/phase-14b.md"
+```
+
+**Scope.** A visitor picks the network and the whole terminal follows: markets, prices, balances,
+positions, the wallet and the explorer links. One build, two chains.
+
+**Why it is worth doing, and why it is not a gate.** Sample mode (Phase 7) already lets someone see the
+product with no wallet, so the toggle is not what makes the venue approachable. What it adds is a place
+to *trade* without real money — which, at the Section 0.3 caps of 0.008 USDG of notional per market, is
+the only way anyone can take a position worth watching. It also replaces Phase 15's separate testnet
+build with a switch on the real one, so the thing filmed is the thing shipped. None of that is required
+for the open, which is why it is cut first.
+
+**Work.**
+
+1. **Chain state at runtime.** Move `chainId` out of `apps/web/src/lib/env.ts`'s module-load constant
+   into a client provider: a `NetworkProvider` holding the selected chain, persisted per browser and
+   readable from a `?network=` URL parameter so a link can open either mode. Default to mainnet.
+2. **Addresses per chain.** Resolve every contract through `addressesForChain(chainId)`
+   (`packages/config/src/deployments.ts` already records both 4663 and 46630). Decide and document what
+   happens to the per-contract `NEXT_PUBLIC_*` overrides, which today apply to whichever chain is
+   loaded: scope them to one chain or ignore them while the toggle is on. **A mainnet address reaching a
+   testnet read, or the reverse, is the failure this step exists to prevent.**
+3. **A second set of environment values.** `NEXT_PUBLIC_TESTNET_RPC_URL`, `NEXT_PUBLIC_TESTNET_API_URL`,
+   `NEXT_PUBLIC_TESTNET_EXPLORER_URL`, and the testnet read proxy if one is used. Add them to
+   `.env.example` beside the mainnet names, with a note that an unset testnet API disables the toggle
+   rather than silently serving mainnet data.
+4. **Wallet.** `createConfig` takes both chains and a transport each
+   (`apps/web/src/lib/wagmi.ts`), the toggle calls `useSwitchChain`, and a wallet that refuses or
+   cannot switch gets an explicit wrong-network state with the chain name and a retry — not a silent
+   failure and not a blank page.
+5. **The testnet label.** A persistent marker in `AppShell` whenever testnet is selected, stating mock
+   prices and simulated traders in the simulator README's words. Per `REFERENCE.md` Section 2's tier
+   rules, a number whose source is not what it appears to be must say so on the row, not only in a
+   banner — so the balance, PNL and leaderboard surfaces carry it too.
+6. **A testnet API that is actually reachable.** Phase 15 stands up a testnet API and database; this
+   phase needs it on a public host rather than localhost, which is one more Railway service in the
+   `hume-testnet` environment against the testnet Supabase project from Phase 5.
+
+**Degradation.** If the testnet API is not hosted, ship the toggle disabled with the reason visible
+(not hidden), and record it amber. If the chain-state refactor turns out to touch more of
+`apps/web/src/lib/env.ts`'s consumers than this phase can finish cleanly, stop and move the whole phase
+to Phase 18 item 1c rather than leaving the app half-switched.
+
+**Done when.** `docs/evidence/phase-14b.md` shows both chains served from one deployment, the wallet
+switching from the toggle, the wrong-network state, the testnet label present in testnet mode and absent
+in mainnet mode, no cross-chain address leak, and screenshots at 375 px and 1440 px in both modes.
+
+**Cost.** $0 on testnet. One extra Railway service if the testnet API is not already hosted.
+
+#### Phase 15 — Testnet acceptance and the recorded walkthrough
 
 **Prompt.** Paste this to run the phase.
 
@@ -1524,7 +1643,7 @@ Evidence: docs/evidence/phase-15.md"
 Testnet costs nothing: the deployment exists, gas comes from the faucet, and the collateral token has a
 public `mint`.
 
-**15.1 — Bring up the environment (0.5 h).**
+**15.1 — Bring up the environment.**
 
 1. Point a testnet web build and a testnet API at the existing chain `46630` deployment
    (`packages/contracts/deployments/robinhood_testnet.json`, 21 contracts), with **its own Supabase
@@ -1561,7 +1680,7 @@ pnpm --filter @hume/simulator nudge NVDA -6        # 6% down over 90s: the long 
 pnpm --filter @hume/simulator nudge AAPL 6 30      # 6% up over 30s
 ```
 
-**15.2 — Record one clip per feature (2 h).** One take each, desktop at 1440 px, plus a phone-width pass
+**15.2 — Record one clip per feature.** One take each, desktop at 1440 px, plus a phone-width pass
 at 375 px for the two that matter most on a phone. This machine is **X11 + XFCE**, so capture with
 `ffmpeg -f x11grab` or the already-installed `simplescreenrecorder`; `wf-recorder` is Wayland-only and
 is not installed. Keep the files out of git and link them from the evidence file.
@@ -1586,13 +1705,13 @@ show something that does not exist.
 prices and simulated traders. **Every clip and its description says so.** Presenting bot activity as real
 users or real volume would mislead anyone who sees it, and the recordings will outlive this launch.
 
-**15.3 — Acceptance checks that are not filmed (0.5 h).**
+**15.3 — Acceptance checks that are not filmed.**
 
 6. The UI hard gates: the review step on all three money paths; the keyboard path end to end; the 375 px
    pass on the four surfaces.
 7. Rehearse the pause on testnet: pause, confirm trading is refused, unpause.
 
-**15.4 — The mainnet fork suite (0.5 h).**
+**15.4 — The mainnet fork suite.**
 
 8. `forge test --match-path test/fork/MainnetFork.t.sol`. **The only check covering real Chainlink
    staleness and real USDG behaviour**, which a mock-feed testnet cannot touch. A green testnet
@@ -1608,7 +1727,7 @@ that feature.**
 
 **Cost.** $0. Testnet gas from the faucet, test collateral minted.
 
-#### Phase 16 — Safety rails and key separation on mainnet (2 h)
+#### Phase 16 — Safety rails and key separation on mainnet
 
 **Prompt.** Paste this to run the phase.
 
@@ -1685,7 +1804,7 @@ distinct addresses per role, and one alert has been deliberately triggered and r
 
 **Cost.** ~0.00015 ETH of floats, plus a few cents of gas.
 
-#### Phase 17 — Launch gate and open (1.5 h, ends 21:00 WIB)
+#### Phase 17 — Launch gate and open (ends 21:00 WIB)
 
 **Prompt.** Paste this to run the phase.
 
@@ -1796,7 +1915,7 @@ Unpause one additional market at a time, never two at once, and only after an ho
 Write the first incident review even if nothing goes wrong.
 
 After the watch, work the deferred table in order. Item 1 is anything that went amber at the gate.
-Then the China group (research already done, 2.5 h of execution), the full failure and empty-state
+Then the China group (research already done; what is left is execution), the full failure and empty-state
 pass, the full mobile pass, the landing page rework, the Pons market in two steps — quoted listing of
 all 282 graduated tokens first, then tradeable — the options stepper, copy trading in full, the 24h
 leaderboard window, and a real multisig for the owner role.
@@ -1837,7 +1956,8 @@ only after an hour of clean readings. Write the first incident review even if no
 | #   | Deferred item                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | From                 |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------- |
 | 1   | Anything that went amber at the gate — in particular the mainnet round trip and the credit seed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Section 0.3          |
-| 1b  | **The China group** — 2 tradeable (BABA, TSM), 4 quoted (UMC, FUTU, EWT, SIMO), labelled "China & Greater China" with Taiwan stated plainly. Plus the quoted-tier UI: tier badges, source and age on a quoted price, no trade button on a quoted row, search spanning all tiers. Research is done; this is 2.5 h of execution                                                                                                                                                                                                                                                                                                                                                        | §3.1, Phase 11       |
+| 1b  | **The China group** — 2 tradeable (BABA, TSM), 4 quoted (UMC, FUTU, EWT, SIMO), labelled "China & Greater China" with Taiwan stated plainly. Plus the quoted-tier UI: tier badges, source and age on a quoted price, no trade button on a quoted row, search spanning all tiers. Research is done; what is left is execution                                                                                                                                                                                                                                                                                                                                                        | §3.1, Phase 11       |
+| 1c  | **The mainnet/testnet toggle** (Phase 14b, if it was cut) — one deployment serving chain 4663 and chain 46630, switched at runtime, with the wallet switching chain and a persistent testnet label. The blocker is that `apps/web/src/lib/env.ts` resolves the chain once at module load; both address sets already exist in `packages/config`                                                                                                                                                                                                                                                                                              | Phase 14b            |
 | 2   | Full failure and empty-state pass on the remaining pages; copy review                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Phase 12             |
 | 3   | Full mobile pass on all 8 pages; screen-reader pass                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Phase 13             |
 | 4   | Landing page rework: large display type, numbered `01`–`04` sections, motion within budget                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Phase 18             |
@@ -1853,27 +1973,30 @@ mirroring at once; the executor key failing to withdraw from a follower's subacc
 
 ---
 
-## 3. Schedule and hour arithmetic
+## 3. Schedule and run order
 
-| Day              | Phases                         | Hours    |
-| ---------------- | ------------------------------ | -------- |
-| Day 1 2026-10-04 | 0, 1, 2, 3, 4, 5               | 12.5     |
-| Day 2 2026-10-05 | 6, 7, 8, 9                     | 11.5     |
-| Day 3 2026-10-06 | 10, 11, 12, 13, 14, 15, 16, 17 | 13.0     |
-| **Total**        |                                | **37.0** |
+| Day              | Phases                         |
+| ---------------- | ------------------------------ |
+| Day 1 2026-10-04 | 0, 1, 2, 3, 4, 5               |
+| Day 2 2026-10-05 | 6, 7, 8, 9                     |
+| Day 3 2026-10-06 | 10, 11, 12, 13, 14, 15, 16, 17 |
 
-Day 1 grew by an hour when Phase 3 took on the palette swap. The swap is values-only — token names stay
-identical, so no component is renamed — which is what keeps it at one hour rather than a redesign.
+**There are no hour estimates in this plan, by decision.** Claude is the developer, so a phase takes as
+long as it takes and an estimate only invites a phase to be declared done on the clock instead of on its
+acceptance check. What is fixed is the order, the gates, and the open: 2026-10-06 at 21:00 WIB.
+
+The day grouping above is a target, not a budget. Run phases back to back and the days collapse; the
+only hard rule is that Phase 15 passes before mainnet opens.
 
 ### 3.1 Option A is the decision (2026-10-03)
 
 Three cuts are **already applied** to the phases above. They are not contingencies.
 
-| Cut applied                                                                               | Phase | Was   | Now   |
-| ----------------------------------------------------------------------------------------- | ----- | ----- | ----- |
-| Leaderboard ships one window, `all`, instead of `24h` + `all`                             | 10    | 3.0 h | 2.0 h |
-| **China group deferred to Phase 18. The crypto set stays** — crypto is the liveness win   | 11    | 2.5 h | 1.0 h |
-| Copy trading becomes a static "coming soon" entry: no tables, no endpoints, no subaccount | 14    | 2.0 h | 0.5 h |
+| Cut applied                                                                               | Phase |
+| ----------------------------------------------------------------------------------------- | ----- |
+| Leaderboard ships one window, `all`, instead of `24h` + `all`                             | 10    |
+| **China group deferred to Phase 18. The crypto set stays** — crypto is the liveness win   | 11    |
+| Copy trading becomes a static "coming soon" entry: no tables, no endpoints, no subaccount | 14    |
 
 Consequences recorded honestly rather than quietly:
 
@@ -1892,43 +2015,40 @@ equity market reads "closed" — technically correct and a terrible first impres
 US equity open is 09:30 ET = **20:30 WIB**. Opening at **21:00 WIB (14:00 UTC)** on 2026-10-06, a
 Tuesday, means the feeds go fresh within the first half hour and the crypto set is live regardless.
 
-### 3.3 Day 3 against the clock
+### 3.3 The last day, in order
 
 ```
-08:00  P15.1 Start the simulator            ── runs all day, so charts have history
-08:00  P10 Leaderboard and PNL card        2.0 h
-10:00  P11 Crypto set                      1.0 h
-11:00  P12 Failure and empty states        1.0 h
-12:00  P13 Mobile and keyboard             1.5 h
-13:30  P14 Copy trading static entry       0.5 h
-14:00  P15 Testnet acceptance + recording  3.5 h   ── hard gate + the documentation
-17:30  P16 Rails and key separation        2.0 h
-19:30  P17 Launch gate and open            1.5 h
-21:00  LAUNCH, 30 minutes after US equity open
+P15.1 Start the simulator             ── FIRST, and leave it running all day
+P10   Leaderboard and PNL card
+P11   Crypto set
+P12   Failure and empty states
+P13   Mobile and keyboard
+P14   Copy trading static entry
+P14b  Network toggle                  ── optional; skip it if the open is near
+P15   Testnet acceptance + recording  ── hard gate + the documentation
+P16   Rails and key separation
+P17   Launch gate and open
+      LAUNCH at 21:00 WIB, 30 minutes after US equity open
 ```
 
-13.0 hours, starting 08:00. It fits, with no slack.
+**If the open is getting close**, fire this ladder in order and stop at the first item that buys back
+enough room:
 
-**If a phase still slips**, fire the remaining ladder in order and stop at the first item that buys back
-enough time:
-
-1. Phase 10 ships the PNL card only, no leaderboard page (−1.5 h). Clip 6 narrows to the card
-2. Phase 13 covers two surfaces instead of four (−0.5 h)
-3. Phase 11 crypto set drops to BTC and ETH only (−0.5 h)
+1. Skip Phase 14b entirely. Nothing waits on it; it becomes Phase 18 item 1c
+2. Phase 10 ships the PNL card only, no leaderboard page. Clip 6 narrows to the card
+3. Phase 13 covers two surfaces instead of four
+4. Phase 11 crypto set drops to BTC and ETH only
 
 **Never cut:** Phase 7 sample mode, Phase 8 review step, Phase 12 error mapping, **Phase 15 in full
 including the recording**, Phase 16 rails. The first three are the reason the previous platform went
 unused. Phase 15 is both the gate and the only record that the product worked. Phase 16 is the reason an
 unaudited launch is survivable.
 
-**The arithmetic was wrong before 2026-10-03 and is corrected here.** Day 3's stated total had drifted
-from the sum of its phase headers. Every figure in 3.3 is the sum of the headers above it; re-sum them
-after any change rather than adjusting the total.
-
 **One scheduling note on the recording.** Phase 15 cannot move earlier, because it films features that
 Phases 10 to 14 build. But 15.1 can: start the simulator at the beginning of Day 3 and leave it running
 all day. Charts need price-tick history and the chain has no backfill, so a market that started five
-minutes before filming looks empty. Ten hours of bot activity films far better than ten minutes.
+minutes before filming looks empty. A day of bot activity films far better than ten minutes, and
+`simulator backfill 72 replace` is the shortcut when it did not get one.
 
 ---
 
@@ -1965,7 +2085,7 @@ P0 Freeze ─► P1 Brand ─► P2 Groups ────────────�
 | ---------------------------------------------------- | ---------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | **USDG never funded (0.295 USDG today)**             | **Open**   | **No pool, no seed, no real test trade**    | Section 0.3's ordered degradation: gates 6 and 9 go amber, everything else ships                                              |
 | **The interface is again the reason nobody uses it** | Medium     | The launch works and still fails            | Five hard UI gates; sample mode removes the wallet wall; a review before every signature; UI exercised and filmed in Phase 15 |
-| Day 3 is 13.0 h with no slack                        | **High**   | A phase slips into the open                 | Option A's three cuts are already applied (3.1); the open moved to 21:00 (3.2); a further ladder is in 3.3                    |
+| The last day runs out before the open                | **High**   | A phase slips into the open                 | Option A's three cuts are already applied (3.1); the open moved to 21:00 (3.2); a further ladder is in 3.3                    |
 | Sample mode mistaken for real trading                | Medium     | A user believes they hold a position        | Persistent `SAMPLE DATA` on every balance and position surface, the header chip, the page title                               |
 | Unaudited contracts hold real funds                  | Certain    | An unknown bug reaches user money           | Tiny on-chain caps, owner-only liquidity, the testnet gate, a rehearsed pause, a visible notice                               |
 | Chainlink staleness outside the US session           | Certain    | Equity markets read closed much of the week | Session-aware limits (Phase 4); the crypto set is fresh at any hour (Phase 11); the open is timed to the US session (3.2)     |
