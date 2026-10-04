@@ -55,21 +55,21 @@ nothing opens before the testnet walkthrough passes.
 Read your phase with `sed`, never the whole file.
 
 ```bash
-sed -n '588,659p' docs/DEVELOPMENT_PHASES.md   # Phase 4
+sed -n '589,660p' docs/DEVELOPMENT_PHASES.md   # Phase 4
 ```
 
 | Phase | Lines     | Phase | Lines       |
 | ----- | --------- | ----- | ----------- |
-| 0     | 312–380   | 10    | 1085–1160   |
-| 1     | 381–435   | 11    | 1161–1252   |
-| 2     | 436–503   | 12    | 1253–1320   |
-| 3     | 504–587   | 13    | 1321–1382   |
-| 4     | 588–659   | 14    | 1383–1463   |
-| 5     | 660–786   | 14b   | 1464–1572   |
-| 6     | 787–853   | 15    | 1573–1729   |
-| 7     | 854–931   | 16    | 1730–1806   |
-| 8     | 932–1007  | 17    | 1807–1904   |
-| 9     | 1008–1084 | 18    | 1905–2119   |
+| 0     | 313–381   | 10    | 1160–1235   |
+| 1     | 382–436   | 11    | 1236–1327   |
+| 2     | 437–504   | 12    | 1328–1395   |
+| 3     | 505–588   | 13    | 1396–1457   |
+| 4     | 589–660   | 14    | 1458–1538   |
+| 5     | 661–861   | 14b   | 1539–1647   |
+| 6     | 862–928   | 15    | 1648–1806   |
+| 7     | 929–1006  | 16    | 1807–1883   |
+| 8     | 1007–1082 | 17    | 1884–1981   |
+| 9     | 1083–1159 | 18    | 1982–2198   |
 
 Section 0 is lines 99–286 and holds the access facts, the USDG blocker and the working agreement.
 Regenerate this table after any edit that moves the phases:

@@ -143,8 +143,10 @@ export interface PerpMarketInfo {
 }
 
 export interface PerpsNamespace {
-  /// Every active market with perps enabled, from MarketRegistry.
-  list(): Promise<MarketConfig[]>;
+  /// Markets with perps enabled, from MarketRegistry. Paused markets are left out unless
+  /// `includePaused` is set: a keeper or a quoter wants the tradeable set, while the terminal shows
+  /// a paused market and refuses the trade (docs/UI_CONTRACT.md).
+  list(options?: { includePaused?: boolean }): Promise<MarketConfig[]>;
   get(market: string): Promise<PerpMarketInfo>;
   funding(market: string): Promise<FundingInfo>;
   /// Everything PROJECT_BRIEF.md Section 45 requires before signing a perp order, computed at
@@ -231,9 +233,9 @@ export function createPerps(deps: PerpsDeps): PerpsNamespace {
     return bound.deadline === undefined ? defaultDeadline() : toUnixSeconds(bound.deadline);
   }
 
-  async function list() {
+  async function list(options?: { includePaused?: boolean }) {
     const all = await markets.list();
-    return all.filter((market) => market.active && market.perpsEnabled);
+    return all.filter((market) => market.perpsEnabled && (options?.includePaused === true || market.active));
   }
 
   async function get(market: string): Promise<PerpMarketInfo> {

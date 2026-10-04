@@ -12,8 +12,8 @@ Node services in `services/`, Next.js in `apps/web`.
 - **Never touch git.** No `commit`, `push`, `add`, `stage`, `tag` or `gh pr create`. Leave the
   working tree dirty, list the paths you changed, and print the phase's **Ship** block for the
   operator to run. The operator owns every git mutation.
-- **Never read `docs/DEVELOPMENT_PHASES.md` whole.** It is 2119 lines. Read only your phase's line
-  range from `docs/LANES.md`: `sed -n '588,659p' docs/DEVELOPMENT_PHASES.md`.
+- **Never read `docs/DEVELOPMENT_PHASES.md` whole.** It is 2198 lines. Read only your phase's line
+  range from `docs/LANES.md`: `sed -n '589,660p' docs/DEVELOPMENT_PHASES.md`.
 - **A phase is done only when its acceptance check passes.** Nothing is ticked because it looks
   finished. Report `pass`, `amber` or `fail` in one line, and do not start the next phase.
 - **Secrets never reach a commit, an evidence file or the transcript.** Addresses are fine. Never

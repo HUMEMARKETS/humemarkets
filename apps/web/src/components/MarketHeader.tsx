@@ -2,9 +2,9 @@
 
 import { Num, Skeleton, Stat, cn, fieldBorder } from "@hume/ui";
 import { useNow } from "@/hooks/useNow";
-import { usePerpMarket, usePerpMarkets } from "@/hooks/queries";
+import { usePerpMarket, usePerpMarketConfig, usePerpMarkets } from "@/hooks/queries";
 import { fmtBps, fmtCountdown, fmtPrice } from "@/lib/format";
-import { symbolOf } from "@/lib/market";
+import { symbolOf, tradeBlocker } from "@/lib/market";
 import { useTerminal } from "@/stores/terminal";
 import { Change, useStatsFor } from "./Change";
 
@@ -18,10 +18,19 @@ export function MarketHeader() {
   const stats = useStatsFor(symbol);
   const now = useNow();
 
+  const paused = tradeBlocker(usePerpMarketConfig(symbol)?.active);
+
   return (
     <div className="flex shrink-0 flex-col gap-3 rounded-panel border border-line/70 bg-surface p-3 lg:flex-row lg:items-center lg:gap-8 lg:px-4">
       <div className="flex items-center justify-between gap-3 xl:block">
-        <h1 className="text-title font-normal">{symbol ? `${symbol}-PERP` : "–"}</h1>
+        <div className="flex items-baseline gap-2">
+          <h1 className="text-title font-normal">{symbol ? `${symbol}-PERP` : "–"}</h1>
+          {paused ? (
+            <span className="rounded-sm border border-down px-1 text-xs text-down" title={paused}>
+              Paused
+            </span>
+          ) : null}
+        </div>
         {markets && markets.length > 1 ? (
           <label className="xl:hidden">
             <span className="sr-only">Market</span>

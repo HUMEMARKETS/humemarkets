@@ -8,3 +8,11 @@ export function symbolOf(marketId: Hex): string {
 }
 
 export const perpLabel = (marketId: Hex) => `${symbolOf(marketId)}-PERP`;
+
+/// Why the terminal refuses to open a position on this market, or `undefined` when it does not.
+/// A paused market is still a shipped market: it is listed, it keeps pricing, and the ticket says
+/// plainly that it cannot be traded rather than failing at signature time (CLAUDE.md, Phase 6).
+/// `active` is `undefined` while the market config is still loading, which blocks nothing.
+export function tradeBlocker(active: boolean | undefined): string | undefined {
+  return active === false ? "This market is paused. Prices keep updating; new positions are refused." : undefined;
+}
