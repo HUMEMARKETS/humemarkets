@@ -5,6 +5,20 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added — session-aware oracle staleness, and the launch caps as data (2026-10-04)
+
+A flat staleness limit cannot work on this chain. Every Chainlink feed here updates on a 0.5% deviation or a 24-hour heartbeat and goes quiet while its underlying is shut, so a one-hour limit closes the venue every evening and a 25-hour limit lets a day-old price settle. Measured on 2026-10-04 (a Sunday) all 32 equity feeds read 35.7 to 46.0 hours old, and over 180 rounds of history per feed, 9 of the 32 printed nothing at all during a whole 420-minute session — SPY's median in-session silence is 358 minutes. So no single age can tell a quiet market from a dead feed.
+
+- **`PriceValidator` gained a trading session per market.** `setTradingSession(marketId, openSecond, closeSecond, daysMask, preOpenGrace)` stores the underlying's hours in UTC with a weekday mask, and `setSessionHoliday(marketId, day, closed)` shuts one weekday for a market holiday. Both mappings are appended, so no deployed slot moves (`check-storage-layout.py` passes).
+- **Three states instead of two.** `priceState(timestamp, marketId)` returns `Fresh`, `Stale` or `Closed`, and `validateFreshness` reverts `StaleOraclePrice` in session and the new `MarketSessionClosed` outside it. Outside its session a market reads *closed* — a normal state the frontend renders as the last price plus a disabled ticket — instead of looking like a broken oracle.
+- **The session floor is what protects settlement.** A price must be stamped at or after this session's open, less `preOpenGrace` (90 minutes at launch, from the measured first-print lag). An earlier session's close can never settle, whatever the age limit is, so the age limit no longer has to be tight enough to do that job.
+- **A market with no session configured is always in session**, which keeps the old behaviour for a crypto, FX or stablecoin feed.
+- **The window is UTC and US DST moves it.** Re-run `SetLaunchCaps.s.sol` on each boundary; the first is 2026-11-01, when the session becomes 14:30 to 21:30 UTC.
+- **`deployments/<network>.limits.json` is new**, and holds the launch caps and staleness limits as data: the per-wallet position cap, the per-market open-interest and net open-interest caps, the vault pool reserve, the session and the staleness seconds. `script/SetLaunchCaps.s.sol` applies the whole file to every listed market, preserving each market's leverage and margin. Without an audit these caps are the primary loss bound, so they are sized against the settlement-token balance that actually exists.
+- **`FundPool.s.sol` takes `AMOUNT_RAW` and `SetNetOpenInterest.s.sol` takes `VALUE_RAW`**, both in base units. The mainnet launch pool is a fraction of one USDG, which the whole-token arguments could not express.
+- **`script/UpgradePriceValidator.s.sol` is new.** The deployed mainnet implementation predates this change, so `setTradingSession` reverts until the proxy is upgraded; `UpgradeAll.s.sol` would have replaced all 20 implementations to fix one, which on a live network ships every other contract's current working tree as well.
+- Tests: 7 cases in `test/oracle/OracleSafeguards.t.sol` covering the in-session limit, the measured weekend reading closed, inclusive window bounds, a holiday, the no-session default, an earlier session's price being refused, and a quiet session carried by one pre-open print.
+
 ### Deployed to testnet — vault solvency, fast pauser, premium bounds, batched settlement (2026-09-24)
 
 `UpgradeAll.s.sol` upgraded all 20 proxies to the code merged in PRs #8 and #9. **The proxy addresses did not change**; the 20 new implementation addresses are in `deployments/robinhood_testnet.implementations.json`.
