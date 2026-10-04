@@ -43,6 +43,10 @@ you were given, not `main`.
   limit was reached. `apps/web` stays on Vercel.
 - **The testnet Postgres does not exist yet, by design.** It is created for the Phase 15 walkthrough and
   deleted after the recording, to protect the $5-6 budget. Do not assume it is up.
+- **The Railway account is on a free or trial plan**, so capacity is a constraint, not a detail: Free
+  gives $1 of included usage per month and Trial a one-time $5, both with a **0.5 GB volume cap**.
+  Size `PRICE_TICK_RETENTION_DAYS` against that cap and set the smallest RAM each service needs. Never
+  upgrade a plan, add a payment method or buy credit — report the number and stop.
 
 ## Never
 

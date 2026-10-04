@@ -26,6 +26,11 @@ response, not with the Railway dashboard.
 Only the `mainnet` environment exists. The `testnet` Postgres is created in Phase 15 and deleted after
 the recording, so do not configure it here.
 
+The account is on a **free or trial** Railway plan: $1 of included usage per month on Free, a one-time
+$5 on Trial, and a **0.5 GB volume cap** on both. Four always-on containers cost more than $1 a month,
+so treat capacity as a real constraint — size `PRICE_TICK_RETENTION_DAYS` against the volume cap and
+report measured usage. Changing the plan is the operator's decision.
+
 ## Phase 10 — leaderboard and PNL card (wave 2, parallel with P7 and P9)
 
 Yours: steps 1–4. Both features derive read-only from the indexer's append-only `events` table, so
