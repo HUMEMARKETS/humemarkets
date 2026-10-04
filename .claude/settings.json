@@ -1,6 +1,8 @@
 {
     "permissions": {
         "allow": [
+            "mcp__railway__create-tcp-proxy",
+            "mcp__railway__delete-tcp-proxy",
             "mcp__railway__connect-service-source",
             "Bash(railway up:*)",
             "mcp__railway__update-service",
