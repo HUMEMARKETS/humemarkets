@@ -1,11 +1,10 @@
-import { PageHeader } from "@/components/PageHeader";
+import { AppPage } from "@/components/AppPage";
 import { PortfolioView } from "@/components/PortfolioView";
 
-export default function PortfolioPage() {
+export default function Page() {
   return (
-    <div className="mx-auto w-full max-w-[1400px] p-6 lg:p-10">
-      <PageHeader title="Portfolio">Your collateral, open positions and orders.</PageHeader>
+    <AppPage title="Portfolio" description="Your collateral, open positions and orders.">
       <PortfolioView />
-    </div>
+    </AppPage>
   );
 }

@@ -2,7 +2,7 @@ import { chains } from '@hume/config';
 import Link from 'next/link';
 import { ContractAddressBadge } from './ContractAddressBadge';
 import { env } from '@/lib/env';
-import { PAGE_FRAME } from '@/lib/frame';
+import { APP_GUTTER } from '@/lib/frame';
 import { X_URL } from '@/lib/social';
 import { listLink } from '@hume/ui';
 import { Logo } from './Logo';
@@ -19,7 +19,7 @@ export function Footer() {
     return (
         <footer className="border-t border-line bg-surface">
             <div
-                className={`${PAGE_FRAME} flex flex-wrap items-center justify-center gap-x-6 gap-y-3 py-6 sm:justify-between`}
+                className={`w-full ${APP_GUTTER} flex flex-wrap items-center justify-center gap-x-6 gap-y-3 py-6 sm:justify-between`}
             >
                 <div className="flex flex-wrap items-center gap-3">
                     <Logo />

@@ -41,7 +41,7 @@ Zupiter runs on the same chain, which makes it an unusually fair reference.
 | Step-wise flow with `Back` / `Continue`, then a review before authorising                                                                           | **Adopt as the default, not the only, flow**                        | A review turns a signature from a gamble into a decision. A perp trader still needs the dense panel, so Pro stays. Phase 8  |
 | Itemised breakdown before confirm: minimum received, price impact, venue fee                                                                        | **Adopt, translated**                                               | The derivatives equivalents: liquidation price, margin required, funding, fees, max loss. Phase 8                           |
 | Recovery-before-deposit ordering                                                                                                                    | **Adopt the ordering idea**                                         | Hume's version: deposit and caps explained before the first approval                                                        |
-| Dark, high-contrast, **no vivid accent**                                                                                                            | **Adopt — and the new palette fits it better than the old one did** | Charcoal and ivory are higher contrast than the outgoing teal, and sage is a quiet accent rather than a loud one. Section 4 |
+| Dark, high-contrast, **one vivid accent** (amended 2026-10-06: was "no vivid accent")                                                              | **Adopt — one signal-green accent on a green-black ground**         | Charcoal and ivory are higher contrast than the outgoing teal, and the signal-green accent is the only saturated colour on the page. Section 4 |
 | Large display type, numbered `01`–`04` sections                                                                                                     | Landing page only, Phase 18                                         | Marketing surface, not a drop-off                                                                                           |
 | Heavy motion: "DRAG OR MOVE TO EXPLORE PERSPECTIVE"                                                                                                 | **Reject for the app**                                              | A trading terminal must be fast and still                                                                                   |
 | Chain switcher with isolated sample balances per environment                                                                                        | **Adopt**                                                           | Both chains are already in `packages/config`. Phase 7                                                                       |
@@ -61,126 +61,108 @@ Written in `DEVELOPMENT_PHASES.md` Phase 3, enforced by every later phase. Rules
 6. **Guided is the default, Pro is a toggle,** remembered per device. Guided never hides what Pro shows;
    it sequences it.
 7. **Works at 375 px** with a 16 px gutter and no horizontal page scroll.
+9. **Layout (amended 2026-10-06).** The shell is `h-dvh` with one scroll region. Every page that is not a
+   terminal uses `AppPage`: full width (capped at 1920 px), the shared `APP_GUTTER` (16 / 24 / 40 px) that
+   the header also uses, a body that grows to fill the space under the title, and a footer pinned to the
+   bottom. Terminals (`/perpetuals`, `/options`) fill the scroll region at `lg` and above. Panels stretch
+   to the bottom of the screen. An empty, loading, error or not-connected state fills its panel with one
+   sentence and one next step (`PanelState`), never a one-line strip at the top of a blank box. A width
+   cap applies to prose only, inside a full-width page.
 8. **Keyboard reachable, focus always visible.** Do not regress the computed contrast.
 
 ## 4. Palette
 
-Decided 2026-10-03. These four brand colours **replace** the outgoing dark-teal set in `globals.css`.
-Re-tokenizing is a Phase 3 task.
+Decided 2026-10-03 (charcoal, ivory, sage, stone). **Amended 2026-10-06:** the sage accent is replaced by a
+signal green, and the dark elevation steps gain a faint green cast. Reason: the sage page read as grey
+line art with one muted accent. Ivory text, the stone secondary and the clay `down` are unchanged.
+Token names are unchanged, so no component is renamed. The full measured table is
+`docs/evidence/landing-rework/palette.md`.
 
-| Name         | Hex       | Role                                                        |
-| ------------ | --------- | ----------------------------------------------------------- |
-| **Charcoal** | `#0B0B0B` | Ground. The page behind everything                          |
-| **Ivory**    | `#F3F1EA` | Primary text, and the ground of the light surfaces          |
-| **Sage**     | `#6B7F6B` | The one accent. Action, selection, focus, the price line    |
-| **Stone**    | `#C9C3B8` | Secondary text, labels, borders, the quiet half of the page |
+| Name             | Hex       | Role                                                                   |
+| ---------------- | --------- | ---------------------------------------------------------------------- |
+| **Charcoal**     | `#0A0D0B` | Ground. A green-black, so the page has a temperature                   |
+| **Ivory**        | `#F3F1EA` | Primary text, and the ground of the light surfaces                     |
+| **Signal green** | `#22E06B` | The one accent. Action, selection, focus, the price line, the lit scene |
+| **Stone**        | `#C9C3B8` | Secondary text, labels, borders, the quiet half of the page            |
 
 #### Measured contrast, not assumed
 
 Computed from the sRGB relative-luminance formula:
 
-| Pair              | Ratio       | Verdict                                      |
-| ----------------- | ----------- | -------------------------------------------- |
-| Ivory on Charcoal | **17.42:1** | Body text. Excellent                         |
-| Stone on Charcoal | **11.23:1** | Secondary text, labels. Excellent            |
-| Sage on Charcoal  | **4.57:1**  | Passes 4.5:1 for normal text, with no margin |
-| Charcoal on Stone | **11.23:1** | Light surfaces, the PNL card                 |
-| Charcoal on Ivory | **17.42:1** | Light surfaces                               |
-| **Ivory on Sage** | **3.81:1**  | **FAILS 4.5:1**                              |
-| Charcoal on Sage  | **4.57:1**  | Passes                                       |
+| Pair                       | Ratio       | Verdict                                         |
+| -------------------------- | ----------- | ----------------------------------------------- |
+| Ivory on Charcoal          | **17.28:1** | Body text. Excellent                            |
+| Signal green on Charcoal   | **11.11:1** | Text and icons. Excellent, on every elevation   |
+| Charcoal on Signal green   | **11.11:1** | The ink on every accent fill                    |
+| **Ivory on Signal green**  | **1.56:1**  | **FAILS.** Never put ivory on the accent        |
+| **Signal green on Ivory**  | **1.56:1**  | **FAILS.** The PNL card uses `card-accent`      |
+| Charcoal on Ivory          | **17.28:1** | Light surfaces                                  |
 
-Re-measured 2026-10-04 against the values now in `globals.css`. The four brand numbers above are
-unchanged; the derived tokens moved, and Section 4.1 records what moved and why.
+**Three findings that are rules, not preferences:**
 
-**Two findings that are rules, not preferences:**
+**1. Every accent-filled control takes charcoal ink, never ivory.** `--color-accent-ink: #0A0D0B`.
 
-**1. The primary button takes charcoal ink, never ivory.** Ivory text on a sage fill is 3.81:1 and fails
-WCAG AA. Charcoal on sage is 4.57:1 and passes. Every sage-filled control uses `--color-accent-ink:
-#0B0B0B`.
+**2. Direction never shares the accent's job.** The accent means "you can act here" and nothing else. `up`
+is a pale mint (lighter and less saturated than the accent) and `down` is clay. Colour alone does not
+carry direction: a price, PNL or change always shows a `+` / `-` sign or a ▲ / ▼ as well, so the pale mint
+is never the only signal.
 
-**2. The palette contains no red, so price direction needs two derived colours.** A derivatives terminal
-cannot work without up and down, and sage cannot be both "the accent" and "up" — one hue carrying two
-meanings is how a user misreads a position. Sage therefore stays the accent only, and direction gets its
-own pair, drawn from the palette's warm neutral family rather than a generic exchange red:
-
-| Token  | Hex       | On Charcoal | Why                                                                      |
-| ------ | --------- | ----------- | ------------------------------------------------------------------------ |
-| `up`   | `#93BC92` | 9.23:1      | A lifted, lighter sage. Separated from the accent by brightness, not hue |
-| `down` | `#C4705F` | 5.46:1      | Clay. Warm, sits with ivory and stone, never reads as a Binance red      |
+**3. The PNL card is the one light surface.** The bright accent is 1.56:1 on ivory, so the card draws its
+frame and bar in `card-accent` (`#0F8F3E`, 3.70:1, enough for a frame or a bar, never for text).
 
 #### Derived tokens
 
 Four colours cannot build a dense terminal. These are derived, and nothing beyond this list is allowed:
 
-| Token          | Hex                       | On ground | On surface | On raised | Role                                   |
-| -------------- | ------------------------- | --------- | ---------- | --------- | -------------------------------------- |
-| `ground`       | `#0B0B0B` (Charcoal)      | —         | —          | —         | Page                                   |
-| `surface`      | `#141414`                 | 1.07:1    | —          | —         | Panels                                 |
-| `raised`       | `#1E1E1D`                 | 1.18:1    | —          | —         | Inputs, hovered rows, menus            |
-| `line`         | `#2E2E2C`                 | 1.45:1    | —          | —         | Hairlines, table rules                 |
-| `text`         | `#F3F1EA` (Ivory)         | 17.42:1   | 16.30:1    | 14.76:1   | Body                                   |
-| `muted`        | `#A8A29A` (Stone, dimmed) | 7.78:1    | 7.28:1     | 6.59:1    | Labels, column heads                   |
-| `faint`        | `#8C8780`                 | 5.52:1    | 5.17:1     | 4.68:1    | Timestamps, hints. Still above 4.5:1   |
-| `accent`       | `#6B7F6B` (Sage)          | 4.57:1    | 4.28:1     | **3.87:1** | Action, selection, focus, price line  |
-| `accent-ink`   | `#0B0B0B`                 | —         | —          | —         | Text **on** a sage fill. See finding 1 |
-| `accent-hover` | `#7D917D`                 | 5.83:1    | 5.46:1     | 4.94:1    | Hover, and accent-coloured text on a lifted surface |
-| `accent-soft`  | `#1C221C`                 | 1.21:1    | —          | —         | The hover fill behind an accent control |
-| `accent-press` | `#748874`                 | 5.17:1    | 4.84:1     | 4.38:1    | Active                                 |
-| `up`           | `#93BC92`                 | 9.23:1    | 8.64:1     | 7.82:1    | Direction only, never decoration       |
-| `down`         | `#C4705F`                 | 5.46:1    | 5.11:1     | 4.63:1    | Direction only, never decoration       |
-| `up-hover` / `up-press`     | `#A6C9A5` / `#7FA87E` | 10.80 / 7.32 | — | — | The up control's states              |
-| `down-hover` / `down-press` | `#D08575` / `#B46554` | 6.84 / 4.62  | — | — | The down control's states            |
+| Token          | Hex                        | On ground | On surface | On raised | Role                                              |
+| -------------- | -------------------------- | --------- | ---------- | --------- | ------------------------------------------------- |
+| `ground`       | `#0A0D0B` (Charcoal)       | —         | —          | —         | Page                                              |
+| `surface`      | `#101512`                  | 1.06:1    | —          | —         | Panels                                            |
+| `raised`       | `#171D19`                  | 1.14:1    | —          | —         | Inputs, hovered rows, menus                       |
+| `line`         | `#26302A`                  | 1.43:1    | —          | —         | Hairlines, table rules                            |
+| `text`         | `#F3F1EA` (Ivory)          | 17.28:1   | 16.33:1    | 15.15:1   | Body                                              |
+| `muted`        | `#A8A29A` (Stone, dimmed)  | 7.72:1    | 7.29:1     | 6.77:1    | Labels, column heads                              |
+| `faint`        | `#8C8780`                  | 5.48:1    | 5.18:1     | 4.81:1    | Timestamps, hints. Still above 4.5:1              |
+| `accent`       | `#22E06B` (Signal green)   | 11.11:1   | 10.49:1    | 9.74:1    | Action, selection, focus, price line              |
+| `accent-ink`   | `#0A0D0B`                  | —         | —          | —         | Text **on** an accent fill. See finding 1         |
+| `accent-hover` | `#4AEA88`                  | 12.48:1   | 11.79:1    | 10.94:1   | Hover                                             |
+| `accent-soft`  | `#0F2418`                  | 1.20:1    | —          | —         | The hover fill behind an accent control           |
+| `accent-press` | `#1FC95F`                  | 8.91:1    | 8.42:1     | 7.81:1    | Active. Darker than the accent; ink stays 8.91:1  |
+| `accent-line`  | the accent at 0.4 alpha    | —         | —          | —         | Focus ring, hover ring                            |
+| `card-accent`  | `#0F8F3E`                  | —         | —          | —         | PNL card frame and bar on ivory (3.70:1)          |
+| `up`           | `#B9E8C9` (pale mint)      | 14.37:1   | 13.58:1    | 12.60:1   | Direction only, never decoration                  |
+| `down`         | `#C4705F` (clay)           | 5.42:1    | 5.12:1     | 4.75:1    | Direction only, never decoration                  |
+| `up-hover` / `up-press`     | `#CBEFD8` / `#A6D9B9` | 15.70 / 12.32 | — | — | The up control's states                   |
+| `down-hover` / `down-press` | `#D08575` / `#B46554` | 6.78 / 4.58   | — | — | The down control's states                 |
 | `up-soft` / `down-soft`     | the up/down colour at 0.12 alpha | — | — | — | The hover fill behind an up/down control |
 | `up-line` / `down-line`     | the up/down colour at 0.35 alpha | — | — | — | Focus ring, the direction twin of `accent-line` |
 
-### 4.1 What Phase 3 measured, and the three values it changed
+Shadows: `shadow-accent-glow` (`0 0 24px` accent at 0.35 alpha) marks the primary button on hover, the
+active tab and the lit 3D scene. It is a halo of the accent itself, not a new hue.
 
-The table above is computed from the sRGB relative-luminance formula against the values now in
-`apps/web/src/app/globals.css`. Running it on the originally proposed derived set found three places
-where a value failed WCAG AA **in its own documented use**. Each is changed here, with the measurement:
+### 4.1 Ink and text on fills, measured
 
-| Token         | Was       | Now       | Why                                                                                                                                                                  |
-| ------------- | --------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `accent-press` | `#5A6C5A` | `#748874` | The primary button fills with it on `:active` and keeps charcoal ink. Charcoal on `#5A6C5A` is **3.49:1** and fails; on `#748874` it is **5.17:1**. A press therefore *lifts* slightly instead of darkening, and still reads as a press because hover (`#7D917D`, 5.83:1) lifts further. It is also used as link-press text, where `#5A6C5A` was 3.49:1 on ground |
-| `down-press`  | `#AD5F4F` | `#B46554` | The down button fills with it and keeps charcoal ink: **4.24:1** fails, **4.62:1** passes, and it is still visibly darker than `down` at 5.46:1                       |
-| `accent-soft` | `#273027` | `#1C221C` | The hover fill behind accent controls. See the rule below                                                                                                            |
+Because the accent is bright, the sage-era rule "accent text belongs on ground only" is retired: accent
+text clears 4.5:1 on `ground`, `surface`, `raised` and `accent-soft` (9.29:1).
 
-**The sage ceiling, and the rule it forces.** Sage is 4.57:1 on charcoal — it clears AA by 0.07. Any
-surface lighter than the page therefore pushes sage-coloured *text* below the line:
+| Fill           | Charcoal ink | Ivory ink | Which is used |
+| -------------- | ------------ | --------- | ------------- |
+| `accent`       | **11.11:1**  | 1.56:1    | Charcoal      |
+| `accent-hover` | **12.48:1**  | 1.39:1    | Charcoal      |
+| `accent-press` | **8.91:1**   | 1.94:1    | Charcoal      |
+| `up`           | **14.37:1**  | 1.20:1    | Charcoal      |
+| `down`         | **5.42:1**   | 3.19:1    | Charcoal      |
+| `down-press`   | **4.58:1**   | 3.77:1    | Charcoal      |
 
-| Sage text on … | Ratio      | Verdict                             |
-| -------------- | ---------- | ----------------------------------- |
-| `ground`       | 4.57:1     | Passes                              |
-| `surface`      | 4.28:1     | **Fails**                           |
-| `raised`       | 3.87:1     | **Fails**                           |
-| `accent-soft`  | 3.76:1     | **Fails**, at any usable soft value |
-
-No choice of `accent-soft` fixes this: at near-black (`#141914`) sage text still reaches only 4.13:1.
-**So the rule is: sage-coloured text belongs on `ground`. On `surface`, `raised` or `accent-soft`, use
-`accent-hover` (#7D917D), which is 5.46:1, 4.94:1 and 4.80:1 respectively.** Phase 3 swept every
-`hover:bg-accent-soft hover:text-accent` pair in `apps/web/src` and `packages/ui/src` to
-`hover:text-accent-hover` for exactly this reason — 10 files.
-
-**The same arithmetic applies to direction.** `down` on a `down-soft` fill was 3.56:1 at the 0.2 alpha
-the outgoing palette used. The soft fills are now 0.12, and an up/down control's hover ink is its
-`*-hover` shade: `down-hover` on `down-soft` is **4.98:1**, `up` on `up-soft` is 6.23:1.
-
-**Ink on every fill, measured:**
-
-| Fill           | Charcoal ink | Ivory ink | Which is used                     |
-| -------------- | ------------ | --------- | --------------------------------- |
-| `accent`       | **4.57:1**   | 3.81:1    | Charcoal — finding 1              |
-| `accent-hover` | **5.83:1**   | 2.99:1    | Charcoal                          |
-| `accent-press` | **5.17:1**   | 3.37:1    | Charcoal                          |
-| `up`           | **9.23:1**   | 1.89:1    | Charcoal                          |
-| `down`         | **5.46:1**   | 3.19:1    | Charcoal                          |
+Soft fills: `up` on `up-soft` 11.26:1, `up-hover` on `up-soft` 12.31:1, `down` on `down-soft` 4.81:1,
+`down-hover` on `down-soft` 6.02:1.
 
 A later change to any value re-runs this arithmetic rather than assuming it still holds.
 
 #### One deliberate use of light
 
-The app is dark: ivory on charcoal. The **PNL card is the exception** — it renders charcoal and sage on
-ivory. A shareable card is seen outside the app, usually in a light feed, and the inversion makes it
+The app is dark: ivory on charcoal. The **PNL card is the exception** — it renders charcoal and deep green
+on ivory. A shareable card is seen outside the app, usually in a light feed, and the inversion makes it
 unmistakably Hume's rather than one more dark screenshot. It is the only light surface at launch.
 
 ## 5. How Zupiter's style reaches each Hume surface
@@ -189,16 +171,16 @@ Section 2 decides what to borrow. This is where each borrowing lands.
 
 | Hume surface                           | What changes                                                                                                                                                                                                                   | Phase |
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----- |
-| Landing `/`                            | Zupiter's progressive reveal: large display type, numbered `01`–`04` sections, one idea per section, motion allowed within the 200 ms budget. The existing `HeroSilkBackground` is retained but re-tinted to charcoal and sage | 18    |
+| Landing `/`                            | Zupiter's progressive reveal: large display type, numbered `01`–`04` sections, one idea per section, motion allowed within the 200 ms budget. The existing `HeroSilkBackground` is retained but re-tinted to charcoal and signal green | 18    |
 | Header / `AppShell`                    | Zupiter's network selector becomes a three-way environment switcher: Mainnet, Testnet, Sample — each with isolated balances. Plus the `SAMPLE DATA` chip and the unaudited notice                                              | 6, 7  |
 | First visit, any page                  | No connect wall. The app opens in Sample. Zupiter's "no extension opens, no signatures are requested and no funds move" is the literal behaviour, not a claim                                                                  | 7     |
 | Connect flow                           | Zupiter's considered-connection screen: what a wallet does here, sample balances do not carry over, the caps, the unaudited notice. Shown once, at the moment the user chooses to connect                                      | 7     |
 | Perp ticket, option ticket, `/lending` | Zupiter's `Back` / `Continue` / review sequence replaces submit-straight-to-signature. Guided by default, Pro toggle restores today's dense `OrderPanel`                                                                       | 8     |
 | The review screen                      | Zupiter's itemised fee table, translated to derivatives: margin required, **liquidation price**, funding, fees, venue cut, the binding cap, and the worst case in one sentence                                                 | 8     |
 | Deposit path                           | Zupiter's recovery-before-deposit ordering becomes caps-and-risk-before-first-approval                                                                                                                                         | 8     |
-| Tables and charts                      | **Zupiter's motion is rejected here.** Dense data stays still. Direction uses `up` / `down` only; sage marks the price line and the selected row                                                                               | 3     |
+| Tables and charts                      | **Zupiter's motion is rejected here.** Dense data stays still. Direction uses `up` / `down` only; the accent marks the price line and the selected row                                                                               | 3     |
 | Every failure                          | Zupiter's transparency applied to errors: a plain sentence and a next action, never a raw revert                                                                                                                               | 12    |
-| PNL card                               | Inverted to ivory, per Section 4. Charcoal figure, sage frame, one number that dominates                                                                                                                                       | 10    |
+| PNL card                               | Inverted to ivory, per Section 4. Charcoal figure, deep-green frame, one number that dominates                                                                                                                                       | 10    |
 
 **What Hume does not take.** Zupiter is a swap venue; Hume is a derivatives terminal. Zupiter can afford
 a scroll-driven, motion-led surface because a swap is one decision. A trader watching funding on five

@@ -4,21 +4,20 @@
 /* Type: Geist, a light-leaning grotesk. Large text is set light with tight tracking; small text stays
    regular and muted. Panels are softly rounded fills separated by gaps rather than hard seams.
 
-   Hume terminal tokens, from docs/UI_CONTRACT.md Section 4: charcoal ground, ivory text, one sage
-   accent for what you can act on (primary button, selected item, focus, the price line), and stone for
-   the quiet half of the page. The palette has no red, so direction gets its own derived pair — a
-   lifted sage for up and a clay for down — separated from the accent by brightness, never standing in
-   for it. Direction is direction: `up` and `down` never decorate.
+   Hume terminal tokens, from docs/UI_CONTRACT.md Section 4: a green-black charcoal ground, ivory text,
+   one signal-green accent for what you can act on (primary button, selected item, focus, the price
+   line, the lit 3D scene), and stone for the quiet half of the page. Direction gets its own derived
+   pair — a pale mint for up and a clay for down — separated from the accent by brightness and
+   saturation, and always carried by a sign or an arrow as well as by colour. Direction is direction:
+   `up` and `down` never decorate.
 
-   Every value is measured, not assumed; docs/UI_CONTRACT.md Section 4 carries the full table and
-   re-runs it whenever one changes. Three measurements shape the tokens below:
-     1. Charcoal ink on a sage fill is 4.57:1 and passes AA; ivory on sage is 3.81:1 and fails. So
-        `--color-accent-ink` is charcoal, and nothing ever puts ivory on sage.
-     2. Sage is 4.57:1 on ground and only 3.87:1 on `raised`, so sage-coloured TEXT belongs on ground
-        and surface. On `raised` or on `accent-soft`, use `--color-accent-hover` (4.94:1 and 4.80:1).
-     3. `accent-press` is LIGHTER than the accent, not darker. A darker press (#5a6c5a) puts charcoal
-        ink at 3.49:1 and fails; #748874 keeps it at 5.17:1 and still reads as a press because hover
-        lifts further. The same reasoning sets `down-press`. */
+   Every value is measured, not assumed; docs/evidence/landing-rework/palette.md carries the full
+   table and re-runs it whenever one changes. Three measurements shape the tokens below:
+     1. Charcoal ink on a signal-green fill is 11.11:1 and ivory on it is 1.56:1, so
+        `--color-accent-ink` is charcoal, and nothing ever puts ivory on the accent.
+     2. The accent is 9.74:1 even on `raised`, so accent-coloured TEXT is safe on every elevation step.
+     3. The PNL card is the one light surface (ivory). The bright accent is 1.56:1 on ivory and cannot
+        draw a frame or a bar there, so the card uses `--color-card-accent`, a deep green at 3.70:1. */
 @theme {
   /* Near-flat radius for cards that carry data (the hero's market ring, ticker-style surfaces) —
      matches the reference hero's own card radius and replaces the one-off rounded-[2px] the audit
@@ -38,42 +37,48 @@
      not a palette colour, so it lives here with the other shadow tokens rather than as a literal in a
      component — rule 1 admits no literal anywhere else. */
   --shadow-lift: 0 20px 45px -20px rgb(0 0 0 / 0.7);
-  --shadow-up-glow: 0 0 20px rgb(147 188 146 / 0.25);
+  --shadow-up-glow: 0 0 20px rgb(185 232 201 / 0.25);
+  /* The signal-green halo on a primary button, the active tab and the lit 3D scene. */
+  --shadow-accent-glow: 0 0 24px rgb(34 224 107 / 0.35);
   --shadow-down-glow: 0 0 20px rgb(196 112 95 / 0.25);
-  /* Elevation. Four steps from the page to a hairline, each a neutral charcoal with no hue, so the
-     sage accent is the only colour on a dense screen. */
-  --color-ground: #0b0b0b;
-  --color-surface: #141414;
-  --color-raised: #1e1e1d;
-  --color-line: #2e2e2c;
-  /* Text. Ivory 17.42:1, stone-dimmed 7.78:1, faint 5.52:1 on ground — all above 4.5:1 on ground,
-     surface and raised. */
+  /* Elevation. Four steps from the page to a hairline, each a charcoal with a faint green cast, so
+     the page has a temperature and the signal-green accent is the only saturated colour on it. */
+  --color-ground: #0a0d0b;
+  --color-surface: #101512;
+  --color-raised: #171d19;
+  --color-line: #26302a;
+  /* Text. Ivory 17.28:1, stone-dimmed 7.72:1, faint 5.48:1 on ground — all above 4.5:1 on ground,
+     surface and raised (faint is 4.81:1 on raised). */
   --color-text: #f3f1ea;
   --color-muted: #a8a29a;
   --color-faint: #8c8780;
-  /* Direction, never decoration. A lifted sage (9.23:1) and a clay (5.46:1): told apart by
-     brightness, so they survive the common red-green colour blindness that a Binance red/green does
-     not. Charcoal is the ink on both when they are used as a fill. */
-  --color-up: #93bc92;
+  /* Direction, never decoration. A pale mint (14.37:1) and a clay (5.42:1): told apart by brightness,
+     so they survive the common red-green colour blindness that a Binance red/green does not, and
+     the mint is paler and less saturated than the accent so a price is never mistaken for a button.
+     Charcoal is the ink on both when they are used as a fill. */
+  --color-up: #b9e8c9;
   --color-down: #c4705f;
   /* The soft fills sit at 0.12, not 0.2: at 0.2 the hover fill lifts the background enough that
      `down` text on it drops to 3.56:1. At 0.12 the matching *-hover ink clears 4.5:1. */
-  --color-up-soft: rgb(147 188 146 / 0.12);
+  --color-up-soft: rgb(185 232 201 / 0.12);
   --color-down-soft: rgb(196 112 95 / 0.12);
-  /* The one accent. Sage marks what you can act on and nothing else. */
-  --color-accent: #6b7f6b;
-  --color-accent-hover: #7d917d;
-  --color-accent-ink: #0b0b0b;
-  --color-accent-soft: #1c221c;
-  --color-accent-line: rgb(107 127 107 / 0.4);
-  --color-accent-press: #748874;
-  --color-up-hover: #a6c9a5;
-  --color-up-press: #7fa87e;
+  /* The one accent. Signal green marks what you can act on and nothing else. Hover lifts the fill,
+     press darkens it; charcoal ink stays above 8.9:1 on all three. */
+  --color-accent: #22e06b;
+  --color-accent-hover: #4aea88;
+  --color-accent-ink: #0a0d0b;
+  --color-accent-soft: #0f2418;
+  --color-accent-line: rgb(34 224 107 / 0.4);
+  --color-accent-press: #1fc95f;
+  /* The accent on the PNL card's ivory ground, where the bright green would be 1.56:1. */
+  --color-card-accent: #0f8f3e;
+  --color-up-hover: #cbefd8;
+  --color-up-press: #a6d9b9;
   --color-down-hover: #d08575;
   --color-down-press: #b46554;
   /* Focus rings on the up/down buttons, the direction equivalent of `--color-accent-line`. They
      replace two raw rgb literals that were still carrying the outgoing green and red. */
-  --color-up-line: rgb(147 188 146 / 0.35);
+  --color-up-line: rgb(185 232 201 / 0.35);
   --color-down-line: rgb(196 112 95 / 0.35);
   --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
   /* Display face for the hero, section titles and big figures. Was Newsreader (a literary serif);

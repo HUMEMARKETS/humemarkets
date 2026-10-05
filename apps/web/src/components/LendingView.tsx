@@ -21,7 +21,7 @@ const bandTone: Record<HealthBand, "neutral" | "up" | "down" | "muted"> = { none
 
 function Notice({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 p-4">
+    <div className="flex flex-1 flex-wrap items-center justify-between gap-3 p-4">
       <p className="max-w-prose text-muted">{children}</p>
       {action}
     </div>
@@ -91,7 +91,7 @@ function HealthCalculator({ maxLtv, liquidationLtv, price, priceFromPair, exampl
   const shareLtv = BigInt(share) * 100n;
 
   return (
-    <Panel title="How a health factor works" sample={useAccountMode() === "sample"}>
+    <Panel className="lg:col-start-2 lg:row-span-2 lg:row-start-1" title="How a health factor works" sample={useAccountMode() === "sample"}>
       <div className="flex flex-col gap-4 p-4">
         <p className="max-w-prose text-sm leading-snug text-muted">
           Lending here means you lock {symbol} as collateral and borrow USDG against it. How much you may borrow, and how close you are to losing the
@@ -152,7 +152,7 @@ export function LendingView() {
   const hf = p ? p.healthFactorBps : undefined;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="grid flex-1 content-start gap-4 lg:grid-cols-2 lg:grid-rows-[auto_1fr]">
       <Panel title={`${symbol} / USDG pair`} actions={status ? <span className={cn("rounded-sm border px-1 text-xs", status === "NORMAL" ? "border-line text-muted" : "border-down text-down")}>{status === "NORMAL" ? "Open" : status === "REDUCE_ONLY" ? "Reduce only" : "Paused"}</span> : undefined}>
         {!online && !m ? (
           <Notice>You are offline, so the pair cannot be read. It will refresh by itself when you reconnect.</Notice>
@@ -180,7 +180,7 @@ export function LendingView() {
         )}
       </Panel>
 
-      <Panel title="Your position" sample={mode === "sample"}>
+      <Panel title="Your position" sample={mode === "sample"} className="flex-1">
         {mode === "sample" ? (
           <Notice>Sample mode has no lending account, so there is no sample position to show. Use the calculator below to see how a loan behaves, then connect a wallet for a real one.</Notice>
         ) : mode === "disconnected" ? (

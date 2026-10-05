@@ -12,6 +12,7 @@ import { fmt, fmtBps, fmtPrice } from "@/lib/format";
 import { symbolOf } from "@/lib/market";
 import { useTerminal } from "@/stores/terminal";
 import { Change } from "./Change";
+import { PanelState } from "./PanelState";
 
 type Overview = ReturnType<typeof useMarketOverviews>[number]["data"];
 
@@ -180,6 +181,7 @@ export function MarketsTable() {
 
   return (
     <Panel
+      className="flex-1"
       title="All markets"
       actions={
         symbols.length >= FILTER_FROM ? (
@@ -194,15 +196,15 @@ export function MarketsTable() {
         ) : null
       }
     >
-      <div className="overflow-x-auto">
+      <div className="flex flex-1 flex-col overflow-x-auto">
         {isPending ? (
-          <p className="p-3 text-muted">Loading markets…</p>
+          <PanelState>Loading markets…</PanelState>
         ) : error ? (
-          <p className="p-3 text-down">Could not read markets from the chain. Check NEXT_PUBLIC_RPC_URL.</p>
+          <PanelState>Could not read markets from the chain. Check NEXT_PUBLIC_RPC_URL.</PanelState>
         ) : markets.length === 0 ? (
-          <p className="p-3 text-muted">No markets are listed on the registry yet.</p>
+          <PanelState>No markets are listed on the registry yet.</PanelState>
         ) : shown.length === 0 ? (
-          <p className="p-3 text-muted">No market matches “{filter}”.</p>
+          <PanelState>No market matches “{filter}”.</PanelState>
         ) : (
           <table className="w-full text-cell md:min-w-[900px]">
             <thead>
