@@ -50,7 +50,7 @@ export default async function PnlCardImage({ params }: { params: Promise<{ walle
             <div style={{ display: "flex", background: THEME_GROUND, padding: "10px 14px", marginRight: 20 }}>
               <img src={markSrc} width={84} height={45} alt="" />
             </div>
-            <div style={{ fontSize: 30, letterSpacing: 10, fontWeight: 500 }}>HUME</div>
+            <div style={{ fontSize: 40, letterSpacing: -1, fontWeight: 700 }}>Hume</div>
           </div>
           {p.sample ? <div style={{ display: "flex", fontSize: 22, letterSpacing: 4, background: THEME_GROUND, color: THEME_TEXT, padding: "6px 14px" }}>SAMPLE DATA</div> : null}
         </div>

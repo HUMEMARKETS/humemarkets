@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAccount } from "wagmi";
 import { useDismiss } from "@/hooks/useDismiss";
-import { APP_GUTTER, CHIP_LABEL, PAGE_FRAME } from "@/lib/frame";
+import { APP_GUTTER, CHIP_LABEL, LANDING_FRAME } from "@/lib/frame";
 import { X_URL } from "@/lib/social";
 import { chip, cn, interactive, menuItem } from "@hume/ui";
 import { ArrowIcon } from "./ArrowIcon";
@@ -71,7 +71,7 @@ export function Header() {
         landing ? "absolute inset-x-0 top-0" : "relative",
       )}
     >
-      <div className={cn("flex h-20 items-center justify-between gap-3", landing ? PAGE_FRAME : APP_GUTTER)}>
+      <div className={cn("flex items-center justify-between gap-3", landing ? `h-[96px] ${LANDING_FRAME}` : `h-20 ${APP_GUTTER}`)}>
         <div className="flex h-full items-center gap-6">
           <Link href="/" aria-label="Hume home" className="flex h-full shrink-0 items-center">
             <Logo />

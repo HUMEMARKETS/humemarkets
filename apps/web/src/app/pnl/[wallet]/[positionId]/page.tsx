@@ -52,7 +52,7 @@ export default async function PnlCardPage({ params }: Props) {
         </Notice>
       ) : (
         <div className="flex flex-col gap-5">
-          <PnlCard {...cardProps(cardPartsFromApi(result.card))} mark={<Logo />} />
+          <PnlCard {...cardProps(cardPartsFromApi(result.card))} mark={<Logo size="sm" />} />
           {result.card.status === "open" && result.card.markPrice === null ? (
             <p className="text-sm leading-snug text-muted">This market has no live price right now, because it is closed or paused. The card shows what the position has booked so far.</p>
           ) : null}

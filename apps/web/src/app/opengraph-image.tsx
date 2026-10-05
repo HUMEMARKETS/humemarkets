@@ -28,7 +28,7 @@ export default async function OpengraphImage() {
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={markSrc} width={216} height={115} alt="" style={{ marginBottom: 44 }} />
-        <div style={{ fontSize: 72, letterSpacing: 18, fontWeight: 500 }}>HUME</div>
+        <div style={{ fontSize: 96, letterSpacing: -2, fontWeight: 700 }}>Hume</div>
         <div style={{ fontSize: 34, color: THEME_MUTED, marginTop: 28 }}>Derivatives for tokenized equities.</div>
       </div>
     ),

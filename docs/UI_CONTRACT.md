@@ -71,6 +71,10 @@ Written in `DEVELOPMENT_PHASES.md` Phase 3, enforced by every later phase. Rules
    to the bottom of the screen. An empty, loading, error or not-connected state fills its panel with one
    sentence and one next step (`PanelState`), never a one-line strip at the top of a blank box. A width
    cap applies to prose only, inside a full-width page.
+   The landing page is the one exception to the page gutter: it uses `LANDING_FRAME` (about 91% of the
+   viewport, a fluid gutter of 40 to 112 px from 768 px up, cap 2560 px) and a 96 px header, after
+   zupiter.tech, so the scene and the headline get the whole screen. `/docs` keeps its 1600 px reading
+   column.
 8. **Keyboard reachable, focus always visible.** Do not regress the computed contrast.
 
 ## 4. Palette

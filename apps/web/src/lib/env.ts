@@ -1,5 +1,6 @@
 import { addressesForChain, protocolTokens, resolveChainId, type ChainId, type ContractAddresses } from "@hume/config";
 import type { Address } from "@hume/types";
+import { pickProtocolToken } from "./protocolToken";
 
 /// Every value the terminal needs from the environment (PROJECT_BRIEF.md Section 4). Next only
 /// inlines `process.env.NEXT_PUBLIC_*` when written out literally, so each name appears in full
@@ -29,6 +30,7 @@ const raw = {
   buybackModule: process.env.NEXT_PUBLIC_BUYBACK_MODULE,
   protocolTokenAddress: process.env.NEXT_PUBLIC_PROTOCOL_TOKEN_ADDRESS,
   protocolTokenSymbol: process.env.NEXT_PUBLIC_PROTOCOL_TOKEN_SYMBOL,
+  protocolTokenLive: process.env.NEXT_PUBLIC_PROTOCOL_TOKEN_LIVE,
   optionStrikeStepBps: process.env.NEXT_PUBLIC_OPTION_STRIKE_STEP_BPS,
   optionStrikeRows: process.env.NEXT_PUBLIC_OPTION_STRIKE_ROWS,
   optionExpiryDays: process.env.NEXT_PUBLIC_OPTION_EXPIRY_DAYS,
@@ -90,13 +92,18 @@ function resolveAddresses(): ContractAddresses {
   return resolved;
 }
 
-/// The protocol token shown as "CA" on the landing page: the environment wins, then the chain's recorded
-/// token; a malformed address is ignored rather than shown, so the badge falls back to "Coming Soon".
+/// The protocol token shown as "CA": none until `NEXT_PUBLIC_PROTOCOL_TOKEN_LIVE=true` (the token has not
+/// launched), then the environment's address or the chain's recorded token. See `lib/protocolToken.ts`.
 function resolveProtocolToken(): { address: Address; symbol: string } | undefined {
   const recorded = protocolTokens[chainId];
-  const address = (raw.protocolTokenAddress || recorded?.address || "").trim();
-  if (!/^0x[0-9a-fA-F]{40}$/.test(address)) return undefined;
-  return { address: address as Address, symbol: raw.protocolTokenSymbol?.trim() || recorded?.symbol || "" };
+  const token = pickProtocolToken({
+    live: raw.protocolTokenLive,
+    address: raw.protocolTokenAddress,
+    recordedAddress: recorded?.address,
+    symbol: raw.protocolTokenSymbol,
+    recordedSymbol: recorded?.symbol,
+  });
+  return token ? { address: token.address as Address, symbol: token.symbol } : undefined;
 }
 
 function validAddress(value: string | undefined): Address | undefined {
