@@ -17,7 +17,7 @@ function CopyIcon({ copied }: { copied: boolean }) {
 }
 
 /// The one interactive bit of a contract card — isolated into its own client leaf so
-/// `LandingContracts` and its static list can stay a server component.
+/// the contracts panel can stay a plain list.
 export function ContractCopyButton({ address, label }: { address: `0x${string}`; label: string }) {
   const [copied, setCopied] = useState(false);
   return (
