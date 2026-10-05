@@ -53,7 +53,7 @@ export function WalletButton({ className = bubble, block = false, menuAbove = fa
 
   if (chainId !== chain.id) {
     return (
-      <Button variant="down" size="sm" className={cn(className, block && "w-full")} disabled={switching} onClick={() => switchChain({ chainId: chain.id })}>
+      <Button variant="primary" size="sm" className={cn(className, block && "w-full")} disabled={switching} onClick={() => switchChain({ chainId: chain.id })}>
         Switch to {chain.name}
       </Button>
     );

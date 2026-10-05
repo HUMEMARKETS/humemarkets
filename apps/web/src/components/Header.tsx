@@ -121,7 +121,7 @@ export function Header() {
           <div className="hidden items-center gap-3 xl:flex 2xl:gap-6">
             {landing ? null : (
               <Link href="/perpetuals" className={cn(tradeLink, "max-2xl:hidden")}>
-                Trade
+                Terminal
                 <ArrowIcon />
               </Link>
             )}

@@ -199,7 +199,7 @@ export default function FeaturesPage() {
                     href="/perpetuals"
                     className="inline-flex h-14 items-center justify-between gap-10 rounded-sharp bg-accent px-6 text-base font-medium text-accent-ink transition-[background-color,box-shadow] duration-150 hover:bg-accent-hover hover:shadow-[0_0_0_3px_var(--color-accent-line),var(--shadow-accent-glow)] active:bg-accent-press active:shadow-none"
                 >
-                    Open app
+                    Open the terminal
                     <ArrowIcon />
                 </Link>
             </section>

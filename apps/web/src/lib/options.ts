@@ -12,6 +12,13 @@ export function expiryCode(expirySeconds: bigint): string {
   return `${day}${MONTHS[date.getUTCMonth()]}${String(date.getUTCFullYear()).slice(-2)}`;
 }
 
+/// The same series in words, for a person rather than an order book: "NVDA call, strike 190, expires
+/// 25 Sep 2026". Dates are UTC, like the contract's expiry.
+export function plainSeries(symbol: string, type: "CALL" | "PUT", strike: bigint, expirySeconds: bigint): string {
+  const date = new Date(Number(expirySeconds) * 1000).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+  return `${symbol} ${type === "CALL" ? "call" : "put"}, strike ${String(Number(formatUnits(strike, 18)))}, expires ${date}`;
+}
+
 /// `UNDERLYING-EXPIRY-STRIKE-TYPE`, e.g. "NVDA-25SEP26-190-C".
 export function optionCode(marketId: Hex, expirySeconds: bigint, strike: bigint, type: OptionType): string {
   const strikeText = String(Number(formatUnits(strike, 18)));

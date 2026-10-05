@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { cn } from "./cn.js";
 
-export function Stat({ label, children, className }: { label: string; children: ReactNode; className?: string }) {
+export function Stat({ label, children, className }: { label: ReactNode; children: ReactNode; className?: string }) {
   return (
     <div className={cn("flex flex-col gap-0.5", className)}>
       <dt className="text-xs text-muted">{label}</dt>

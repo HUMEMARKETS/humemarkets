@@ -7,6 +7,7 @@ import { fmtBps, fmtCountdown, fmtPrice } from "@/lib/format";
 import { symbolOf, tradeBlocker } from "@/lib/market";
 import { useTerminal } from "@/stores/terminal";
 import { Change, useStatsFor } from "./Change";
+import { Term } from "./Term";
 
 /// The market's identity and the one number that matters most, the mark price, set large. Under
 /// 1280px the market list is not on screen, so a picker here takes its place.
@@ -65,7 +66,7 @@ export function MarketHeader() {
       </div>
       <dl className="grid grid-cols-2 gap-x-6 gap-y-2 sm:flex sm:flex-wrap sm:gap-x-8 lg:flex-1">
         <Stat label="Index price">{data ? fmtPrice(data.indexPrice) : <Skeleton className="w-14" />}</Stat>
-        <Stat label="Funding rate">{data ? fmtBps(data.funding.currentFundingRateBps) : <Skeleton className="w-14" />}</Stat>
+        <Stat label={<Term term="fundingRate">Funding rate</Term>}>{data ? fmtBps(data.funding.currentFundingRateBps) : <Skeleton className="w-14" />}</Stat>
         <Stat label="Next funding">{data && now ? fmtCountdown(data.funding.nextFundingTimestamp, now) : <Skeleton className="w-14" />}</Stat>
         <Stat label="Max leverage">{data ? `${data.risk.maxLeverage}x` : <Skeleton className="w-10" />}</Stat>
       </dl>

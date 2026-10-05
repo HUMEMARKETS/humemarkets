@@ -16,6 +16,7 @@ import { fmtLimit, fmtNet } from "@/lib/strategies";
 import { ArrowIcon } from "./ArrowIcon";
 import { LtvBar } from "./LendingView";
 import { PayoffChart } from "./StrategyBuilder";
+import { Term } from "./Term";
 
 const linkClass = "group inline-flex items-center gap-2 text-sm text-accent-hover transition-colors duration-150 hover:text-text";
 
@@ -65,7 +66,7 @@ export function PerpPreview({ className }: { className?: string }) {
           <Row label="Side">Long</Row>
           <Row label="Leverage">{`${view.leverage}x`}</Row>
           <Row label="Entry">{`$${view.entry.toFixed(2)}`}</Row>
-          <Row label="Liquidation price">{`$${liquidation.toFixed(2)}`}</Row>
+          <Row label={<Term term="liquidationPrice">Liquidation price</Term>}>{`$${liquidation.toFixed(2)}`}</Row>
           <Row label="Taker fee">{view.feeBps === undefined ? "Shown before you sign" : fmtBps(view.feeBps)}</Row>
         </dl>
         <p className="text-xs leading-snug text-muted">This is the review step. Nothing is signed until you confirm it in your wallet.</p>
@@ -116,7 +117,7 @@ export function VaultPreview({ className }: { className?: string }) {
       <div className="flex flex-1 flex-col gap-4 p-4">
         <div className="flex flex-wrap items-baseline gap-x-3">
           <Num tone={tone} className={cn("font-display text-[2rem] font-semibold leading-tight")}>{fmtHealth(hf)}</Num>
-          <span className="text-sm font-medium">{healthWords[band].label}</span>
+          <span className="text-sm font-medium"><Term term="healthFactor">{healthWords[band].label}</Term></span>
         </div>
         <p className="text-sm leading-snug text-muted">{healthWords[band].meaning}</p>
         <dl>

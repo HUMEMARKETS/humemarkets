@@ -17,7 +17,7 @@ export function PerpTradeBar() {
 
   if (paused) {
     return (
-      <Button variant="down" className="flex-1" disabled>
+      <Button variant="secondary" className="flex-1" disabled>
         Market paused
       </Button>
     );

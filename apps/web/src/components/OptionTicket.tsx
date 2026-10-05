@@ -20,6 +20,7 @@ import {
   fmtQuoteTheta,
   fmtQuoteVega,
   ivSourceLabel,
+  plainSeries,
   strikeText,
 } from "@/lib/options";
 import { humeRead } from "@/lib/hume";
@@ -27,6 +28,8 @@ import { chain } from "@/lib/wagmi";
 import { useOptionOrder, type OptionSelection } from "@/stores/optionOrder";
 import { errorMessage } from "@/stores/tx";
 import { ConnectButton } from "./ConnectButton";
+import { Disclosure } from "./Disclosure";
+import { Term } from "./Term";
 import { VaultControls } from "./VaultControls";
 
 /// A signed price is only good for a short window; refresh it well inside that.
@@ -77,7 +80,7 @@ export function OptionTicket() {
   const problem = !onRightChain || !p
     ? undefined
     : !p.authorization
-      ? "The pricing service has no signing key, so options cannot be opened. Set QUOTER_PRIVATE_KEY on services/pricing."
+      ? "Options cannot be opened right now: the pricing service is not signing prices. Nothing is wrong with your funds. Try again later."
       : p.violations[0]
         ? errorMessage(p.violations[0])
         : p.sufficientCollateral === false
@@ -86,7 +89,7 @@ export function OptionTicket() {
   const waiting = !selection
     ? "Pick a call or put from the chain."
     : !env.apiUrl
-      ? "Set NEXT_PUBLIC_API_URL to price options."
+      ? "Option prices are not available right now. Try again in a moment."
       : !valid
         ? "Enter a whole number of contracts."
         : !onRightChain
@@ -141,13 +144,16 @@ export function OptionTicket() {
   // Option prices on this screen are real, from the pricing service. Opening one is not simulated yet:
   // it needs a signed quote tied to a chain position, so a sample purchase would be a pretend one. Say so.
   const action = sample ? (
-    <Button variant="down" className="w-full" disabled>
-      Options are not in sample mode
-    </Button>
+    <>
+      <Button variant="secondary" className="w-full" disabled>
+        Options are not in sample mode
+      </Button>
+      <p className="text-xs leading-snug text-muted">Prices here are real, but buying an option needs a connected wallet. Perpetuals work in sample mode.</p>
+    </>
   ) : !isConnected ? (
     <ConnectButton className="w-full" />
   ) : chainId !== chain.id ? (
-    <Button variant="down" className="w-full" onClick={() => switchChain({ chainId: chain.id })}>
+    <Button variant="primary" className="w-full" onClick={() => switchChain({ chainId: chain.id })}>
       Switch to {chain.name}
     </Button>
   ) : (
@@ -168,7 +174,8 @@ export function OptionTicket() {
       <div className="flex flex-col gap-3 p-3">
         <div>
           <p className="text-xs text-muted">Series</p>
-          <p className="mt-1 font-medium">{selection ? codeOf(selection) : "–"}</p>
+          <p className="mt-1 font-medium">{selection ? plainSeries(selection.symbol, selection.type, selection.strike, selection.expiry) : "–"}</p>
+          {selection ? <p className="mt-0.5 text-xs text-faint">{codeOf(selection)}</p> : null}
         </div>
 
         <TextField
@@ -185,38 +192,32 @@ export function OptionTicket() {
 
         {p ? (
           <dl className="border-t border-line pt-2">
-            <Row label="Side">Buy {p.type === "CALL" ? "call" : "put"}</Row>
-            <Row label="Contracts">{p.contracts.toString()}</Row>
             <Row label="Premium">{fmtUsd(p.premium, decimals)}</Row>
             <Row label={`Fee (${fmtBps(p.feeBps)})`}>{fmtUsd(p.fee, decimals)}</Row>
             <Row label="Total from vault" className="border-t border-line font-medium">
               {fmtUsd(p.totalRequired, decimals)}
             </Row>
-            <Row label="Break-even at expiry">{fmtPrice(p.breakEven)}</Row>
-            <Row label="Max loss">{fmtUsd(p.maxLoss, decimals)}</Row>
+            <Row label={<Term term="breakEven">Break-even at expiry</Term>}>{fmtPrice(p.breakEven)}</Row>
+            <Row label={<Term term="maxLoss">Max loss</Term>}>{fmtUsd(p.maxLoss, decimals)}</Row>
             <Row label="Max profit">{p.maxProfit === null ? "Unlimited" : fmtUsd(p.maxProfit, decimals)}</Row>
           </dl>
         ) : null}
 
         {p ? (
-          <dl className="border-t border-line pt-2">
-            <Row label="Price per unit">{fmtQuotePremium(p.quote.ask)}</Row>
-            <Row label="Bid per unit">{fmtQuotePremium(p.quote.bid)}</Row>
-            <Row label={`IV (${ivSourceLabel(p.quote.ivSource)})`}>{fmtQuoteIv(p.quote.iv)}</Row>
-            <Row label="Delta">{fmtQuoteDelta(p.quote.delta)}</Row>
-            <Row label="Gamma">{fmtQuoteGamma(p.quote.gamma)}</Row>
-            <Row label="Theta per day">{fmtQuoteTheta(p.quote.theta)}</Row>
-            <Row label="Vega per vol point">{fmtQuoteVega(p.quote.vega)}</Row>
-          </dl>
+          <Disclosure id="option-ticket" label="The numbers behind the price">
+            <dl>
+              <Row label="Price per contract">{fmtQuotePremium(p.quote.ask)}</Row>
+              <Row label="Sell-back price per contract">{fmtQuotePremium(p.quote.bid)}</Row>
+              <Row label={<Term term="iv">{`IV (${ivSourceLabel(p.quote.ivSource)})`}</Term>}>{fmtQuoteIv(p.quote.iv)}</Row>
+              <Row label={<Term term="delta">Delta</Term>}>{fmtQuoteDelta(p.quote.delta)}</Row>
+              <Row label={<Term term="gamma">Gamma</Term>}>{fmtQuoteGamma(p.quote.gamma)}</Row>
+              <Row label={<Term term="theta">Theta per day</Term>}>{fmtQuoteTheta(p.quote.theta)}</Row>
+              <Row label={<Term term="vega">Vega per vol point</Term>}>{fmtQuoteVega(p.quote.vega)}</Row>
+            </dl>
+          </Disclosure>
         ) : null}
 
         {preview.error ? <p className="text-down">Could not price this order. Check the connection and try again.</p> : null}
-        {sample ? (
-          <p className="text-xs leading-snug text-muted">
-            Prices here are real. Buying an option is not simulated in sample mode, so nothing can be bought. Sample perpetuals work end to end. Connect a wallet to buy
-            options.
-          </p>
-        ) : null}
         {notice ? <p className="leading-snug text-down">{notice}</p> : null}
         {problem ? <p className="leading-snug text-down">{problem}</p> : waiting ? <p className="text-muted">{waiting}</p> : null}
         {action}

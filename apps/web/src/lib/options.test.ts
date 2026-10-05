@@ -15,6 +15,7 @@ import {
   ivSourceLabel,
   nearestStrikeIndex,
   optionCode,
+  plainSeries,
   seriesKey,
   strikeLadder,
   strikeText,
@@ -101,4 +102,12 @@ test("a Greek that rounds to zero has no minus sign", () => {
   assert.equal(fmtQuoteDelta(-0.006), "-0.01");
   assert.equal(fmtQuoteTheta(-0.01), "0.000");
   assert.equal(fmtQuoteDelta(-0.48), "-0.48");
+});
+
+test("a series reads in words: underlying, call or put, strike and a UTC expiry date", () => {
+  const WAD = 10n ** 18n;
+  // 25 Sep 2026, 08:00 UTC.
+  const expiry = BigInt(Date.UTC(2026, 8, 25, 8) / 1000);
+  assert.equal(plainSeries("NVDA", "CALL", 190n * WAD, expiry), "NVDA call, strike 190, expires Sep 25, 2026");
+  assert.equal(plainSeries("TSLA", "PUT", 250n * WAD + WAD / 2n, expiry), "TSLA put, strike 250.5, expires Sep 25, 2026");
 });
