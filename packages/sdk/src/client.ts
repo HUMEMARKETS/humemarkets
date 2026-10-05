@@ -1,6 +1,7 @@
 import { type Account, type Address, createWalletClient, publicActions, type Transport } from "viem";
 import { chains, resolveAddresses, type ChainId, type ContractAddresses } from "@hume/config";
 import { createDecimalsReader, createErc20, type Erc20Namespace } from "./erc20.js";
+import { createCredit, type CreditNamespace } from "./credit.js";
 import { createExplorer, type ExplorerNamespace } from "./explorer.js";
 import { createFees, type FeesNamespace } from "./fees.js";
 import { createSubaccounts, type SubaccountsNamespace } from "./accounts.js";
@@ -9,6 +10,7 @@ import { createStructured, type StructuredNamespace } from "./structured.js";
 import { createRfq, type RfqNamespace } from "./rfq.js";
 import { createTrading, type TradingNamespace } from "./trading.js";
 import { createInstitutional, type InstitutionalNamespace } from "./institutional.js";
+import { createLeaderboard, type LeaderboardNamespace } from "./leaderboard.js";
 import { createFunding, type FundingNamespace } from "./funding.js";
 import { createMarkets, type MarketsNamespace } from "./markets.js";
 import { createOptions, type OptionsNamespace } from "./options.js";
@@ -90,6 +92,8 @@ export class Hume {
   readonly crossMargin: CrossMarginNamespace;
   readonly rfq: RfqNamespace;
   readonly structured: StructuredNamespace;
+  readonly leaderboard: LeaderboardNamespace;
+  readonly credit: CreditNamespace;
 
   constructor(config: HumeConfig) {
     this.chainId = config.chainId;
@@ -131,6 +135,8 @@ export class Hume {
       oracle: this.oracle,
       apiUrl: config.apiUrl,
     });
+    this.leaderboard = createLeaderboard(config.apiUrl);
+    this.credit = createCredit(client);
     this.explorer = createExplorer(config.explorerUrl);
     this.stream = createStream(config.apiUrl, config.webSocket);
     this.institutional = createInstitutional(config.apiUrl);

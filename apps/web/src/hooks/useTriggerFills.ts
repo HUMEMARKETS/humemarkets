@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useAccount } from "wagmi";
+import { useAccountMode } from "@/hooks/useAccountMode";
 import { env } from "@/lib/env";
 import { FillIndex, parseCursor } from "@/lib/fills";
 import { readHistoryAfter } from "@/lib/history";
@@ -33,10 +34,12 @@ function writeCursor(key: string, value: number): void {
 /// catch-up. With no saved cursor (first visit, or new browser) nothing is replayed: old fills are not news.
 export function useTriggerFills(): void {
   const { address } = useAccount();
+  const mode = useAccountMode();
   const push = useFillStore((state) => state.push);
 
   useEffect(() => {
-    if (!address || !env.apiUrl) return;
+    // A connected wallet's history is not the sample's: while the sample is on, its own runtime raises its alerts.
+    if (mode !== "connected" || !address || !env.apiUrl) return;
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const index = new FillIndex();
@@ -82,5 +85,5 @@ export function useTriggerFills(): void {
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, [address, push]);
+  }, [address, mode, push]);
 }

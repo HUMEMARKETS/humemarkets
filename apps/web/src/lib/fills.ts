@@ -16,6 +16,9 @@ export interface Fill {
   pnl?: bigint;
   isLong?: boolean;
   size?: bigint;
+  /// A sample liquidation the person asked to see, replayed at the position's liquidation price rather
+  /// than caused by a market move. The alert says so.
+  replayed?: boolean;
 }
 
 const big = (value: unknown): bigint | undefined => {

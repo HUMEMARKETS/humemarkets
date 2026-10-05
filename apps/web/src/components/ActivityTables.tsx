@@ -1,7 +1,10 @@
 "use client";
 
-import { Num, textLink } from "@hume/ui";
+import { Num, SampleBadge, textLink } from "@hume/ui";
 import type { FundingPayment, HistoryEvent } from "@hume/sdk";
+import { useAccountMode } from "@/hooks/useAccountMode";
+import { PnlCardLink } from "./PnlCardLink";
+import { isSampleHash } from "@/lib/sampleEngine";
 import { useFunding, useHistory, useSettlementDecimals } from "@/hooks/queries";
 import { env } from "@/lib/env";
 import { closeLabel, FillIndex } from "@/lib/fills";
@@ -22,6 +25,14 @@ function txLink(hash: string) {
 }
 
 function TxCell({ hash }: { hash: string }) {
+  // A sample entry has no transaction: it says so instead of showing a hash nobody can look up.
+  if (isSampleHash(hash)) {
+    return (
+      <td className={cell}>
+        <SampleBadge label="Sample" />
+      </td>
+    );
+  }
   const link = txLink(hash);
   return (
     <td className={cell}>
@@ -43,9 +54,11 @@ const needsApi = (what: string) => (
 export function FundingTable() {
   const { data, isPending, isError } = useFunding();
   const { data: decimals = 6 } = useSettlementDecimals();
-  if (!env.apiUrl) return needsApi("Funding payments");
+  const sample = useAccountMode() === "sample";
+  if (!env.apiUrl && !sample) return needsApi("Funding payments");
   if (isError) return <p className="p-3 text-down">The funding history is not available right now.</p>;
   if (isPending) return <p className="p-3 text-muted">Loading funding…</p>;
+  if (sample) return <p className="p-3 text-muted">Funding is shown on the ticket but never charged to a sample position, so there are no payments to list.</p>;
   if (data.length === 0) return <p className="p-3 text-muted">No funding payments yet. They appear once a position is open across a funding interval.</p>;
 
   const total = data.reduce((sum: bigint, row: FundingPayment) => sum + row.amount, 0n);
@@ -98,6 +111,8 @@ const eventLabels: Record<string, string> = {
   PerpPositionUpdated: "Perp changed",
   PerpPositionClosed: "Perp closed",
   PositionLiquidated: "Liquidated",
+  LimitOrderPlaced: "Limit order set",
+  LimitOrderCancelled: "Limit order cancelled",
   TriggerOrderPlaced: "Trigger order set",
   TriggerOrderCancelled: "Trigger order cancelled",
   TriggerOrderExecuted: "Trigger order filled",
@@ -123,10 +138,13 @@ function details(event: HistoryEvent, decimals: number): string {
 export function HistoryTable() {
   const { data, isPending, isError } = useHistory();
   const { data: decimals = 6 } = useSettlementDecimals();
-  if (!env.apiUrl) return needsApi("Transaction history");
+  const sample = useAccountMode() === "sample";
+  if (!env.apiUrl && !sample) return needsApi("Transaction history");
   if (isError) return <p className="p-3 text-down">The transaction history is not available right now.</p>;
   if (isPending) return <p className="p-3 text-muted">Loading history…</p>;
-  if (data.length === 0) return <p className="p-3 text-muted">No activity yet for this wallet.</p>;
+  if (data.length === 0) {
+    return <p className="p-3 text-muted">{sample ? "No sample activity yet. Open a sample position from the Perpetuals page and it appears here." : "No activity yet for this wallet."}</p>;
+  }
 
   // A close that a trigger or a liquidation caused says so, matching the alert the user saw.
   const index = new FillIndex();
@@ -153,8 +171,15 @@ export function HistoryTable() {
           <tr key={event.id} className="border-t border-line">
             <td className={cell}>{fmtDateTime(event.createdAt)}</td>
             <td className={cell}>{label(event)}</td>
-            <td className={cell}>{details(event, decimals)}</td>
-            <td className={cell}>{event.blockNumber}</td>
+            <td className={cell}>
+              <span className="inline-flex flex-wrap items-center justify-end gap-2">
+                {details(event, decimals)}
+                {event.eventName === "PerpPositionClosed" && (event.args as { positionId?: unknown }).positionId !== undefined ? (
+                  <PnlCardLink positionId={String((event.args as { positionId?: unknown }).positionId)} />
+                ) : null}
+              </span>
+            </td>
+            <td className={cell}>{event.blockNumber || "–"}</td>
             <TxCell hash={event.txHash} />
           </tr>
         ))}

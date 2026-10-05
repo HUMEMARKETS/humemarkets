@@ -40,6 +40,23 @@ test("prices.history asks for the range and parses prices", async () => {
   assert.deepEqual(points, [{ time: 1_700_000_000, price: 190n * 10n ** 18n }]);
 });
 
+test("prices.state reads a shut session as an answer, not a revert", async () => {
+  globalThis.fetch = json({ state: "closed", indexPrice: null, markPrice: null, lastPrice: null });
+  const prices = createPrices(fakeClient().client, addresses, {} as OracleNamespace, "http://api.test");
+  assert.deepEqual(await prices.state("NVDA"), { state: "closed", index: undefined, mark: undefined, last: undefined });
+
+  globalThis.fetch = json({
+    state: "fresh",
+    indexPrice: { price: "190000000000000000000", timestamp: "1700000000" },
+    markPrice: { price: "191000000000000000000", timestamp: "1700000000" },
+    lastPrice: { price: "190500000000000000000", timestamp: "1700000000" },
+  });
+  const fresh = await prices.state("NVDA");
+  assert.equal(fresh.state, "fresh");
+  assert.equal(fresh.index?.price, 190n * 10n ** 18n);
+  assert.equal(fresh.mark?.price, 191n * 10n ** 18n);
+});
+
 test("statistics need apiUrl", async () => {
   await assert.rejects(createMarkets(fakeClient().client, addresses).stats(), NotImplementedError);
   await assert.rejects(createPrices(fakeClient().client, addresses, {} as OracleNamespace).history("NVDA"), NotImplementedError);

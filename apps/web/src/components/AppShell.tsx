@@ -3,9 +3,11 @@
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { env } from "@/lib/env";
+import { ConnectExplainer } from "./ConnectExplainer";
 import { Header } from "./Header";
 import { LandingTicker } from "./LandingTicker";
 import { OptionExpiryAlerts } from "./OptionExpiryAlerts";
+import { SampleRuntime } from "./SampleRuntime";
 import { TriggerAlerts } from "./TriggerAlerts";
 import { TxToasts } from "./TxToasts";
 
@@ -39,6 +41,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         </main>
       </div>
       <TxToasts />
+      <ConnectExplainer />
+      <SampleRuntime />
       <TriggerAlerts />
       <OptionExpiryAlerts />
     </div>

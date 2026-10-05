@@ -6,5 +6,7 @@ export { Panel, type PanelProps } from "./Panel.js";
 export { Segmented, type SegmentedOption, type SegmentedProps } from "./Segmented.js";
 export { Tabs, type TabOption } from "./Tabs.js";
 export { TextField, type TextFieldProps } from "./TextField.js";
+export { SampleBadge } from "./SampleBadge.js";
 export { Skeleton } from "./Skeleton.js";
 export { Row, Stat } from "./Stat.js";
+export { PnlCard, type PnlCardProps } from "./PnlCard.js";

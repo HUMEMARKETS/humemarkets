@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { SampleNoPriceError, SampleRefusedError, SampleUnsupportedError } from "@/lib/sampleEngine";
 import {
   DeadlineExpiredError,
   InsufficientCollateralError,
@@ -88,6 +89,9 @@ export function errorMessage(error: unknown): string {
   if (error instanceof InvalidQuoteError) return "The option price could not be verified. Request a new price and try again.";
   if (error instanceof DeadlineExpiredError) return "The order took too long to confirm. Submit it again.";
   if (error instanceof SlippageExceededError) return "The price moved past your slippage limit. Submit it again at the new price.";
+  if (error instanceof SampleNoPriceError) return "There is no price for this market yet, so a sample order cannot fill. Try again once it has one.";
+  if (error instanceof SampleRefusedError) return error.message;
+  if (error instanceof SampleUnsupportedError) return "Sample mode does not simulate that. Everything else works the same as with a wallet.";
   if (error instanceof Error) return error.message.split("\n")[0] ?? "The transaction failed.";
   return "The transaction failed.";
 }

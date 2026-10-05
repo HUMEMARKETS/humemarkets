@@ -5,11 +5,15 @@ import { margin } from "@hume/sdk";
 import type { PerpPosition } from "@hume/types";
 import { useState } from "react";
 import { useCrossPositions, usePerpMarket, useTriggerSupport } from "@/hooks/queries";
+import { useAccountMode } from "@/hooks/useAccountMode";
 import { useWalletHume } from "@/hooks/useHume";
 import { useTx } from "@/hooks/useTx";
 import { fmt, fmtBps, fmtPrice, fmtSigned, fmtUsd, signTone } from "@/lib/format";
 import { perpLabel, symbolOf } from "@/lib/market";
+import { replayLiquidation } from "@/lib/sampleClient";
+import { useFillStore } from "@/stores/fills";
 import { AdjustPosition } from "./AdjustPosition";
+import { PnlCardLink } from "./PnlCardLink";
 import { PositionTriggers } from "./TriggerOrders";
 
 const head = "px-3 py-2 text-right text-xs font-normal text-muted first:text-left";
@@ -20,6 +24,9 @@ function PositionRow({ position, decimals }: { position: PerpPosition; decimals:
   const { data: market } = usePerpMarket(symbol);
   const wallet = useWalletHume();
   const run = useTx();
+  const sample = useAccountMode() === "sample";
+  const pushFill = useFillStore((state) => state.push);
+  const [replaying, setReplaying] = useState(false);
 
   const mark = market?.markPrice;
   const pnl = mark === undefined ? undefined : margin.unrealizedPnl(position.isLong, position.entryPrice, mark, position.size);
@@ -56,28 +63,49 @@ function PositionRow({ position, decimals }: { position: PerpPosition; decimals:
         </td>
         <td className={cell}>{fmtSigned(position.fundingAccrued, decimals)}</td>
         <td className={cell}>
-          <Button size="sm" variant="secondary" aria-expanded={adjusting} onClick={() => setAdjusting((open) => !open)}>
-            Adjust
-          </Button>{" "}
-          {triggersSupported ? (
-            <>
-              <Button size="sm" variant="secondary" aria-expanded={triggers} onClick={() => setTriggers((open) => !open)}>
-                TP/SL
-              </Button>{" "}
-            </>
-          ) : null}
-          <Button
-            size="sm"
-            disabled={!wallet}
-            onClick={() =>
-              run(
-                { title: "Close position", summary: `${perpLabel(position.marketId)} · ${fmtUsd(position.size, decimals, 0)}` },
-                (tx) => wallet!.perps.closePosition(position.positionId, { tx }),
-              )
-            }
-          >
-            Close
-          </Button>
+          <div className="flex justify-end gap-1.5">
+            <PnlCardLink positionId={position.positionId} label="Card" />
+            <Button size="sm" variant="secondary" aria-expanded={adjusting} onClick={() => setAdjusting((open) => !open)}>
+              Adjust
+            </Button>
+            {triggersSupported ? (
+              <>
+                <Button size="sm" variant="secondary" aria-expanded={triggers} onClick={() => setTriggers((open) => !open)}>
+                  TP/SL
+                </Button>
+              </>
+            ) : null}
+            {sample ? (
+              <>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={replaying}
+                  title="A real liquidation needs a large price move. This replays the rule on this position with the price at its liquidation level, so you can see what happens."
+                  onClick={() => {
+                    setReplaying(true);
+                    void replayLiquidation(position.positionId)
+                      .then((fill) => pushFill([fill], false))
+                      .finally(() => setReplaying(false));
+                  }}
+                >
+                  Test liquidation
+                </Button>
+              </>
+            ) : null}
+            <Button
+              size="sm"
+              disabled={!wallet}
+              onClick={() =>
+                run(
+                  { title: "Close position", summary: `${perpLabel(position.marketId)} · ${fmtUsd(position.size, decimals, 0)}` },
+                  (tx) => wallet!.perps.closePosition(position.positionId, { tx }),
+                )
+              }
+            >
+              Close
+            </Button>
+          </div>
         </td>
       </tr>
       {adjusting ? (

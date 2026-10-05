@@ -48,7 +48,23 @@ export interface Candle {
   volume: bigint;
 }
 
+/// What the oracle will let a price be used for right now. `closed` and `stale` are normal states, not
+/// faults: outside its session an equity market has no usable price. Mirrors `services/api`'s
+/// `PriceState`.
+export type PriceState = "fresh" | "closed" | "stale" | "paused";
+
+/// The answer of `GET /v1/prices/:symbol`: a state, and the three prices only while it is `fresh`.
+export interface PriceStateReading {
+  state: PriceState;
+  index?: PriceReading;
+  mark?: PriceReading;
+  last?: PriceReading;
+}
+
 export interface PricesNamespace {
+  /// The price API's own answer: a price when the market has one, and the reason when it has not.
+  /// Unlike `get`, a shut session is a normal answer here and never a revert. Requires `apiUrl`.
+  state(marketIdOrSymbol: string): Promise<PriceStateReading>;
   /// Candlesticks (open, high, low, close, perp volume) from the indexer's price samples, oldest
   /// first. A bucket with no price sample is absent, so a quiet indexer leaves gaps. Requires
   /// `apiUrl`.
@@ -122,7 +138,16 @@ export function createPrices(
     }));
   }
 
-  return { get, settlement, history, candles };
+  async function state(marketIdOrSymbol: string): Promise<PriceStateReading> {
+    type Wire = { state: PriceState; indexPrice: WirePrice | null; markPrice: WirePrice | null; lastPrice: WirePrice | null };
+    type WirePrice = { price: string; timestamp: string };
+    const row = await apiGet<Wire>("prices.state", `/v1/prices/${marketIdOrSymbol}`);
+    const reading = (value: WirePrice | null): PriceReading | undefined =>
+      value ? { price: BigInt(value.price), timestamp: BigInt(value.timestamp) } : undefined;
+    return { state: row.state, index: reading(row.indexPrice), mark: reading(row.markPrice), last: reading(row.lastPrice) };
+  }
+
+  return { get, settlement, history, candles, state };
 }
 
 export function createOracle(client: HumeClient, addresses: ContractAddresses): OracleNamespace {

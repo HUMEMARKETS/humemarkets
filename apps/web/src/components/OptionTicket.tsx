@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useAccount, useSwitchChain } from "wagmi";
 import { useSettlementDecimals, useVaultBalances } from "@/hooks/queries";
 import { useDebounced } from "@/hooks/useDebounced";
+import { useAccountMode } from "@/hooks/useAccountMode";
 import { useWalletHume } from "@/hooks/useHume";
 import { useTx } from "@/hooks/useTx";
 import { env } from "@/lib/env";
@@ -47,6 +48,7 @@ function previewArgs(selection: OptionSelection, contracts: bigint, user?: `0x${
 export function OptionTicket() {
   const selection = useOptionOrder((state) => state.selection);
   const { address, isConnected, chainId } = useAccount();
+  const sample = useAccountMode() === "sample";
   const { switchChain } = useSwitchChain();
   const wallet = useWalletHume();
   const run = useTx();
@@ -136,7 +138,13 @@ export function OptionTicket() {
     setSubmitting(false);
   }
 
-  const action = !isConnected ? (
+  // Option prices on this screen are real, from the pricing service. Opening one is not simulated yet:
+  // it needs a signed quote tied to a chain position, so a sample purchase would be a pretend one. Say so.
+  const action = sample ? (
+    <Button variant="down" className="w-full" disabled>
+      Options are not in sample mode
+    </Button>
+  ) : !isConnected ? (
     <ConnectButton className="w-full" />
   ) : chainId !== chain.id ? (
     <Button variant="down" className="w-full" onClick={() => switchChain({ chainId: chain.id })}>
@@ -154,7 +162,7 @@ export function OptionTicket() {
   );
 
   return (
-    <Panel title="Option order" className="h-full overflow-y-auto">
+    <Panel title="Option order" sample={sample} className="h-full overflow-y-auto">
       <VaultControls />
 
       <div className="flex flex-col gap-3 p-3">
@@ -203,6 +211,12 @@ export function OptionTicket() {
         ) : null}
 
         {preview.error ? <p className="text-down">Could not price this order. Check the connection and try again.</p> : null}
+        {sample ? (
+          <p className="text-xs leading-snug text-muted">
+            Prices here are real. Buying an option is not simulated in sample mode, so nothing can be bought. Sample perpetuals work end to end. Connect a wallet to buy
+            options.
+          </p>
+        ) : null}
         {notice ? <p className="leading-snug text-down">{notice}</p> : null}
         {problem ? <p className="leading-snug text-down">{problem}</p> : waiting ? <p className="text-muted">{waiting}</p> : null}
         {action}
