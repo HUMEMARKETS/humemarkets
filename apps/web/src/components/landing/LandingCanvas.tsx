@@ -10,7 +10,7 @@ import {
     THEME_TEXT,
 } from '@/lib/theme-colors';
 import { SPACED_CAPS } from '@/lib/frame';
-import { buildFloor, buildScenes, type Palette } from './scenes';
+import { buildFloor, buildGround, buildScenes, DISTANCE, type Palette } from './scenes';
 
 interface Props {
     /// The scroll position in sections, fractional: 1.5 is halfway between section 1 and 2.
@@ -27,7 +27,6 @@ interface Props {
 }
 
 const FOV = 38;
-const DISTANCE = 8.4;
 
 function cssColor(name: string, fallback: string): THREE.Color {
     const value = getComputedStyle(document.documentElement)
@@ -116,6 +115,8 @@ export function LandingCanvas(props: Props) {
         rig.add(glow);
         const floor = buildFloor(palette);
         rig.add(floor.group);
+        const ground = buildGround(palette);
+        scene.add(ground.group);
         const scenes = buildScenes(palette);
         for (const item of scenes) rig.add(item.group);
 
@@ -131,6 +132,8 @@ export function LandingCanvas(props: Props) {
             renderer.setSize(width, height, false);
             // setSize clears the canvas; make sure the next frame draws even if nothing else changed.
             lastKey = '';
+            const buffer = renderer.getDrawingBufferSize(new THREE.Vector2());
+            ground.setSize(buffer.x, buffer.y);
             camera.aspect = width / height;
             camera.updateProjectionMatrix();
             const wide = camera.aspect >= 1.1;
@@ -139,6 +142,8 @@ export function LandingCanvas(props: Props) {
             // On a phone the scene sits in the top third, above the text block that is anchored to the bottom.
             rig.position.set(wide ? halfWidth * 0.46 : 0, wide ? 0.05 : 1.15, 0);
             rig.scale.setScalar(wide ? Math.min(1, camera.aspect / 1.7 + 0.35) : 0.55);
+            // The big ground is for wide screens; a phone keeps the scene in its top third over solid ground.
+            ground.group.visible = wide;
         }
         resize();
         const observer = new ResizeObserver(resize);
@@ -225,7 +230,7 @@ export function LandingCanvas(props: Props) {
             // The camera travels with the scroll: a slow orbit and a small rise and dolly between scenes,
             // so moving from one section to the next reads as going somewhere. It is scaled by the motion
             // state, and sits still when motion is off.
-            const angle = (progress - 2) * 0.1 * allowed;
+            const angle = progress * 0.05 * allowed;
             camera.position.set(
                 Math.sin(angle) * DISTANCE,
                 1.7 + Math.sin(progress * 1.3) * 0.2 * allowed,
@@ -354,6 +359,7 @@ export function LandingCanvas(props: Props) {
             window.removeEventListener('pointerup', onUp);
             for (const item of scenes) item.dispose();
             floor.dispose();
+            ground.dispose();
             glowTexture.dispose();
             glowMaterial.dispose();
             renderer.dispose();

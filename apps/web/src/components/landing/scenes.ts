@@ -1,5 +1,8 @@
 import * as THREE from 'three';
 
+/// The camera's distance from the scene centre; the ground is laid out relative to it.
+export const DISTANCE = 8.4;
+
 export interface Palette {
     text: THREE.Color;
     muted: THREE.Color;
@@ -458,13 +461,6 @@ export function buildFloor(palette: Palette) {
     const ticks = lines(tickPositions, 0.4, palette.accent);
     group.add(ticks);
 
-    const grid = new THREE.GridHelper(20, 20, palette.accent, palette.accent);
-    const gridMaterial = grid.material as THREE.LineBasicMaterial;
-    gridMaterial.transparent = true;
-    gridMaterial.opacity = 0.1;
-    gridMaterial.depthWrite = false;
-    group.add(grid);
-
     return {
         group,
         update(time: number, motion: number) {
@@ -476,8 +472,86 @@ export function buildFloor(palette: Palette) {
         dispose() {
             for (const geometry of geometries) geometry.dispose();
             for (const material of materials) material.dispose();
-            grid.geometry.dispose();
-            gridMaterial.dispose();
+        },
+    };
+}
+
+/// The ground the whole scene stands on: a perspective grid that runs the full width of the screen out to
+/// the horizon, drawn as one `LineSegments` with a small shader. The shader fades each line with its
+/// distance from the camera, and fades it out in screen space under the header (top) and above the
+/// bottom rail, so the grid never runs behind the navigation. It belongs to the scene, not the rig, so
+/// it stays centred on the viewport while the rig is shifted to the right.
+export function buildGround(palette: Palette) {
+    const STEP = 1.5;
+    // Every line stays inside the cone the camera can see, so no coordinate is far off screen: a line
+    // that starts at a huge x just in front of the camera is clipped badly by some rasterisers.
+    const CAMERA_Z = DISTANCE;
+    const REACH = 1.2; // sideways reach per unit of depth, enough for a 21:9 screen
+    const DEPTH_FAR = 66;
+    const positions: number[] = [];
+    // Lines that run away from the camera: one per x, from just in front of it out to the horizon.
+    for (let x = -72; x <= 72 + 1e-6; x += STEP) {
+        const startDepth = Math.max(2, Math.abs(x) / REACH);
+        positions.push(x, 0, CAMERA_Z - startDepth, x, 0, CAMERA_Z - DEPTH_FAR);
+    }
+    // Lines across: one per depth, as wide as the view is at that depth.
+    for (let depth = 2; depth <= DEPTH_FAR + 1e-6; depth += STEP) {
+        const half = depth * REACH;
+        positions.push(-half, 0, CAMERA_Z - depth, half, 0, CAMERA_Z - depth);
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute(
+        'position',
+        new THREE.BufferAttribute(new Float32Array(positions), 3),
+    );
+    const uniforms = {
+        uColor: { value: palette.accent.clone() },
+        uResolution: { value: new THREE.Vector2(1, 1) },
+        uNear: { value: 4 },
+        uFar: { value: 46 },
+        uOpacity: { value: 0.28 },
+    };
+    const material = new THREE.ShaderMaterial({
+        uniforms,
+        transparent: true,
+        depthWrite: false,
+        vertexShader: /* glsl */ `
+            varying float vDistance;
+            void main() {
+                vec4 view = modelViewMatrix * vec4(position, 1.0);
+                vDistance = -view.z;
+                gl_Position = projectionMatrix * view;
+            }
+        `,
+        fragmentShader: /* glsl */ `
+            uniform vec3 uColor;
+            uniform vec2 uResolution;
+            uniform float uNear;
+            uniform float uFar;
+            uniform float uOpacity;
+            varying float vDistance;
+            void main() {
+                float v = gl_FragCoord.y / uResolution.y;
+                float distanceFade = 1.0 - smoothstep(uNear, uFar, vDistance);
+                float nearFade = smoothstep(1.0, 3.0, vDistance);
+                float bottomFade = smoothstep(0.125, 0.22, v);
+                float topFade = 1.0 - smoothstep(0.80, 0.89, v);
+                float alpha = uOpacity * distanceFade * nearFade * bottomFade * topFade;
+                gl_FragColor = vec4(uColor, alpha);
+            }
+        `,
+    });
+    const grid = new THREE.LineSegments(geometry, material);
+    grid.frustumCulled = false;
+    grid.position.y = -2.1;
+    return {
+        group: grid,
+        setSize(width: number, height: number) {
+            uniforms.uResolution.value.set(width, height);
+        },
+        dispose() {
+            geometry.dispose();
+            material.dispose();
         },
     };
 }

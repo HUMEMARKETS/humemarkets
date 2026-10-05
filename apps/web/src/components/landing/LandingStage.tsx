@@ -332,7 +332,7 @@ export function LandingStage() {
                                         <>
                                             <div className="mt-9 flex flex-wrap items-center gap-4">
                                                 <Link href="/perpetuals" className={primary}>
-                                                    Open the terminal
+                                                    Open App
                                                     <ArrowIcon />
                                                 </Link>
                                                 <button
@@ -344,7 +344,7 @@ export function LandingStage() {
                                                     <Plus />
                                                 </button>
                                             </div>
-                                            <p className="mt-4 text-sm text-muted">No wallet needed. Start in sample mode.</p>
+                                            <p className="mt-4 text-sm text-muted">No wallet needed. Start in sample mode. The contracts are unaudited: trade only what you can lose.</p>
                                             <ContractAddressBadge className="mt-6 md:hidden" />
                                             <TrustStrip className="mt-12 max-w-[46rem] max-md:hidden" />
                                         </>
@@ -352,7 +352,7 @@ export function LandingStage() {
                                     {index === SECTIONS.length - 1 ? (
                                         <div className="mt-9 flex flex-wrap items-center gap-4">
                                             <Link href="/perpetuals" className={primary}>
-                                                Open the terminal
+                                                Open App
                                                 <ArrowIcon />
                                             </Link>
                                             <a href="#contracts" className={secondary}>

@@ -49,7 +49,7 @@ export function ContractsPanel({
     useEffect(() => {
         if (!open) return;
         const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-        closeButton.current?.focus();
+        closeButton.current?.focus({ preventScroll: true });
         const onKey = (event: KeyboardEvent) => {
             if (event.key === 'Escape') {
                 onClose();
@@ -67,16 +67,16 @@ export function ContractsPanel({
             const current = document.activeElement;
             if (event.shiftKey && (current === first || !dialog.current.contains(current))) {
                 event.preventDefault();
-                last.focus();
+                last.focus({ preventScroll: true });
             } else if (!event.shiftKey && (current === last || !dialog.current.contains(current))) {
                 event.preventDefault();
-                first.focus();
+                first.focus({ preventScroll: true });
             }
         };
         window.addEventListener('keydown', onKey);
         return () => {
             window.removeEventListener('keydown', onKey);
-            if (opener && document.contains(opener)) opener.focus();
+            if (opener && document.contains(opener)) opener.focus({ preventScroll: true });
         };
     }, [open, onClose]);
 
@@ -94,7 +94,7 @@ export function ContractsPanel({
     return (
         <div
             className={cn(
-                'absolute inset-0 z-50 transition-opacity duration-200',
+                'fixed inset-0 z-[70] transition-opacity duration-200',
                 open ? 'opacity-100' : 'pointer-events-none opacity-0',
             )}
             aria-hidden={!open}

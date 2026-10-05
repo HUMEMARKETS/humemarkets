@@ -62,7 +62,9 @@ export function SampleRuntime() {
     };
   }, [watching, push]);
 
-  const titled = sample && !realCard;
+  // The landing, features and docs pages show no balance or position (their previews carry their own
+  // SAMPLE DATA mark), so their tabs keep the plain brand title.
+  const titled = sample && !realCard && !["/", "/features", "/docs"].includes(pathname);
   useEffect(() => {
     if (!titled) return;
     const apply = () => {

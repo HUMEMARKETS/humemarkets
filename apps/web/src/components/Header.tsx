@@ -67,7 +67,7 @@ export function Header() {
     <header
       ref={ref}
       className={cn(
-        "z-40 shrink-0 bg-ground/70 backdrop-blur-md",
+        "z-40 shrink-0 border-b border-line bg-ground/70 backdrop-blur-md",
         landing ? "absolute inset-x-0 top-0" : "relative",
       )}
     >

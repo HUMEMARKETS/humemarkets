@@ -53,7 +53,7 @@ export function ModeMenu({ menuAbove = false }: { menuAbove?: boolean }) {
         aria-label={sample ? "Sample data. Open the environment menu." : `${chain.name}. Open the environment menu.`}
         onClick={() => setOpen((value) => !value)}
         className={cn(
-          "flex h-11 items-center gap-2 rounded-control border px-3 text-[11px] font-medium uppercase tracking-[0.1em] transition-colors duration-150 max-xl:h-10",
+          "flex h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-control border px-2.5 text-[10px] sm:px-3 sm:text-[11px] font-medium uppercase tracking-[0.1em] transition-colors duration-150 max-xl:h-10",
           sample
             ? "border-accent-line bg-accent-soft text-accent-hover hover:border-accent"
             : "border-line bg-raised text-text hover:border-accent hover:bg-accent-soft hover:text-accent-hover",
