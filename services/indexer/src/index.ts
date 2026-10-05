@@ -10,6 +10,7 @@ import { events, indexerState, markets, priceTicks } from "./db/schema.js";
 import { allEventsAbi, contractNamesByAddress, watchedAddresses } from "./events.js";
 import { blockBeforeFirstIndexed } from "./startBlock.js";
 import { serializeArgs } from "./serialize.js";
+import { runTraderStats, type LiveReader } from "./traderStatsJob.js";
 
 const POLL_INTERVAL_MS = Number(process.env.INDEXER_POLL_INTERVAL_MS ?? 5000);
 /// getLogs range width per call. The default of 10 fits the Alchemy free tier, which caps
@@ -23,6 +24,14 @@ if (MAX_BLOCK_RANGE < 1n) {
 /// How often to record each active market's index price for history and 24h change.
 const PRICE_SAMPLE_INTERVAL_MS = Number(process.env.PRICE_SAMPLE_INTERVAL_MS ?? 60_000);
 const PRICE_TICK_RETENTION_DAYS = Number(process.env.PRICE_TICK_RETENTION_DAYS ?? 8);
+
+/// How often to re-derive the leaderboard statistics from `events`. A full pass reads every trading event
+/// and prices each open position at the live mark, so a minute is plenty for a display board.
+const TRADER_STATS_INTERVAL_MS = Number(process.env.LEADERBOARD_INTERVAL_MS ?? 60_000);
+/// Open positions priced against the chain per pass, one RPC read each plus one per market.
+const LEADERBOARD_MAX_LIVE_POSITIONS = Number(process.env.LEADERBOARD_MAX_LIVE_POSITIONS ?? 200);
+/// An option with no close or exercise event this long after expiry is treated as expired worthless.
+const LEADERBOARD_OPTION_GRACE_SECONDS = Number(process.env.LEADERBOARD_OPTION_GRACE_HOURS ?? 24) * 3600;
 
 const chainId = resolveChainId(process.env.CHAIN_ID);
 const addresses = resolveAddresses(chainId);
@@ -153,6 +162,30 @@ async function sampleIndexPrices() {
   await db.delete(priceTicks).where(and(lt(priceTicks.sampledAt, cutoff)));
 }
 
+let lastStatsAt = 0;
+
+const liveReader: LiveReader = {
+  getPerpPosition: async (positionId) => {
+    const position = await hume.portfolio.getPerpPosition(positionId);
+    return { open: position.open, isLong: position.isLong, marketId: position.marketId, entryPrice: position.entryPrice, size: position.size };
+  },
+  getMarkPrice: async (marketId) => (await hume.oracle.getMarkPrice(marketId)).price,
+};
+
+/// Re-derives `trader_stats` from the event log on a fixed interval. It reads only what the indexer already
+/// recorded, plus the chain for open positions' live price, and writes nothing a trade depends on.
+async function deriveTraderStats() {
+  if (Date.now() - lastStatsAt < TRADER_STATS_INTERVAL_MS) return;
+  lastStatsAt = Date.now();
+  const wallets = await runTraderStats(
+    db,
+    liveReader,
+    { maxLivePositions: LEADERBOARD_MAX_LIVE_POSITIONS, optionGraceSeconds: LEADERBOARD_OPTION_GRACE_SECONDS },
+    (message, error) => console.warn(`indexer: ${message}`, error ?? ""),
+  );
+  console.log(`indexer: trader stats refreshed for ${wallets} wallet(s)`);
+}
+
 async function main() {
   console.log(`indexer: watching ${addressList.length} contracts on chain ${chainId}`);
   try {
@@ -170,6 +203,11 @@ async function main() {
       await sampleIndexPrices();
     } catch (error) {
       console.error("indexer: price sampling failed", error);
+    }
+    try {
+      await deriveTraderStats();
+    } catch (error) {
+      console.error("indexer: trader stats failed", error);
     }
     await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
   }

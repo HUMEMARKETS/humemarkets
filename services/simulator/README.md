@@ -37,6 +37,14 @@ Stop it with Ctrl+C. It logs every trade, every price step and every liquidation
 - **Wait.** Start the simulator 15 to 20 minutes before you record, or longer for a fuller chart.
 - **Draw the history** with `backfill`, below, to have candles at once.
 
+## Label the bots on the leaderboard
+
+```bash
+pnpm --filter @hume/simulator wallets
+```
+
+Prints the bots' addresses and a ready `SAMPLE_WALLETS=0x...,0x...` line. Set that variable on the **api** service of the environment the bots trade in. The leaderboard and the PNL card then mark those wallets `sample`, and `GET /v1/leaderboard?sample=1` returns a board of only these wallets. Without it a real board would show simulated traders as real ones. On an environment where the simulator is not running (mainnet) leave it unset: `?sample=1` then returns a fixed synthetic board, labelled sample, so the page is never blank.
+
 ## Get a liquidation on camera
 
 The market is calm, so a liquidation needs a push. The two degens hold 10x positions, which the market's 5% maintenance margin liquidates after roughly a 5% move against them. With the simulator running, from another terminal:

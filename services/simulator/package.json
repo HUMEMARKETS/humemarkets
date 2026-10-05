@@ -9,6 +9,7 @@
     "bootstrap": "tsx src/index.ts bootstrap",
     "start": "tsx src/index.ts start",
     "status": "tsx src/index.ts status",
+    "wallets": "tsx src/index.ts wallets",
     "nudge": "tsx src/index.ts nudge",
     "backfill": "tsx src/index.ts backfill",
     "lint": "echo \"scaffold: services/simulator lint\" && exit 0",

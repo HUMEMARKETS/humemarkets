@@ -1,4 +1,4 @@
-import { bigint, boolean, index, integer, jsonb, pgTable, serial, text, timestamp, unique } from "drizzle-orm/pg-core";
+import { bigint, boolean, index, integer, jsonb, pgTable, primaryKey, serial, text, timestamp, unique } from "drizzle-orm/pg-core";
 
 /// Materialized current-state view of MarketRegistry, kept in sync from `MarketAdded` /
 /// `MarketUpdated` events (DEVELOPMENT_STEPS.md Phase 2 item 1) — `services/api` serves
@@ -67,3 +67,43 @@ export const priceTicks = pgTable(
   },
   (table) => [index("price_ticks_market_sampled_idx").on(table.marketId, table.sampledAt)],
 );
+
+/// Per-wallet trading statistics for the leaderboard, derived from `events` (never written by hand)
+/// by `src/traderStats.ts` on a fixed interval, then replaced wholesale for a window. One row per
+/// (wallet, window); `all` is the only launch window, `24h` is a Phase 18 value of the same column.
+/// Every amount is `text` for the reason `markets` documents (settlement-token base units and
+/// 18-decimal values overflow bigint). `text` sorts lexicographically, so `services/api` casts to
+/// `numeric` before ordering: never `order by` one of these as text.
+///   realised_pnl      price PNL realised + funding - fees, signed.
+///   unrealised_pnl    PNL of open perp positions at the live mark, signed.
+///   capital_deployed  margin posted on perps + premium paid on options; the ROI denominator.
+///   roi_bps           (realised + unrealised) * 10000 / capital_deployed, signed, "0" with no capital.
+///   volume            perp notional traded + option premium paid.
+/// `win_rate_bps` is null until the wallet has closed a position.
+export const traderStats = pgTable(
+  "trader_stats",
+  {
+    wallet: text("wallet").notNull(),
+    window: text("window").notNull(),
+    realisedPnl: text("realised_pnl").notNull(),
+    unrealisedPnl: text("unrealised_pnl").notNull(),
+    capitalDeployed: text("capital_deployed").notNull(),
+    roiBps: text("roi_bps").notNull(),
+    volume: text("volume").notNull(),
+    tradeCount: integer("trade_count").notNull(),
+    closedCount: integer("closed_count").notNull(),
+    winRateBps: integer("win_rate_bps"),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.wallet, table.window] })],
+);
+
+/// A wallet's choice to hide from the leaderboard and its PNL card. Written by `services/api` after it
+/// verifies an EIP-191 signature from the wallet; absent means visible. `issued_at` is the signed unix
+/// time of the last accepted change, so an old signature cannot be replayed to undo a newer choice.
+export const leaderboardVisibility = pgTable("leaderboard_visibility", {
+  wallet: text("wallet").primaryKey(),
+  hidden: boolean("hidden").notNull(),
+  issuedAt: bigint("issued_at", { mode: "bigint" }).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});

@@ -318,11 +318,21 @@ async function status() {
   }
 }
 
+/// The bots' addresses, in the form `SAMPLE_WALLETS` takes. The API and indexer read that variable to label
+/// these wallets `sample` on the leaderboard and the PNL card, so simulated traders are never shown as real
+/// ones. Addresses only: no key leaves the seed file. The liquidator trades nothing, so it is left out.
+function wallets() {
+  const { traders } = accounts();
+  for (const { persona, account } of traders) console.log(`# ${persona.id}`.padEnd(16), account.address);
+  console.log(`SAMPLE_WALLETS=${traders.map((t) => t.account.address.toLowerCase()).join(",")}`);
+}
+
 const [command, ...args] = process.argv.slice(2);
 try {
   if (command === "bootstrap") await bootstrap(Number(args[0] ?? 4));
   else if (command === "start") await start();
   else if (command === "status") await status();
+  else if (command === "wallets") wallets();
   else if (command === "backfill") await backfill(args[0], args[1]);
   else if (command === "nudge") {
     const [symbol, pct, seconds] = args;
@@ -330,7 +340,7 @@ try {
     appendNudge(STATE_DIR, { symbol: symbol.toUpperCase(), pct: Number(pct), seconds: Number(seconds ?? 90) });
     console.log(`Asked the running simulator to move ${symbol.toUpperCase()} by ${pct}%. It plays out over the next ticks.`);
   } else {
-    console.log("Commands: bootstrap [hours] | start | status | nudge <SYMBOL> <percent> [seconds] | backfill [hours] [replace] | backfill undo");
+    console.log("Commands: bootstrap [hours] | start | status | wallets | nudge <SYMBOL> <percent> [seconds] | backfill [hours] [replace] | backfill undo");
     process.exit(command ? 1 : 0);
   }
 } catch (error) {
