@@ -12,6 +12,7 @@ import {
 } from 'react';
 import { ArrowIcon } from '@/components/ArrowIcon';
 import { ContractAddressBadge } from '@/components/ContractAddressBadge';
+import { TrustStrip } from '@/components/TrustStrip';
 import { PAGE_FRAME, SPACED_CAPS } from '@/lib/frame';
 import { X_URL } from '@/lib/social';
 import { ContractsPanel } from './ContractsPanel';
@@ -316,6 +317,7 @@ export function LandingStage() {
                                                 </button>
                                             </div>
                                             <ContractAddressBadge className="mt-6 md:hidden" />
+                                            <TrustStrip className="mt-12 max-w-[46rem] max-md:hidden" />
                                         </>
                                     ) : null}
                                     {index === SECTIONS.length - 1 ? (
@@ -328,7 +330,14 @@ export function LandingStage() {
                                                 View contracts
                                                 <Plus />
                                             </a>
+                                            <Link href="/features" className={secondary}>
+                                                All features
+                                                <Plus />
+                                            </Link>
                                         </div>
+                                    ) : null}
+                                    {index === SECTIONS.length - 1 ? (
+                                        <TrustStrip className="mt-8 max-w-[40rem] md:hidden" />
                                     ) : null}
                                 </div>
                             </div>

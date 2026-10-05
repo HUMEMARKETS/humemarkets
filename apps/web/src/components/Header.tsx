@@ -93,8 +93,8 @@ export function Header() {
         <div className="flex items-center gap-3 sm:gap-6">
           {landing ? (
             <nav aria-label="Landing" className="hidden items-center gap-6 text-sm xl:flex">
-              <Link href="/docs" className="text-muted transition-colors duration-150 hover:text-text">
-                How it works
+              <Link href="/features" className="text-muted transition-colors duration-150 hover:text-text">
+                Features
               </Link>
               <a href="#contracts" className="text-muted transition-colors duration-150 hover:text-text">
                 Contracts

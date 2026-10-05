@@ -60,7 +60,7 @@ function HealthReadout({ hf, price, liquidationBonusBps, symbol }: { hf: bigint;
 
 /// The loan-to-value bar, with the borrow limit and the liquidation line marked on it, so "how close am I"
 /// is a distance you can see and not only a number.
-function LtvBar({ ltv, maxLtv, liquidationLtv }: { ltv: bigint; maxLtv: bigint; liquidationLtv: bigint }) {
+export function LtvBar({ ltv, maxLtv, liquidationLtv }: { ltv: bigint; maxLtv: bigint; liquidationLtv: bigint }) {
   const clamp = (value: bigint) => Math.min(100, Math.max(0, Number(value) / 100));
   const tone = ltv >= liquidationLtv ? "bg-down" : ltv >= maxLtv ? "bg-faint" : "bg-accent";
   return (

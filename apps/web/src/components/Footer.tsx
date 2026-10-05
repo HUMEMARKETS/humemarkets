@@ -47,6 +47,9 @@ export function Footer() {
                     <a href="/#contracts" className={listLink}>
                         Smart contracts
                     </a>
+                    <Link href="/features" className={listLink}>
+                        Features
+                    </Link>
                     <Link href="/docs" className={listLink}>
                         Docs
                     </Link>

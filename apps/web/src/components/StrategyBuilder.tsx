@@ -27,7 +27,7 @@ const selectClass = cn(fieldBorder, "h-8 rounded-md border bg-raised px-2 text-s
 
 /// A payoff-at-expiry line chart. Green above zero, red below, with the price and break-evens on
 /// the axis. Drawn as plain SVG: it is a display of the analysis, nothing here is signed.
-function PayoffChart({ legs, low, high, spot, breakEvens }: { legs: Leg[]; low: number; high: number; spot: number; breakEvens: number[] }) {
+export function PayoffChart({ legs, low, high, spot, breakEvens }: { legs: Leg[]; low: number; high: number; spot: number; breakEvens: number[] }) {
   const width = 640;
   const height = 220;
   const pad = 28;
