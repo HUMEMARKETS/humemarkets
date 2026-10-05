@@ -17,7 +17,7 @@ import { WalletButton } from "./WalletButton";
 import { XIcon } from "./XIcon";
 
 /// PROJECT_BRIEF.md Section 22, plus the strategy builder from Section 41.
-const items = [
+const items: Array<{ label: string; href: string; wideOnly?: boolean }> = [
   { label: "Markets", href: "/markets" },
   { label: "Options", href: "/options" },
   { label: "Perpetuals", href: "/perpetuals" },
@@ -26,6 +26,9 @@ const items = [
   { label: "Lending", href: "/lending" },
   { label: "Portfolio", href: "/portfolio" },
   { label: "Activity", href: "/activity" },
+  // Ninth item: it does not fit beside the other eight and the buttons at 1280 px, so the bar shows it from
+  // 2xl. Below that it is in the footer, and in the mobile sheet.
+  { label: "Features", href: "/features", wideOnly: true },
 ];
 
 /// Primary nav is plain text on the header's own blur, not another row of boxes: full-brightness
@@ -82,7 +85,7 @@ export function Header() {
               {items.map((item) => {
                 const current = isCurrent(pathname, item.href);
                 return (
-                  <Link key={item.href} href={item.href} aria-current={current ? "page" : undefined} className={navLink(current)}>
+                  <Link key={item.href} href={item.href} aria-current={current ? "page" : undefined} className={cn(navLink(current), item.wideOnly && "max-2xl:hidden")}>
                     {item.label}
                   </Link>
                 );

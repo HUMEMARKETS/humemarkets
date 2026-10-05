@@ -6,6 +6,7 @@ import { ContractAddressBadge } from '@/components/ContractAddressBadge';
 import { DocsLiveParameters } from '@/components/DocsLiveParameters';
 import { Footer } from '@/components/Footer';
 import { SampleMark } from '@/components/SampleMark';
+import { TrustStrip } from '@/components/TrustStrip';
 import { env } from '@/lib/env';
 import { explorerAddressUrl } from '@/lib/explorer';
 import { MONO, PAGE_FRAME } from '@/lib/frame';
@@ -99,7 +100,7 @@ export default function Docs() {
 
     return (
         <div className="flex min-h-full flex-col">
-            <div className={`${PAGE_FRAME} grid flex-1 gap-10 py-12 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-16 lg:py-20`}>
+            <div className={`${PAGE_FRAME} grid flex-1 gap-10 py-12 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-16 lg:py-20 xl:grid-cols-[15rem_minmax(0,1fr)_16rem]`}>
                 <nav aria-label="On this page" className="lg:sticky lg:top-6 lg:self-start">
                     <p className="mb-3 text-sm text-faint">On this page</p>
                     <ol className="flex flex-wrap gap-x-5 gap-y-2 lg:flex-col lg:gap-y-1">
@@ -496,6 +497,19 @@ put payout  = max(strike − settlement, 0) × contract size × contracts`}</For
                         </p>
                     </Section>
                 </article>
+
+                <aside aria-label="Check it yourself" className="hidden xl:sticky xl:top-6 xl:block xl:self-start">
+                    <p className="mb-4 text-sm text-faint">Check it yourself</p>
+                    <TrustStrip stacked />
+                    <div className="mt-6 flex flex-col gap-2">
+                        <Link href="/features" className={listLink}>
+                            All features
+                        </Link>
+                        <a href="/#contracts" className={listLink}>
+                            Every contract
+                        </a>
+                    </div>
+                </aside>
             </div>
             <Footer />
         </div>

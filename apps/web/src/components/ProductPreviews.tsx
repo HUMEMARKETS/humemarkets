@@ -10,6 +10,7 @@ import { fmt, fmtBps, fmtPrice } from "@/lib/format";
 import { humeRead } from "@/lib/hume";
 import { fallToLiquidationBps, fmtHealth, healthBand, healthFactorBps, healthWords } from "@/lib/lending";
 import { symbolOf } from "@/lib/market";
+import { longLiquidationPrice } from "@/lib/preview";
 import { PREVIEW_OPTION, PREVIEW_PERP, PREVIEW_VAULT } from "@/lib/previewFixture";
 import { fmtLimit, fmtNet } from "@/lib/strategies";
 import { ArrowIcon } from "./ArrowIcon";
@@ -51,7 +52,7 @@ export function PerpPreview({ className }: { className?: string }) {
     return { symbol: PREVIEW_PERP.symbol, leverage: PREVIEW_PERP.leverage, entry: PREVIEW_PERP.mark, mmr: PREVIEW_PERP.maintenanceMarginRate, feeBps: undefined };
   }, [isLive, risk, mark, symbol, fees.data]);
 
-  const liquidation = view.entry * (1 - 1 / view.leverage + view.mmr);
+  const liquidation = longLiquidationPrice(view.entry, view.leverage, view.mmr);
   const label = `${view.symbol}-PERP`;
   return (
     <Panel className={className} title={label} sample={!isLive}>
