@@ -288,8 +288,8 @@ Set by Phase 3, enforced from here on.
 | ----------------------------- | ----------------------------------------------------------------------- |
 | Anything inside the app       | **No animation over 200 ms.** Transitions are 150 ms (`duration-150`), the existing default |
 | Dense data: tables, the chain, the order book | **No animation at all.** Section 5: Zupiter's motion is rejected here |
-| The landing page `/`          | Motion allowed: the hero wipe (1.4 s), the heading wipe (1.1 s), the ticker (70 s loop) |
-| `prefers-reduced-motion`      | Every animation collapses to 0.01 ms and the hero wipes are disabled outright. Already in `globals.css` |
+| The landing page `/`          | Motion allowed: the section fade (0.7 s), the scene turn and scroll travel in the WebGL canvas, the ticker on app pages (70 s loop). The render loop pauses when the tab is hidden or the canvas is off screen |
+| `prefers-reduced-motion`      | Every animation collapses to 0.01 ms; the landing scene starts with motion off, so idle motion, pointer tilt and drag coasting stop and smooth scrolling is off. The "Immersive motion" toggle overrides it per device |
 
 One exception, already in the code and kept: a fill confirmation (`fill-pop`, 350 ms) is a success
 signal a trader waits for, not decoration.

@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAccount } from "wagmi";
 import { useDismiss } from "@/hooks/useDismiss";
-import { APP_GUTTER, CHIP_LABEL, PAGE_FRAME, SPACED_CAPS } from "@/lib/frame";
+import { APP_GUTTER, CHIP_LABEL, PAGE_FRAME } from "@/lib/frame";
 import { X_URL } from "@/lib/social";
 import { chip, cn, interactive, menuItem } from "@hume/ui";
 import { ArrowIcon } from "./ArrowIcon";
@@ -75,10 +75,7 @@ export function Header() {
           </Link>
           {landing ? (
             <div className="hidden h-10 items-center gap-6 border-l border-line pl-6 lg:flex">
-              <div className="flex flex-col gap-1">
-                <p className={cn(SPACED_CAPS, "text-[9px] tracking-[0.3em] text-faint")}>A different kind of market</p>
-                <ContractAddressBadge className="py-1" />
-              </div>
+              <ContractAddressBadge className="py-1" />
             </div>
           ) : (
             <nav aria-label="Primary" className="hidden h-full items-center gap-5 xl:flex 2xl:gap-8">
@@ -119,11 +116,13 @@ export function Header() {
           </a>
           {/* On a phone the wallet button lives at the bottom of the menu, which leaves the bar to the logo, X and the menu button — Trade goes with it, since "Markets"/"Perpetuals" in the sheet already cover that entry point on mobile. */}
           <div className="hidden items-center gap-3 xl:flex 2xl:gap-6">
-            <Link href="/perpetuals" className={cn(tradeLink, !landing && "max-2xl:hidden")}>
-              {landing ? "Open app" : "Trade"}
-              <ArrowIcon />
-            </Link>
-            <WalletButton />
+            {landing ? null : (
+              <Link href="/perpetuals" className={cn(tradeLink, "max-2xl:hidden")}>
+                Trade
+                <ArrowIcon />
+              </Link>
+            )}
+            <WalletButton variant={landing ? "secondary" : "primary"} />
           </div>
           <button
             type="button"

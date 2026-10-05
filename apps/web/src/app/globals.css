@@ -84,9 +84,9 @@
   /* Display face for the hero, section titles and big figures. Was Newsreader (a literary serif);
      swapped for Tomorrow, a geometric technical sans, imitating the reference site's own display
      choice — moves the landing page's voice from editorial toward institutional/technical, closer to
-     PROJECT_BRIEF.md's "precise typography" / "financial-terminal aesthetic" line. Kept under the
-     `--font-serif` name so every `font-serif` utility in the app picks it up with no class renames. */
-  --font-serif: var(--font-tomorrow), ui-sans-serif, system-ui, sans-serif;
+     PROJECT_BRIEF.md's "precise typography" / "financial-terminal aesthetic" line. Named for its role
+     (it was `--font-serif`, which it never was), so `font-display` is the utility. */
+  --font-display: var(--font-tomorrow), ui-sans-serif, system-ui, sans-serif;
   /* Verifiable data only — contract addresses, chain name, tech-stack tags — never prices/tickers,
      which stay in the sans everywhere else in the app. */
   --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;

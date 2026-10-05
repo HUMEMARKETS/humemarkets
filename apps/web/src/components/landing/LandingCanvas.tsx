@@ -89,6 +89,7 @@ export function LandingCanvas(props: Props) {
         const scenes = buildScenes(palette);
         for (const item of scenes) rig.add(item.group);
 
+        let lastKey = '';
         const size = { width: 1, height: 1 };
         function resize() {
             const width = hostEl!.clientWidth;
@@ -96,15 +97,18 @@ export function LandingCanvas(props: Props) {
             if (width === 0 || height === 0) return;
             size.width = width;
             size.height = height;
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, width < 768 ? 1.5 : 2));
             renderer.setSize(width, height, false);
+            // setSize clears the canvas; make sure the next frame draws even if nothing else changed.
+            lastKey = '';
             camera.aspect = width / height;
             camera.updateProjectionMatrix();
             const wide = camera.aspect >= 1.1;
             const halfWidth =
                 Math.tan((FOV / 2) * (Math.PI / 180)) * DISTANCE * camera.aspect;
-            rig.position.set(wide ? halfWidth * 0.46 : 0, wide ? 0.05 : -1.3, 0);
-            rig.scale.setScalar(wide ? Math.min(1, camera.aspect / 1.7 + 0.35) : 0.6);
+            // On a phone the scene sits in the top third, above the text block that is anchored to the bottom.
+            rig.position.set(wide ? halfWidth * 0.46 : 0, wide ? 0.05 : 1.15, 0);
+            rig.scale.setScalar(wide ? Math.min(1, camera.aspect / 1.7 + 0.35) : 0.55);
         }
         resize();
         const observer = new ResizeObserver(resize);
@@ -165,6 +169,9 @@ export function LandingCanvas(props: Props) {
 
         const spinAngles: number[] = scenes.map(() => 0);
         let motionFactor = 0;
+        // 1 while motion is allowed, 0 when it is off (the toggle or prefers-reduced-motion). Unlike
+        // `motionFactor` it stays 1 while a hotspot is hovered, so the pointer tilt does not drop out.
+        let allowed = 0;
         let animTime = 0;
         const clock = new THREE.Clock();
         let frameId = 0;
@@ -177,7 +184,8 @@ export function LandingCanvas(props: Props) {
             motionFactor += (motionTarget - motionFactor) * Math.min(1, dt * 5);
             animTime += dt * motionFactor;
             const time = animTime;
-            const motion = 1;
+            allowed += ((state.motion ? 1 : 0) - allowed) * Math.min(1, dt * 5);
+            const motion = allowed;
             const progress = state.progress.current;
             const activeIndex = Math.max(
                 0,
@@ -188,11 +196,16 @@ export function LandingCanvas(props: Props) {
             pointer.x += (pointer.tx - pointer.x) * ease;
             pointer.y += (pointer.ty - pointer.y) * ease;
             if (!drag.active) {
-                drag.yaw += drag.velocity * dt;
-                drag.velocity *= Math.pow(0.04, dt);
+                // A drag is a direct action and always works; its coasting is motion and stops with it.
+                drag.yaw += drag.velocity * dt * allowed;
+                drag.velocity = state.motion ? drag.velocity * Math.pow(0.04, dt) : 0;
             }
-            rig.rotation.y = pointer.x * 0.22;
-            rig.rotation.x = pointer.y * 0.07;
+            // With motion off nothing changes between frames unless the person acts, so skip the render.
+            const key = [progress.toFixed(3), state.tab, state.hover, pointer.x.toFixed(3), pointer.y.toFixed(3), drag.yaw.toFixed(3), allowed.toFixed(3), motionFactor.toFixed(3), size.width, size.height].join('|');
+            if (!state.motion && allowed < 0.001 && motionFactor < 0.001 && key === lastKey) return;
+            lastKey = key;
+            rig.rotation.y = pointer.x * 0.22 * allowed;
+            rig.rotation.x = pointer.y * 0.07 * allowed;
             floor.update(time, motion);
 
             if (pointer.dirty && pointer.inside && !drag.active) {
@@ -257,10 +270,38 @@ export function LandingCanvas(props: Props) {
 
             renderer.render(scene, camera);
         }
-        frame();
+        // The loop runs only while the tab is visible and the canvas is on screen.
+        let tabVisible = !document.hidden;
+        let inView = true;
+        function sync() {
+            if (tabVisible && inView) {
+                if (frameId === 0) {
+                    clock.getDelta();
+                    lastKey = '';
+                    frame();
+                }
+            } else if (frameId !== 0) {
+                cancelAnimationFrame(frameId);
+                frameId = 0;
+            }
+        }
+        function onVisibility() {
+            tabVisible = !document.hidden;
+            sync();
+        }
+        document.addEventListener('visibilitychange', onVisibility);
+        const viewObserver = new IntersectionObserver((entries) => {
+            inView = entries[entries.length - 1]?.isIntersecting ?? true;
+            sync();
+        });
+        viewObserver.observe(hostEl);
+        sync();
 
         return () => {
             cancelAnimationFrame(frameId);
+            frameId = 0;
+            document.removeEventListener('visibilitychange', onVisibility);
+            viewObserver.disconnect();
             observer.disconnect();
             pointerTarget.removeEventListener('pointermove', onMove);
             pointerTarget.removeEventListener('pointerdown', onDown);
@@ -277,9 +318,9 @@ export function LandingCanvas(props: Props) {
             <canvas
                 ref={canvas}
                 aria-hidden="true"
-                className="absolute inset-0 size-full opacity-40 md:opacity-100"
+                className="absolute inset-0 size-full opacity-70 md:opacity-100"
             />
-            <div className="pointer-events-none absolute inset-0 z-20 hidden md:block">
+            <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-20 hidden md:block">
                 {[0, 1, 2].map((tab) => {
                     const label = props.hotspotLabels[tab];
                     if (!label) return null;
@@ -295,6 +336,7 @@ export function LandingCanvas(props: Props) {
                         >
                             <button
                                 type="button"
+                                tabIndex={-1}
                                 aria-pressed={selected}
                                 aria-label={label}
                                 onPointerEnter={() => props.onHover(tab)}
