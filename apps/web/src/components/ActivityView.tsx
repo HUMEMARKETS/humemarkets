@@ -2,7 +2,7 @@
 
 import { Panel, Tabs } from "@hume/ui";
 import { useState } from "react";
-import { useAccount } from "wagmi";
+import { useAccountMode } from "@/hooks/useAccountMode";
 import { ConnectButton } from "./ConnectButton";
 import { FundingTable, HistoryTable } from "./ActivityTables";
 
@@ -16,10 +16,10 @@ const tabs: Array<{ id: Tab; label: string }> = [
 /// PROJECT_BRIEF.md Section 22: the wallet's full record. Both tables come from the indexer, and
 /// the Portfolio page shows the same ones next to the positions they belong to.
 export function ActivityView() {
-  const { isConnected } = useAccount();
+  const mode = useAccountMode();
   const [tab, setTab] = useState<Tab>("history");
 
-  if (!isConnected) {
+  if (mode === "disconnected") {
     return (
       <Panel>
         <div className="flex flex-wrap items-center justify-between gap-3 p-3">
@@ -31,9 +31,7 @@ export function ActivityView() {
   }
 
   return (
-    <Panel
-      title={<Tabs label="Activity sections" tabs={tabs} value={tab} onChange={setTab} />}
-    >
+    <Panel title={<Tabs label="Activity sections" tabs={tabs} value={tab} onChange={setTab} />} sample={mode === "sample"}>
       <div role="tabpanel" className="overflow-x-auto">
         {tab === "history" ? <HistoryTable /> : <FundingTable />}
       </div>

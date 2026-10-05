@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useAccount, useSwitchChain } from "wagmi";
 import { usePerpMarket, usePerpMarketConfig, useSettlementDecimals, useVaultBalances } from "@/hooks/queries";
 import { useDebounced } from "@/hooks/useDebounced";
+import { useAccountMode } from "@/hooks/useAccountMode";
 import { useWalletHume } from "@/hooks/useHume";
 import { useTx } from "@/hooks/useTx";
 import { env } from "@/lib/env";
@@ -14,7 +15,9 @@ import { fmtBps, fmtPrice, fmtUsd } from "@/lib/format";
 import { tradeBlocker } from "@/lib/market";
 import { LIMIT_EXPIRIES, limitDirectionNote, limitExpirySeconds, parseLimitPrice, type LimitExpiry } from "@/lib/limit";
 import { humeRead } from "@/lib/hume";
+import { samplePreviewOpen } from "@/lib/sampleMarket";
 import { chain } from "@/lib/wagmi";
+import { useSampleStore } from "@/stores/sample";
 import { errorMessage } from "@/stores/tx";
 import { useTerminal } from "@/stores/terminal";
 import { ConnectButton } from "./ConnectButton";
@@ -26,6 +29,11 @@ import { VaultControls } from "./VaultControls";
 export function OrderPanel() {
   const symbol = useTerminal((state) => state.symbol);
   const { address, isConnected, chainId } = useAccount();
+  const mode = useAccountMode();
+  const sample = mode === "sample";
+  const sampleVersion = useSampleStore((state) => state.version);
+  /// Whether an order can be sent from here: the sample always can, a wallet only on the right network.
+  const ready = sample || (isConnected && chainId === chain.id);
   const { switchChain } = useSwitchChain();
   const wallet = useWalletHume();
   const run = useTx();
@@ -61,16 +69,21 @@ export function OrderPanel() {
   const validLimit = !isLimit || trigger !== undefined;
 
   const preview = useQuery({
-    queryKey: ["preview", symbol, side, orderType, isLimit ? debouncedLimit : "", debouncedCollateral, String(leverage), address],
+    queryKey: ["preview", symbol, side, orderType, isLimit ? debouncedLimit : "", debouncedCollateral, String(leverage), sample ? `sample-${sampleVersion}` : address],
     queryFn: () =>
-      humeRead.perps.previewOpen({
-        market: symbol,
-        side,
-        collateral: debouncedCollateral,
-        leverage: Number(leverage),
-        user: address,
-        ...(isLimit ? { orderType, limitPrice: trigger } : {}),
-      }),
+      sample
+        ? samplePreviewOpen(
+            { market: symbol, side, collateral: debouncedCollateral, leverage: Number(leverage), ...(isLimit && trigger !== undefined ? { limitPrice: toBaseUnits(trigger, 18) } : {}) },
+            useSampleStore.getState().account,
+          )
+        : humeRead.perps.previewOpen({
+            market: symbol,
+            side,
+            collateral: debouncedCollateral,
+            leverage: Number(leverage),
+            user: address,
+            ...(isLimit ? { orderType, limitPrice: trigger } : {}),
+          }),
     enabled: Boolean(symbol && leverage && validAmount && validLimit),
     refetchInterval: 4_000,
     placeholderData: (previous) => previous,
@@ -85,15 +98,17 @@ export function OrderPanel() {
   const problem =
     paused
       ? paused
-      : !isConnected || chainId !== chain.id || !validAmount || !p
+      : !ready || !validAmount || !p
       ? undefined
       : p.violations[0]
         ? errorMessage(p.violations[0])
         : p.sufficientCollateral === false
-          ? "Not enough available collateral. Deposit first."
+          ? sample
+            ? "Not enough sample USDG for this size. Add more from the Sample menu, or lower the size."
+            : "Not enough available collateral. Deposit first."
           : undefined;
   const waiting =
-    paused || !isConnected || chainId !== chain.id
+    paused || !ready
       ? undefined
       : !validAmount
         ? "Enter a collateral amount."
@@ -146,9 +161,9 @@ export function OrderPanel() {
     <Button variant="down" className="w-full" disabled>
       Market paused
     </Button>
-  ) : !isConnected ? (
+  ) : !sample && !isConnected ? (
     <ConnectButton className="w-full" />
-  ) : chainId !== chain.id ? (
+  ) : !ready ? (
     <Button variant="down" className="w-full" onClick={() => switchChain({ chainId: chain.id })}>
       Switch to {chain.name}
     </Button>
@@ -168,7 +183,7 @@ export function OrderPanel() {
   );
 
   return (
-    <Panel title="Order" className="h-full overflow-y-auto">
+    <Panel title="Order" sample={sample} className="h-full overflow-y-auto">
       <VaultControls />
 
       <div className="flex flex-col gap-3 p-3">
@@ -298,7 +313,21 @@ export function OrderPanel() {
           </p>
         ) : null}
 
-        {preview.error ? <p className="text-down">Could not price this order. Check the connection and try again.</p> : null}
+        {sample && market?.priceSource === "last-close" ? (
+          <p className="text-xs leading-snug text-muted">
+            The market is closed, so a sample order fills at the last close, {fmtPrice(market.indexPrice)}. A real order would be refused until the session opens.
+          </p>
+        ) : null}
+        {sample ? (
+          <p className="text-xs leading-snug text-muted">
+            Sample order: it fills at the real index price against your sample balance. Funding is shown but not charged. Nothing is sent to a wallet.
+          </p>
+        ) : null}
+        {preview.error ? (
+          <p className="text-down">
+            {sample ? "Could not price this order. The price service did not answer. Try again in a moment." : "Could not price this order. Check the connection and try again."}
+          </p>
+        ) : null}
         {problem ? <p className="leading-snug text-down">{problem}</p> : waiting ? <p className="text-muted">{waiting}</p> : null}
         {action}
       </div>

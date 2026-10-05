@@ -4,12 +4,13 @@ import { Num, Panel, Skeleton, Stat, Tabs, chip, cn } from "@hume/ui";
 import { OptionPositionStatus } from "@hume/sdk";
 import { useState } from "react";
 import Link from "next/link";
-import { useAccount } from "wagmi";
+import { useAccountMode } from "@/hooks/useAccountMode";
 import { useOrders, usePortfolioSummary, useSettlementDecimals } from "@/hooks/queries";
 import { useNow } from "@/hooks/useNow";
 import { openOrderCount } from "@/lib/orders";
 import { fmtSigned, fmtUsd, signTone } from "@/lib/format";
 import { ConnectButton } from "./ConnectButton";
+import { SampleMark } from "./SampleMark";
 import { FundingTable, HistoryTable } from "./ActivityTables";
 import { OptionPositionsTable } from "./OptionPositionsTable";
 import { OrdersTable } from "./OrdersTable";
@@ -50,7 +51,8 @@ function lockedShare(available: bigint, locked: bigint): { available: number; lo
 
 /// PROJECT_BRIEF.md Section 28.
 export function PortfolioView() {
-  const { isConnected } = useAccount();
+  const mode = useAccountMode();
+  const sample = mode === "sample";
   const { data: summary, isPending, error } = usePortfolioSummary();
   const { data: decimals = 6 } = useSettlementDecimals();
   const [tab, setTab] = useState<Tab>("all");
@@ -59,7 +61,7 @@ export function PortfolioView() {
   const waiting = orders ? openOrderCount(orders, BigInt(Math.floor(now / 1000))) : 0;
   const tabList = tabs.map((item) => (item.id === "orders" && waiting > 0 ? { ...item, label: `${item.label} (${waiting})` } : item));
 
-  if (!isConnected) {
+  if (mode === "disconnected") {
     return (
       <Panel>
         <div className="flex flex-wrap items-center justify-between gap-3 p-3">
@@ -86,7 +88,10 @@ export function PortfolioView() {
   return (
     <div className="flex flex-col gap-6">
       <div className="rounded-panel border border-line/70 bg-surface p-6">
-        <p className="text-xs text-muted">Portfolio value</p>
+        <p className="flex items-center gap-2 text-xs text-muted">
+          Portfolio value
+          <SampleMark />
+        </p>
         <p className="mt-1 text-[2.5rem] font-light leading-tight tabular-nums">
           {isPending ? <Skeleton className="h-9 w-56" /> : fmtUsd(value, decimals)}
         </p>
@@ -110,6 +115,12 @@ export function PortfolioView() {
             <Num tone={signTone(summary?.realizedPnl, decimals)}>{fmtSigned(summary?.realizedPnl, decimals)}</Num>
           </Stat>
         </dl>
+        {sample ? (
+          <p className="mt-4 text-xs leading-snug text-muted">
+            Sample account: simulated USDG and simulated positions, kept on this device. Prices are real. None of it is on chain, and none of it
+            carries over to a wallet.
+          </p>
+        ) : null}
         <p className="mt-4 text-xs text-muted">
           Unrealized PnL covers perpetual positions. Option positions are priced from the pricing service and shown per position.
         </p>
@@ -117,6 +128,7 @@ export function PortfolioView() {
 
       <Panel
         title={<Tabs label="Portfolio sections" tabs={tabList} value={tab} onChange={setTab} />}
+        sample={sample}
       >
         <div role="tabpanel" className="overflow-x-auto">
           {tab === "all" || tab === "perps" ? (

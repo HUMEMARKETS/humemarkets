@@ -11,6 +11,7 @@ import { chip, cn, interactive, menuItem } from "@hume/ui";
 import { ArrowIcon } from "./ArrowIcon";
 import { Logo } from "./Logo";
 import { MenuIcon } from "./MenuIcon";
+import { ModeMenu } from "./ModeMenu";
 import { WalletButton } from "./WalletButton";
 import { XIcon } from "./XIcon";
 
@@ -20,6 +21,8 @@ const items = [
   { label: "Options", href: "/options" },
   { label: "Perpetuals", href: "/perpetuals" },
   { label: "Strategies", href: "/strategies" },
+  { label: "Leaderboard", href: "/leaderboard" },
+  { label: "Lending", href: "/lending" },
   { label: "Portfolio", href: "/portfolio" },
   { label: "Activity", href: "/activity" },
 ];
@@ -69,7 +72,7 @@ export function Header() {
           <Link href="/" aria-label="Hume home" className="flex h-full shrink-0 items-center">
             <Logo />
           </Link>
-          <nav aria-label="Primary" className="hidden h-full items-center gap-8 lg:flex">
+          <nav aria-label="Primary" className="hidden h-full items-center gap-5 xl:flex 2xl:gap-8">
             {items.map((item) => {
               const current = isCurrent(pathname, item.href);
               return (
@@ -80,19 +83,20 @@ export function Header() {
             })}
           </nav>
         </div>
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-3 sm:gap-6">
+          <ModeMenu />
           <a
             href={X_URL}
             target="_blank"
             rel="noreferrer"
             aria-label="Hume on X"
-            className={cn(chip, "size-11 shrink-0 justify-center rounded-control! max-lg:size-10")}
+            className={cn(chip, "size-11 shrink-0 justify-center rounded-control! max-xl:size-10")}
           >
             <XIcon />
           </a>
           {/* On a phone the wallet button lives at the bottom of the menu, which leaves the bar to the logo, X and the menu button — Trade goes with it, since "Markets"/"Perpetuals" in the sheet already cover that entry point on mobile. */}
-          <div className="hidden items-center gap-6 lg:flex">
-            <Link href="/perpetuals" className={tradeLink}>
+          <div className="hidden items-center gap-3 xl:flex 2xl:gap-6">
+            <Link href="/perpetuals" className={cn(tradeLink, "max-2xl:hidden")}>
               Trade
               <ArrowIcon />
             </Link>
@@ -104,7 +108,7 @@ export function Header() {
             aria-expanded={open}
             aria-controls="mobile-nav"
             onClick={() => setOpen((value) => !value)}
-            className={cn(chip, "relative size-10 justify-center rounded-control! lg:hidden")}
+            className={cn(chip, "relative size-10 justify-center rounded-control! xl:hidden")}
           >
             <MenuIcon open={open} />
             {/* A connected wallet is out of sight in the menu, so the button says so. */}
@@ -113,7 +117,7 @@ export function Header() {
         </div>
       </div>
       {open ? (
-        <nav id="mobile-nav" aria-label="Primary mobile" className="absolute inset-x-0 top-full max-h-[calc(100dvh-7.125rem)] overflow-y-auto bg-ground lg:hidden">
+        <nav id="mobile-nav" aria-label="Primary mobile" className="absolute inset-x-0 top-full max-h-[calc(100dvh-7.125rem)] overflow-y-auto bg-ground xl:hidden">
           {items.map((item) => {
             const current = isCurrent(pathname, item.href);
             return (

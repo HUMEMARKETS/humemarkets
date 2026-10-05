@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { ContractAddressBadge } from '@/components/ContractAddressBadge';
 import { DocsLiveParameters } from '@/components/DocsLiveParameters';
 import { Footer } from '@/components/Footer';
+import { SampleMark } from '@/components/SampleMark';
 import { env } from '@/lib/env';
 import { explorerAddressUrl } from '@/lib/explorer';
 import { MONO, PAGE_FRAME } from '@/lib/frame';
@@ -117,6 +118,7 @@ export default function Docs() {
                         <h1 className="font-serif text-[2.75rem] font-normal leading-[1.05] tracking-[-0.03em] text-text sm:text-[4rem]">
                             Documentation
                         </h1>
+                        <SampleMark className="mt-3" />
                         <p className={cn(bodyText, 'mt-5 text-xl')}>
                             How Hume works, written from the deployed contracts. Each section names the source
                             files it was checked against. Fees, leverage and caps are read from the chain, not

@@ -4,14 +4,16 @@ import { Button, cn, menuItem } from "@hume/ui";
 import Link from "next/link";
 import { useCallback, useRef, useState } from "react";
 import { useAccount, useDisconnect, useSwitchChain } from "wagmi";
+import { useAccountMode } from "@/hooks/useAccountMode";
 import { useDismiss } from "@/hooks/useDismiss";
+import { useModeStore } from "@/stores/mode";
 import { shortHash } from "@/lib/format";
 import { humeRead } from "@/lib/hume";
 import { chain } from "@/lib/wagmi";
 import { ConnectButton } from "./ConnectButton";
 
 /// The header's own size: a 38px bubble with the same small uppercase type as the navigation.
-const bubble = "h-11! rounded-control! px-4! text-[13px]! uppercase tracking-[0.04em] max-lg:h-10! max-sm:px-3!";
+const bubble = "h-11! rounded-control! px-4! text-[13px]! uppercase tracking-[0.04em] max-xl:h-10! max-sm:px-3!";
 
 const item = cn(menuItem, "flex h-9 w-full items-center px-3 text-left text-sm");
 
@@ -28,6 +30,8 @@ function explorerAddressUrl(address: `0x${string}`): string | undefined {
 /// upward (`menuAbove`), because it sits at the bottom of the sheet.
 export function WalletButton({ className = bubble, block = false, menuAbove = false }: { className?: string; block?: boolean; menuAbove?: boolean }) {
   const { address, isConnected, chainId } = useAccount();
+  const mode = useAccountMode();
+  const setPreference = useModeStore((state) => state.setPreference);
   const { disconnect } = useDisconnect();
   const { switchChain, isPending: switching } = useSwitchChain();
   const [open, setOpen] = useState(false);
@@ -37,6 +41,15 @@ export function WalletButton({ className = bubble, block = false, menuAbove = fa
   useDismiss(ref, open, close);
 
   if (!isConnected || !address) return <ConnectButton size="sm" className={className} block={block} menuAbove={menuAbove} />;
+
+  // A wallet is connected but the person is on the sample account: say what the button does.
+  if (mode === "sample") {
+    return (
+      <Button variant="primary" size="sm" className={cn(className, block && "w-full")} onClick={() => setPreference("live")}>
+        Use wallet
+      </Button>
+    );
+  }
 
   if (chainId !== chain.id) {
     return (

@@ -3,7 +3,7 @@
 import { Num, Panel, Segmented, Stat, Tabs } from "@hume/ui";
 import type { OpenInterestRange } from "@hume/sdk";
 import { useMemo, useState } from "react";
-import { useAccount } from "wagmi";
+import { useAccountMode } from "@/hooks/useAccountMode";
 import {
   useMarketFundingHistory,
   useOpenInterestHistory,
@@ -175,12 +175,12 @@ const TABS: Array<{ id: Tab; label: string }> = [
 ];
 
 function PositionsBody() {
-  const { isConnected } = useAccount();
+  const mode = useAccountMode();
   const { data, isPending } = usePositions();
   const { data: decimals = 6 } = useSettlementDecimals();
   const open = data?.perps.filter((position) => position.open) ?? [];
 
-  if (!isConnected) return <p className="p-3 text-muted">Connect a wallet to see your positions.</p>;
+  if (mode === "disconnected") return <p className="p-3 text-muted">Connect a wallet to see your positions.</p>;
   if (isPending) return <p className="p-3 text-muted">Loading positions…</p>;
   if (open.length === 0) return <p className="p-3 text-muted">No open positions. Deposit collateral and open one from the order panel.</p>;
   return <PerpPositionsTable positions={open} decimals={decimals} />;
@@ -189,6 +189,8 @@ function PositionsBody() {
 /// The strip under the chart: the wallet's positions, and the market's funding and open interest.
 export function MarketAnalytics() {
   const [tab, setTab] = useState<Tab>("positions");
+  // Funding and open interest are the market's real figures; only the positions tab is the sample account.
+  const sample = useAccountMode() === "sample" && tab === "positions";
   const { data } = usePositions();
   const count = data?.perps.filter((position) => position.open).length ?? 0;
   const tabList = TABS.map((item) => (item.id === "positions" && count > 0 ? { ...item, label: `${item.label} (${count})` } : item));
@@ -196,6 +198,7 @@ export function MarketAnalytics() {
   return (
     <Panel
       className="h-64 shrink-0"
+      sample={sample}
       title={<Tabs label="Market sections" tabs={tabList} value={tab} onChange={setTab} />}
     >
       <div role="tabpanel" className="min-h-0 flex-1 overflow-auto">

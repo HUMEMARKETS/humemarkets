@@ -1,10 +1,16 @@
 "use client";
 
-import { useQueries, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQueries, useQuery } from "@tanstack/react-query";
 import { useAccount } from "wagmi";
-import type { CandleInterval, OpenInterestRange } from "@hume/sdk";
+import type { CandleInterval, Leaderboard, LeaderboardMetric, OpenInterestRange, PerpMarketInfo, PriceSet } from "@hume/sdk";
 import type { Address } from "@hume/types";
+import { useAccountMode } from "@/hooks/useAccountMode";
 import { humeRead } from "@/lib/hume";
+import { sampleBoard } from "@/lib/leaderboardFixture";
+import { priceSetWithFallback, type PriceSource } from "@/lib/samplePrices";
+import { toOpenOrders, toVaultBalances, type SampleAccount } from "@/lib/sampleEngine";
+import { sampleHistory, samplePositions, sampleSummary } from "@/lib/sampleViews";
+import { useSampleStore } from "@/stores/sample";
 import { symbolOf } from "@/lib/market";
 import { env } from "@/lib/env";
 import { readHistoryAfter } from "@/lib/history";
@@ -38,16 +44,33 @@ export function usePerpMarketConfig(symbol: string) {
   return data?.find((market) => symbolOf(market.marketId) === symbol);
 }
 
+/// `PerpMarketInfo` plus where its prices came from, so a screen can say "last close" instead of
+/// presenting a carried-over price as live.
+export type PerpMarketView = PerpMarketInfo & { priceSource: PriceSource };
+
 /// Config, risk parameters, funding and the three live prices for one market.
-export const perpMarketQuery = (symbol: string) => ({
-  queryKey: ["perp-market", symbol],
-  queryFn: () => humeRead.perps.get(symbol),
+///
+/// In sample mode a shut equity session does not blank the market: `perps.get` reads the oracle, which
+/// reverts outside the session, so the sample falls back to the API's last close and says so. A real
+/// trade on a shut market is refused by the chain, so the connected path is unchanged.
+export const perpMarketQuery = (symbol: string, sample = false) => ({
+  queryKey: sample ? ["perp-market", symbol, "sample"] : ["perp-market", symbol],
+  queryFn: async (): Promise<PerpMarketView> => {
+    if (!sample) return { ...(await humeRead.perps.get(symbol)), priceSource: "live" };
+    const [market, risk, funding, prices] = await Promise.all([
+      humeRead.markets.get(symbol),
+      humeRead.risk.get(symbol),
+      humeRead.funding.get(symbol),
+      priceSetWithFallback(symbol),
+    ]);
+    return { market, risk, funding, indexPrice: prices.index.price, markPrice: prices.mark.price, lastPrice: prices.last.price, priceSource: prices.source };
+  },
   enabled: Boolean(symbol),
   refetchInterval: TICK_MS,
 });
 
 export function usePerpMarket(symbol: string) {
-  return useQuery(perpMarketQuery(symbol));
+  return useQuery(perpMarketQuery(symbol, useAccountMode() === "sample"));
 }
 
 export function useSettlementDecimals() {
@@ -58,34 +81,65 @@ export function useSettlementDecimals() {
   });
 }
 
-export function useVaultBalances() {
-  const { address } = useAccount();
+/// The sample account as a query. It has the shape of every chain read (`isPending`, `data`, `error`), so
+/// a component reads the sample and the chain through the same code. The key carries the store's
+/// version, so any change to the account refetches this at once; the previous value stays on screen
+/// meanwhile, so a balance never flashes a skeleton when a fill lands.
+function useSampleRead<T>(name: string, read: (account: SampleAccount) => T | Promise<T>, options: { enabled?: boolean; refetchInterval?: number } = {}) {
+  const account = useSampleStore((state) => state.account);
+  const version = useSampleStore((state) => state.version);
+  const sample = useAccountMode() === "sample";
   return useQuery({
+    queryKey: ["sample", name, version],
+    queryFn: () => read(account as SampleAccount),
+    enabled: sample && Boolean(account) && (options.enabled ?? true),
+    refetchInterval: options.refetchInterval,
+    placeholderData: keepPreviousData,
+  });
+}
+
+/// A live read of the connected wallet, switched off in sample mode and while no wallet is connected.
+function useWalletEnabled() {
+  const { address } = useAccount();
+  const mode = useAccountMode();
+  return { address, enabled: mode === "connected" && Boolean(address) };
+}
+
+export function useVaultBalances() {
+  const { address, enabled } = useWalletEnabled();
+  const live = useQuery({
     queryKey: ["vault-balances", address],
     queryFn: () => humeRead.vault.balances(address as Address, env.addresses.settlementToken),
-    enabled: Boolean(address),
+    enabled,
     refetchInterval: 8_000,
   });
+  const sample = useSampleRead("vault-balances", toVaultBalances);
+  return useAccountMode() === "sample" ? sample : live;
 }
 
 export function useWalletTokenBalance() {
-  const { address } = useAccount();
-  return useQuery({
+  const { address, enabled } = useWalletEnabled();
+  const live = useQuery({
     queryKey: ["wallet-token-balance", address],
     queryFn: () => humeRead.erc20.balanceOf(env.addresses.settlementToken, address as Address),
-    enabled: Boolean(address),
+    enabled,
     refetchInterval: 8_000,
   });
+  // The sample has no wallet: its USDG is handed out into the vault directly.
+  const sample = useSampleRead("wallet-token-balance", () => 0n);
+  return useAccountMode() === "sample" ? sample : live;
 }
 
 export function usePositions() {
-  const { address } = useAccount();
-  return useQuery({
+  const { address, enabled } = useWalletEnabled();
+  const live = useQuery({
     queryKey: ["positions", address],
     queryFn: () => humeRead.portfolio.positions(address as Address),
-    enabled: Boolean(address),
+    enabled,
     refetchInterval: 6_000,
   });
+  const sample = useSampleRead("positions", samplePositions);
+  return useAccountMode() === "sample" ? sample : live;
 }
 
 /// Every market on the registry, perps and options alike.
@@ -109,10 +163,11 @@ export function useMarketStats() {
 }
 
 /// What the Markets page needs per market from the chain. Each read is settled separately so one
-/// market with, say, no funding configured still shows its price.
-async function fetchMarketOverview(symbol: string) {
+/// market with, say, no funding configured still shows its price. Sample mode prices a shut market at
+/// its last close rather than leaving every row blank.
+async function fetchMarketOverview(symbol: string, sample = false) {
   const [prices, funding, openInterest] = await Promise.allSettled([
-    humeRead.prices.get(symbol),
+    sample ? (priceSetWithFallback(symbol) as Promise<PriceSet>) : humeRead.prices.get(symbol),
     humeRead.funding.get(symbol),
     humeRead.risk.openInterest(symbol),
   ]);
@@ -120,48 +175,56 @@ async function fetchMarketOverview(symbol: string) {
   return { prices: value(prices), funding: value(funding), openInterest: value(openInterest) };
 }
 
-export const overviewQuery = (symbol: string) => ({
-  queryKey: ["market-overview", symbol],
-  queryFn: () => fetchMarketOverview(symbol),
+export const overviewQuery = (symbol: string, sample = false) => ({
+  queryKey: sample ? ["market-overview", symbol, "sample"] : ["market-overview", symbol],
+  queryFn: () => fetchMarketOverview(symbol, sample),
   refetchInterval: TICK_MS,
 });
 
 /// The overview for several markets at once, in the order given, so a table can sort by it. Each
 /// entry is `overviewQuery(symbol)`, so the cache is shared with anything else that reads it.
 export function useMarketOverviews(symbols: string[]) {
-  return useQueries({ queries: symbols.map(overviewQuery) });
+  const sample = useAccountMode() === "sample";
+  return useQueries({ queries: symbols.map((symbol) => overviewQuery(symbol, sample)) });
 }
 
 export function usePortfolioSummary() {
-  const { address } = useAccount();
-  return useQuery({
+  const { address, enabled } = useWalletEnabled();
+  const live = useQuery({
     queryKey: ["portfolio-summary", address],
     queryFn: () => humeRead.portfolio.summary(address as Address),
-    enabled: Boolean(address),
+    enabled,
     refetchInterval: 6_000,
   });
+  const sample = useSampleRead("portfolio-summary", sampleSummary, { refetchInterval: 6_000 });
+  return useAccountMode() === "sample" ? sample : live;
 }
 
 export function useFunding() {
-  const { address } = useAccount();
-  return useQuery({
+  const { address, enabled } = useWalletEnabled();
+  const live = useQuery({
     queryKey: ["funding", address],
     queryFn: () => humeRead.portfolio.funding(address as Address, { limit: 200 }),
-    enabled: Boolean(address && env.apiUrl),
+    enabled: enabled && Boolean(env.apiUrl),
     refetchInterval: 30_000,
     retry: false,
   });
+  // Funding is shown on the ticket but never charged to a sample position.
+  const sample = useSampleRead("funding", () => [] as Awaited<ReturnType<typeof humeRead.portfolio.funding>>);
+  return useAccountMode() === "sample" ? sample : live;
 }
 
 export function useHistory() {
-  const { address } = useAccount();
-  return useQuery({
+  const { address, enabled } = useWalletEnabled();
+  const live = useQuery({
     queryKey: ["history", address],
     queryFn: () => readHistoryAfter(address as Address),
-    enabled: Boolean(address && env.apiUrl),
+    enabled: enabled && Boolean(env.apiUrl),
     refetchInterval: 30_000,
     retry: false,
   });
+  const sample = useSampleRead("history", sampleHistory);
+  return useAccountMode() === "sample" ? sample : live;
 }
 
 export const priceHistoryQuery = (symbol: string, range: "1h" | "6h" | "24h" | "7d") => ({
@@ -187,9 +250,10 @@ export function useOptionUnderlyings() {
 
 /// Index price, the spot the strike ladder is centred on.
 export function useIndexPrice(symbol: string) {
+  const sample = useAccountMode() === "sample";
   return useQuery({
-    queryKey: ["index-price", symbol],
-    queryFn: async () => (await humeRead.prices.get(symbol)).index.price,
+    queryKey: sample ? ["index-price", symbol, "sample"] : ["index-price", symbol],
+    queryFn: async () => (sample ? (await priceSetWithFallback(symbol)).index.price : (await humeRead.prices.get(symbol)).index.price),
     enabled: Boolean(symbol),
     refetchInterval: TICK_MS,
   });
@@ -289,35 +353,40 @@ export function useOpenInterestNow(symbol: string) {
 /// The connected wallet's limit orders, oldest first, read from the chain. Off on a deployment
 /// without limit orders.
 export function useOrders() {
-  const { address } = useAccount();
-  return useQuery({
+  const { address, enabled } = useWalletEnabled();
+  const live = useQuery({
     queryKey: ["orders", address],
     queryFn: () => humeRead.portfolio.orders(address as Address),
-    enabled: Boolean(address && env.limitOrders),
+    enabled: enabled && env.limitOrders,
     refetchInterval: 8_000,
   });
+  const sample = useSampleRead("orders", (account) => toOpenOrders(account, "0x0000000000000000000000000000000000000000"), { enabled: env.limitOrders });
+  return useAccountMode() === "sample" ? sample : live;
 }
 
 /// Whether the deployment has stop-loss and take-profit orders. A deployment made before `[1.3.0]`
 /// has limit orders without them. Cached for the session once known.
 export function useTriggerSupport() {
-  return useQuery({
+  const live = useQuery({
     queryKey: ["trigger-support"],
     queryFn: () => humeRead.perps.supportsTriggerOrders(),
     enabled: env.limitOrders,
     staleTime: Number.POSITIVE_INFINITY,
   });
+  // Stop-loss and take-profit are not simulated, so sample mode reports a deployment without them and
+  // the controls stay out of sight rather than failing when pressed.
+  return useAccountMode() === "sample" ? { ...live, data: false } : live;
 }
 
 /// The connected wallet's stop-loss and take-profit orders, oldest first, read from the chain.
 /// Off where the deployment has none.
 export function useTriggerOrders() {
-  const { address } = useAccount();
+  const { address, enabled } = useWalletEnabled();
   const { data: supported } = useTriggerSupport();
   return useQuery({
     queryKey: ["trigger-orders", address],
     queryFn: () => humeRead.portfolio.triggerOrders(address as Address),
-    enabled: Boolean(address && supported),
+    enabled: enabled && Boolean(supported),
     refetchInterval: 8_000,
   });
 }
@@ -326,11 +395,64 @@ export function useTriggerOrders() {
 /// cross margin. A cross position is liquidated on the account's health, so its own liquidation price
 /// would mislead.
 export function useCrossPositions() {
-  const { address } = useAccount();
+  const { address, enabled } = useWalletEnabled();
   return useQuery({
     queryKey: ["cross-positions", address],
     queryFn: async () => new Set((await humeRead.crossMargin.positions(address as Address)).map((id) => id.toString())),
-    enabled: Boolean(address && env.crossMargin),
+    enabled: enabled && env.crossMargin,
     refetchInterval: 15_000,
   });
+}
+
+/// The leaderboard. In sample mode it asks the API for its simulator board and, when the API has none
+/// (not deployed yet, or unreachable), falls back to the board in the repo, so the page is never blank. A
+/// real board never falls back: if it cannot be read the page says so.
+export function useLeaderboard(metric: LeaderboardMetric) {
+  const sample = useAccountMode() === "sample";
+  return useQuery({
+    queryKey: ["leaderboard", metric, sample ? "sample" : "live"],
+    queryFn: async (): Promise<Leaderboard> => {
+      if (!sample) return humeRead.leaderboard.board({ metric });
+      const board = await humeRead.leaderboard.board({ metric, sample: true }).catch(() => undefined);
+      return board && board.total > 0 ? board : sampleBoard(metric);
+    },
+    refetchInterval: 60_000,
+    retry: false,
+  });
+}
+
+/// The lending pair's parameters, status and totals. Off until a pair address exists for this network.
+export function useCreditMarket() {
+  return useQuery({
+    queryKey: ["credit-market", env.creditPair],
+    queryFn: () => humeRead.credit.market(env.creditPair as Address),
+    enabled: Boolean(env.creditPair),
+    refetchInterval: 30_000,
+    retry: 1,
+  });
+}
+
+/// The connected wallet's position in the lending pair. Sample mode has no lending account, so it is off there.
+export function useCreditPosition() {
+  const { address, enabled } = useWalletEnabled();
+  return useQuery({
+    queryKey: ["credit-position", env.creditPair, address],
+    queryFn: () => humeRead.credit.position(env.creditPair as Address, address as Address),
+    enabled: enabled && Boolean(env.creditPair),
+    refetchInterval: 8_000,
+  });
+}
+
+/// The collateral's USD price for the health calculator: the pair's own oracle when there is a pair, otherwise
+/// the terminal's index price for the same symbol (the last close while its session is shut, in sample mode).
+export function useCreditCollateralPrice(oracle?: Address, collateralToken?: Address) {
+  const fromTerminal = useIndexPrice(env.creditSymbol);
+  const fromPair = useQuery({
+    queryKey: ["credit-price", oracle, collateralToken],
+    queryFn: () => humeRead.credit.price(oracle as Address, collateralToken as Address),
+    enabled: Boolean(oracle && collateralToken),
+    refetchInterval: 30_000,
+    retry: false,
+  });
+  return fromPair.data !== undefined ? { price: fromPair.data, source: "pair" as const, isPending: false } : { price: fromTerminal.data, source: "terminal" as const, isPending: fromTerminal.isPending };
 }

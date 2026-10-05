@@ -33,6 +33,13 @@ const raw = {
   optionStrikeRows: process.env.NEXT_PUBLIC_OPTION_STRIKE_ROWS,
   optionExpiryDays: process.env.NEXT_PUBLIC_OPTION_EXPIRY_DAYS,
   optionExpiryHourUtc: process.env.NEXT_PUBLIC_OPTION_EXPIRY_HOUR_UTC,
+  creditPair: process.env.NEXT_PUBLIC_CREDIT_PAIR,
+  creditSymbol: process.env.NEXT_PUBLIC_CREDIT_SYMBOL,
+  creditExampleMaxLtvBps: process.env.NEXT_PUBLIC_CREDIT_EXAMPLE_MAX_LTV_BPS,
+  creditExampleLiquidationLtvBps: process.env.NEXT_PUBLIC_CREDIT_EXAMPLE_LIQ_LTV_BPS,
+  sampleStartingUsd: process.env.NEXT_PUBLIC_SAMPLE_START_USD,
+  sampleMaxPositionUsd: process.env.NEXT_PUBLIC_SAMPLE_MAX_POSITION_USD,
+  sampleTopUpUsd: process.env.NEXT_PUBLIC_SAMPLE_TOP_UP_USD,
 };
 
 /// A whole number from the environment, or `fallback` when it is unset, not a number or out of range.
@@ -92,6 +99,10 @@ function resolveProtocolToken(): { address: Address; symbol: string } | undefine
   return { address: address as Address, symbol: raw.protocolTokenSymbol?.trim() || recorded?.symbol || "" };
 }
 
+function validAddress(value: string | undefined): Address | undefined {
+  return value && /^0x[0-9a-fA-F]{40}$/.test(value.trim()) ? (value.trim() as Address) : undefined;
+}
+
 export const env = {
   chainId,
   /// No default RPC is baked in: Robinhood's own default had an expired TLS certificate
@@ -113,6 +124,26 @@ export const env = {
   limitOrders: Boolean(resolveAddresses().perpOrderManager),
   /// Cross margin needs a deployment that includes `CrossMarginManager`; the ticket hides it without one.
   crossMargin: Boolean(resolveAddresses().crossMargin),
+  /// The sample account's own numbers, in whole dollars of sample USDG. They belong to the simulation
+  /// only: the real caps live on chain and are read from there. A sample cap is deliberately larger
+  /// than the launch caps, which are sized to a treasury of cents and would refuse every sample order.
+  sample: {
+    startingUsd: wholeNumber(raw.sampleStartingUsd, 10_000, 100, 10_000_000),
+    maxPositionUsd: wholeNumber(raw.sampleMaxPositionUsd, 50_000, 100, 100_000_000),
+    topUpUsd: wholeNumber(raw.sampleTopUpUsd, 10_000, 100, 10_000_000),
+  },
+  /// The lending pair (Phase 9). The environment wins; otherwise the deployment record's `creditPairTslaUsdg`,
+  /// which the contracts lane adds to `@hume/config` once the credit stack is broadcast. Read through a loose
+  /// record so this builds before and after that key exists. `undefined` until then: the page says so.
+  creditSymbol: (raw.creditSymbol || "TSLA").trim().toUpperCase(),
+  /// Worked-example thresholds for the health calculator while the pair is not deployed on this network, so
+  /// the page can still teach what a health factor is. They are labelled as examples on screen and replaced by
+  /// the pair's own the moment it exists. They follow the launch parameters in docs/evidence/phase-9.md.
+  creditExample: {
+    maxLtvBps: wholeNumber(raw.creditExampleMaxLtvBps, 6_000, 1, 9_999),
+    liquidationLtvBps: wholeNumber(raw.creditExampleLiquidationLtvBps, 7_000, 1, 9_999),
+  },
+  creditPair: validAddress(raw.creditPair) ?? validAddress((resolveAddresses() as unknown as Record<string, string | undefined>).creditPairTslaUsdg),
   /// Option chain layout. The contract lists no strikes (a series is created on first use), so the
   /// terminal proposes a ladder around spot and a few upcoming expiries; these set its shape.
   options: {

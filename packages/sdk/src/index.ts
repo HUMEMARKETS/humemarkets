@@ -60,6 +60,7 @@ export type {
   SignedQuote,
 } from "./options.js";
 export { premiumForOrder } from "./options.js";
+export { DEFAULT_SLIPPAGE_BPS } from "./perps.js";
 export type {
   ClosePerpPositionParams,
   IncreasePerpPositionParams,
@@ -84,7 +85,7 @@ export type { OpenOrder, OrderStatus, TriggerKind, TriggerOrder } from "./orders
 export { triggerFiresBelow } from "./orders.js";
 export type { VaultBalances, VaultNamespace } from "./vault.js";
 export type { Erc20Namespace } from "./erc20.js";
-export type { Candle, CandleInterval, OracleNamespace, PricePoint, PriceRange, PriceReading, PriceSet, PricesNamespace } from "./oracle.js";
+export type { Candle, CandleInterval, OracleNamespace, PricePoint, PriceRange, PriceReading, PriceSet, PriceState, PriceStateReading, PricesNamespace } from "./oracle.js";
 export type { FundingNamespace, FundingInfo, FundingRatePoint } from "./funding.js";
 export type { OpenInterest, OpenInterestPoint, OpenInterestRange, RiskNamespace, RiskInfo } from "./risk.js";
 export type { FeeInfo, FeesNamespace } from "./fees.js";
@@ -159,3 +160,15 @@ export { RFQ_DOMAIN_NAME, RFQ_DOMAIN_VERSION, rfqQuoteTypedData } from "./rfq.js
 export type { RfqNamespace, RfqParameters, RfqQuote, RfqQuoteInput } from "./rfq.js";
 export { STRUCTURED_KINDS, STRUCTURED_SUMMARY } from "./structured.js";
 export type { StructuredKind, StructuredNamespace, StructuredProduct, StructuredRequest } from "./structured.js";
+export { LeaderboardHttpError, parseLeaderboard, parsePnlCard } from "./leaderboard.js";
+export type {
+  Leaderboard,
+  LeaderboardEntry,
+  LeaderboardMetric,
+  LeaderboardNamespace,
+  LeaderboardQuery,
+  PnlCard,
+  PnlCardStatus,
+} from "./leaderboard.js";
+export { CREDIT_STATUS } from "./credit.js";
+export type { CreditNamespace, CreditStatus } from "./credit.js";
