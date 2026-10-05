@@ -58,7 +58,7 @@ export function PerpPreview({ className }: { className?: string }) {
     <Panel className={className} title={label} sample={!isLive}>
       <div className="flex flex-1 flex-col gap-4 p-4">
         <div className="flex items-baseline justify-between gap-3">
-          <Num className="text-[2rem] font-light leading-tight">{isLive ? `$${fmtPrice(mark)}` : `$${view.entry.toFixed(2)}`}</Num>
+          <Num className="font-display text-[2rem] font-semibold leading-tight">{isLive ? `$${fmtPrice(mark)}` : `$${view.entry.toFixed(2)}`}</Num>
           <span className="text-xs text-muted">{isLive ? "Mark price" : "Illustrative price"}</span>
         </div>
         <dl>
@@ -115,7 +115,7 @@ export function VaultPreview({ className }: { className?: string }) {
     <Panel className={className} title={`${env.creditSymbol} collateral, borrowing USDG`} sample>
       <div className="flex flex-1 flex-col gap-4 p-4">
         <div className="flex flex-wrap items-baseline gap-x-3">
-          <Num tone={tone} className={cn("text-[2rem] font-light leading-tight")}>{fmtHealth(hf)}</Num>
+          <Num tone={tone} className={cn("font-display text-[2rem] font-semibold leading-tight")}>{fmtHealth(hf)}</Num>
           <span className="text-sm font-medium">{healthWords[band].label}</span>
         </div>
         <p className="text-sm leading-snug text-muted">{healthWords[band].meaning}</p>

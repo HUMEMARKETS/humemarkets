@@ -72,6 +72,12 @@
   --color-accent-press: #1fc95f;
   /* The accent on the PNL card's ivory ground, where the bright green would be 1.56:1. */
   --color-card-accent: #0f8f3e;
+  /* Candles only. A chart is read at a glance across hundreds of bodies, so it uses a fully saturated
+     green and red; text, buttons and PnL keep the calmer `up`/`down` pair above. Direction is still
+     carried by shape (body above or below the open, wick), so the pair does not rely on hue alone.
+     6-digit hex on purpose: the chart fades them to an alpha for the volume bars. */
+  --color-candle-up: #00e676;
+  --color-candle-down: #ff3b4e;
   --color-up-hover: #cbefd8;
   --color-up-press: #a6d9b9;
   --color-down-hover: #d08575;
@@ -81,12 +87,11 @@
   --color-up-line: rgb(185 232 201 / 0.35);
   --color-down-line: rgb(196 112 95 / 0.35);
   --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
-  /* Display face for the hero, section titles and big figures. Was Newsreader (a literary serif);
-     swapped for Tomorrow, a geometric technical sans, imitating the reference site's own display
-     choice — moves the landing page's voice from editorial toward institutional/technical, closer to
-     PROJECT_BRIEF.md's "precise typography" / "financial-terminal aesthetic" line. Named for its role
-     (it was `--font-serif`, which it never was), so `font-display` is the utility. */
-  --font-display: var(--font-tomorrow), ui-sans-serif, system-ui, sans-serif;
+  /* Display face for the hero, section titles, page titles and big figures: Space Grotesk, a geometric
+     grotesk with a technical edge, set bold (600 to 700) with tight tracking and short phrases. It
+     replaces Tomorrow, which only came in light weights and read as quiet. Body, tables and forms stay
+     Geist; addresses and verifiable data stay Geist Mono. */
+  --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
   /* Verifiable data only — contract addresses, chain name, tech-stack tags — never prices/tickers,
      which stay in the sans everywhere else in the app. */
   --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;

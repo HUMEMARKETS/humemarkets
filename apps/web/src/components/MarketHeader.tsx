@@ -24,7 +24,7 @@ export function MarketHeader() {
     <div className="flex shrink-0 flex-col gap-3 rounded-panel border border-line/70 bg-surface p-3 lg:flex-row lg:items-center lg:gap-8 lg:px-4">
       <div className="flex items-center justify-between gap-3 xl:block">
         <div className="flex items-baseline gap-2">
-          <h1 className="text-title font-normal">{symbol ? `${symbol}-PERP` : "–"}</h1>
+          <h1 className="font-display text-title font-semibold">{symbol ? `${symbol}-PERP` : "–"}</h1>
           {data?.priceSource === "last-close" ? (
             <span
               className="rounded-sm border border-line px-1 text-xs text-muted"
@@ -60,7 +60,7 @@ export function MarketHeader() {
         ) : null}
       </div>
       <div className="flex items-baseline gap-3">
-        <Num className="text-figure font-light">{data ? fmtPrice(data.markPrice) : <Skeleton className="h-7 w-32" />}</Num>
+        <Num className="font-display text-figure font-semibold">{data ? fmtPrice(data.markPrice) : <Skeleton className="h-7 w-32" />}</Num>
         <Change stats={stats} className="text-sm" />
       </div>
       <dl className="grid grid-cols-2 gap-x-6 gap-y-2 sm:flex sm:flex-wrap sm:gap-x-8 lg:flex-1">

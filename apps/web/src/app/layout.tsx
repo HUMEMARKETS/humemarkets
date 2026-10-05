@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Tomorrow } from "next/font/google";
+import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
 import { preconnect } from "react-dom";
 import type { ReactNode } from "react";
 import { AppShell } from "@/components/AppShell";
@@ -9,9 +9,9 @@ import { Providers } from "../providers";
 import "./globals.css";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist", display: "swap" });
-// The landing page's display face: light weights for the headline and statement, italic for the wordmark.
-// Imitates the reference site's own display choice (see globals.css's --font-display comment).
-const tomorrow = Tomorrow({ subsets: ["latin"], style: ["normal", "italic"], weight: ["300", "400"], variable: "--font-tomorrow", display: "swap" });
+// The display face for headings and big figures: a bold geometric grotesk with a technical edge, which
+// suits short headlines and holds up at 700 (see globals.css's --font-display comment).
+const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], weight: ["500", "600", "700"], variable: "--font-space-grotesk", display: "swap" });
 // Verifiable data only (contract addresses, chain name, tech-stack tags) — Geist's own mono companion,
 // so it pairs with the sans instead of reading as a bolted-on font.
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono", display: "swap" });
@@ -52,7 +52,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     if (target) preconnect(target, { crossOrigin: "anonymous" });
   }
   return (
-    <html lang="en" className={`${geist.variable} ${tomorrow.variable} ${geistMono.variable}`}>
+    <html lang="en" className={`${geist.variable} ${spaceGrotesk.variable} ${geistMono.variable}`}>
       <body>
         <Providers>
           <AppShell>{children}</AppShell>

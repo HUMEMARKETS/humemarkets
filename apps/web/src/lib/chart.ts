@@ -14,6 +14,11 @@ export interface CandlePoint {
   volume: number;
 }
 
+/// A candle chart opens by default, because it shows an open, high, low and close where a line shows
+/// one price. Candles come from the API, so without it the chart falls back to the line.
+export type ChartMode = "line" | "candles";
+export const defaultChartMode = (apiUrl: string | undefined): ChartMode => (apiUrl ? "candles" : "line");
+
 export function toCandlePoints(candles: Candle[], tokenDecimals: number): CandlePoint[] {
   const price = (value: bigint) => Number(formatUnits(value, PRICE_DECIMALS));
   return candles.map((candle) => ({

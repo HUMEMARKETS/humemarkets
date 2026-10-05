@@ -90,7 +90,7 @@ export function PortfolioView() {
           Portfolio value
           <SampleMark />
         </p>
-        <p className="mt-1 text-[2.5rem] font-light leading-tight tabular-nums">
+        <p className="mt-1 font-display text-[2.5rem] font-semibold leading-tight tabular-nums">
           {isPending ? <Skeleton className="h-9 w-56" /> : fmtUsd(value, decimals)}
         </p>
         {summary ? (

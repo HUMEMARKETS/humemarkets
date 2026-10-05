@@ -1,8 +1,14 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { mergeSeries, toCandlePoints } from "./chart.js";
+import { defaultChartMode, mergeSeries, toCandlePoints } from "./chart.js";
 
 const WAD = 10n ** 18n;
+
+test("the chart opens on candles when the API is set, and on the line when it is not", () => {
+  assert.equal(defaultChartMode("https://api.example"), "candles");
+  assert.equal(defaultChartMode(undefined), "line");
+  assert.equal(defaultChartMode(""), "line");
+});
 
 test("candles convert from base units to plain numbers", () => {
   const [point] = toCandlePoints(

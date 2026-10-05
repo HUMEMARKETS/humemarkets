@@ -37,7 +37,7 @@ function HealthReadout({ hf, price, liquidationBonusBps, symbol }: { hf: bigint;
   return (
     <div>
       <div className="flex flex-wrap items-baseline gap-x-3">
-        <Num tone={bandTone[band]} className="text-[2.5rem] font-light leading-tight">
+        <Num tone={bandTone[band]} className="font-display text-[2.5rem] font-semibold leading-tight">
           {fmtHealth(hf)}
         </Num>
         <span className="text-sm font-medium">{healthWords[band].label}</span>

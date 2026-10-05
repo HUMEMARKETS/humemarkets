@@ -254,7 +254,7 @@ export function LandingStage() {
                                     </p>
                                     <Heading
                                         id={`${section.id}-title`}
-                                        className="mt-5 font-display text-[clamp(2.75rem,min(6.4vw,12dvh),7.5rem)] font-light md:whitespace-nowrap leading-[0.95] tracking-[-0.045em] text-text"
+                                        className="mt-5 font-display text-[clamp(2.5rem,min(6vw,11dvh),6.75rem)] font-bold md:whitespace-nowrap leading-[0.98] tracking-[-0.04em] text-text"
                                     >
                                         {section.title[0]}
                                         <br />

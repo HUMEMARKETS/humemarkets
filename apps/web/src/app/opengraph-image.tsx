@@ -8,7 +8,7 @@ export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 // Social preview. The same palette as globals.css, through `theme-colors.ts`: charcoal ground, ivory
-// text, stone for the line beneath it. The mark is ivory; no accent is spent here.
+// text, stone for the line beneath it. The mark is a pale metal ring; no accent is spent here.
 export default async function OpengraphImage() {
   const mark = await readFile(join(process.cwd(), "src/assets/hume-mark.png"));
   const markSrc = `data:image/png;base64,${mark.toString("base64")}`;
@@ -27,7 +27,7 @@ export default async function OpengraphImage() {
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={markSrc} width={168} height={117} alt="" style={{ marginBottom: 44 }} />
+        <img src={markSrc} width={216} height={115} alt="" style={{ marginBottom: 44 }} />
         <div style={{ fontSize: 72, letterSpacing: 18, fontWeight: 500 }}>HUME</div>
         <div style={{ fontSize: 34, color: THEME_MUTED, marginTop: 28 }}>Derivatives for tokenized equities.</div>
       </div>

@@ -46,7 +46,10 @@ export default async function PnlCardImage({ params }: { params: Promise<{ walle
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={markSrc} width={72} height={50} alt="" style={{ marginRight: 20 }} />
+            {/* The ring is pale, so on the ivory card it sits on a charcoal tile. */}
+            <div style={{ display: "flex", background: THEME_GROUND, padding: "10px 14px", marginRight: 20 }}>
+              <img src={markSrc} width={84} height={45} alt="" />
+            </div>
             <div style={{ fontSize: 30, letterSpacing: 10, fontWeight: 500 }}>HUME</div>
           </div>
           {p.sample ? <div style={{ display: "flex", fontSize: 22, letterSpacing: 4, background: THEME_GROUND, color: THEME_TEXT, padding: "6px 14px" }}>SAMPLE DATA</div> : null}
