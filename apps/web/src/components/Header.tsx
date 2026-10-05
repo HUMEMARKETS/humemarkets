@@ -27,7 +27,7 @@ const items: Array<{ label: string; href: string; wideOnly?: boolean }> = [
   { label: "Portfolio", href: "/portfolio" },
   { label: "Activity", href: "/activity" },
   // Ninth item: it does not fit beside the other eight and the buttons at 1280 px, so the bar shows it from
-  // 2xl. Below that it is in the footer, and in the mobile sheet.
+  // 2xl. Below that it is in the footer line, and in the mobile sheet.
   { label: "Features", href: "/features", wideOnly: true },
 ];
 
@@ -121,7 +121,7 @@ export function Header() {
           <div className="hidden items-center gap-3 xl:flex 2xl:gap-6">
             {landing ? null : (
               <Link href="/perpetuals" className={cn(tradeLink, "max-2xl:hidden")}>
-                Trade
+                Terminal
                 <ArrowIcon />
               </Link>
             )}

@@ -65,7 +65,7 @@ function Block({ id, eyebrow, title, children }: { id?: string; eyebrow: string;
     return (
         <section id={id} aria-labelledby={`${id ?? eyebrow}-title`} className="scroll-mt-6 border-t border-line py-12 first:border-t-0 first:pt-0 lg:py-16">
             <p className={cn(SPACED_CAPS, 'text-muted')}>{eyebrow}</p>
-            <h2 id={`${id ?? eyebrow}-title`} className="mt-3 font-display text-[1.75rem] font-normal leading-[1.1] tracking-[-0.03em] text-text sm:text-[2.5rem]">
+            <h2 id={`${id ?? eyebrow}-title`} className="mt-3 font-display text-[1.75rem] font-bold leading-[1.08] tracking-[-0.03em] text-text sm:text-[2.5rem]">
                 {title}
             </h2>
             <div className="mt-8">{children}</div>
@@ -192,14 +192,14 @@ export default function FeaturesPage() {
 
             <section aria-label="Next step" className="flex flex-wrap items-center justify-between gap-6 border-t border-line py-12">
                 <div>
-                    <p className="font-display text-[1.75rem] font-light leading-tight tracking-[-0.03em] sm:text-[2.25rem]">Verify it. Then trade.</p>
+                    <p className="font-display text-[1.75rem] font-bold leading-tight tracking-[-0.03em] sm:text-[2.25rem]">Verify it. Then trade.</p>
                     <p className="mt-2 text-muted">Start in sample mode. No wallet needed.</p>
                 </div>
                 <Link
                     href="/perpetuals"
                     className="inline-flex h-14 items-center justify-between gap-10 rounded-sharp bg-accent px-6 text-base font-medium text-accent-ink transition-[background-color,box-shadow] duration-150 hover:bg-accent-hover hover:shadow-[0_0_0_3px_var(--color-accent-line),var(--shadow-accent-glow)] active:bg-accent-press active:shadow-none"
                 >
-                    Open app
+                    Open the terminal
                     <ArrowIcon />
                 </Link>
             </section>

@@ -9,12 +9,9 @@ import { Logo } from './Logo';
 import { StatusBadge } from './StatusBadge';
 import { XIcon } from './XIcon';
 
-/// One slim line, not a block of columns: the brand on the left, everything else — product links, a
-/// way back up to Smart contracts (which already lists every address in full, so the footer doesn't
-/// repeat that list), the chain status and the X link — spaced out on the right. Wraps and centres on
-/// a phone the same way the rest of this file's rows do. The CA badge is the one address shown here
-/// directly, truncated: a quick copy for a trader already at the bottom of the page, not a repeat of
-/// the full verification list `#contracts` panel owns.
+/// One thin line, not a menu: the brand, the tagline and the CA badge on the left; Features, Docs, the
+/// network status and the X link on the right. The site's pages are in the header, so the footer does not
+/// list them again. Wraps and centres on a phone.
 export function Footer() {
     return (
         <footer className="border-t border-line bg-surface">
@@ -32,21 +29,6 @@ export function Footer() {
                     aria-label="Footer"
                     className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2"
                 >
-                    <Link href="/markets" className={listLink}>
-                        Markets
-                    </Link>
-                    <Link href="/options" className={listLink}>
-                        Options
-                    </Link>
-                    <Link href="/perpetuals" className={listLink}>
-                        Perpetuals
-                    </Link>
-                    <Link href="/portfolio" className={listLink}>
-                        Portfolio
-                    </Link>
-                    <a href="/#contracts" className={listLink}>
-                        Smart contracts
-                    </a>
                     <Link href="/features" className={listLink}>
                         Features
                     </Link>

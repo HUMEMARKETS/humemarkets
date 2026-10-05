@@ -21,7 +21,9 @@ import { useSampleStore } from "@/stores/sample";
 import { errorMessage } from "@/stores/tx";
 import { useTerminal } from "@/stores/terminal";
 import { ConnectButton } from "./ConnectButton";
+import { Disclosure } from "./Disclosure";
 import { RiskLadder } from "./RiskLadder";
+import { Term } from "./Term";
 import { VaultControls } from "./VaultControls";
 
 /// PROJECT_BRIEF.md Section 27. Every figure below the form comes from `perps.previewOpen`, so
@@ -158,13 +160,16 @@ export function OrderPanel() {
   const action = paused ? (
     // A paused market refuses the trade before the wallet matters, so the connect prompt would be
     // a dead end: the button states the refusal instead.
-    <Button variant="down" className="w-full" disabled>
-      Market paused
-    </Button>
+    <>
+      <Button variant="secondary" className="w-full" disabled>
+        Market paused
+      </Button>
+      <p className="text-xs leading-snug text-muted">This market still shows prices, but it is not taking new orders right now.</p>
+    </>
   ) : !sample && !isConnected ? (
     <ConnectButton className="w-full" />
   ) : !ready ? (
-    <Button variant="down" className="w-full" onClick={() => switchChain({ chainId: chain.id })}>
+    <Button variant="primary" className="w-full" onClick={() => switchChain({ chainId: chain.id })}>
       Switch to {chain.name}
     </Button>
   ) : (
@@ -207,22 +212,6 @@ export function OrderPanel() {
             { value: "LIMIT", label: "Limit", disabled: !env.limitOrders },
           ]}
         />
-        {env.crossMargin ? (
-          <Segmented
-            label="Margin mode"
-            value={marginMode}
-            onChange={setMarginMode}
-            options={[
-              { value: "ISOLATED", label: "Isolated" },
-              { value: "CROSS", label: "Cross", disabled: isLimit },
-            ]}
-          />
-        ) : null}
-        {useCross ? (
-          <p className="text-xs leading-snug text-muted">
-            Cross: this position is backed by your whole account, not only its own margin. It is liquidated when the account&apos;s equity falls under its requirement, and withdrawals that would leave it too thin are refused.
-          </p>
-        ) : null}
         {env.limitOrders ? null : (
           <p className="text-xs leading-snug text-muted">Limit orders need the latest contracts, which are not deployed on this network yet.</p>
         )}
@@ -287,25 +276,45 @@ export function OrderPanel() {
         )}
         {/* Always shown, so the button below does not jump when the numbers arrive. */}
         <dl className="border-t border-line pt-2">
-          <Row label="Side">{side === "LONG" ? "Long" : "Short"}</Row>
           <Row label="Size">{show(p && fmtUsd(p.notional, decimals))}</Row>
-          <Row label="Leverage">{leverage ? `${leverage}x` : "–"}</Row>
           {isLimit ? (
             <Row label={side === "LONG" ? "Fills at or below" : "Fills at or above"}>{show(p && fmtPrice(p.entryPrice))}</Row>
           ) : (
-            <>
-              <Row label="Estimated entry">{show(p && fmtPrice(p.entryPrice))}</Row>
-              <Row label="Worst accepted price">{show(p && fmtPrice(p.worstPrice))}</Row>
-            </>
+            <Row label="Estimated entry">{show(p && fmtPrice(p.entryPrice))}</Row>
           )}
-          <Row label="Margin">{show(p && fmtUsd(p.collateral, decimals))}</Row>
-          <Row label="Liquidation price">{show(p && fmtPrice(p.liquidationPrice))}</Row>
-          <Row label="Funding rate">{show(p && fmtBps(p.fundingRateBps))}</Row>
+          <Row label={<Term term="liquidationPrice">Liquidation price</Term>}>{show(p && fmtPrice(p.liquidationPrice))}</Row>
           <Row label={p ? `Fee (${fmtBps(p.feeBps)})` : "Fee"}>{show(p && fmtUsd(p.fee, decimals))}</Row>
           <Row label={isLimit ? "Needed when it fills" : "Total from vault"} className="border-t border-line font-medium">
             {show(p && fmtUsd(p.totalRequired, decimals))}
           </Row>
         </dl>
+        <Disclosure id="order-panel" label="More detail">
+          {env.crossMargin ? (
+            <>
+              <p className="-mb-2 text-xs text-muted">
+                <Term term="marginMode">Margin mode</Term>
+              </p>
+              <Segmented
+                label="Margin mode"
+                value={marginMode}
+                onChange={setMarginMode}
+                options={[
+                  { value: "ISOLATED", label: "Isolated" },
+                  { value: "CROSS", label: "Cross", disabled: isLimit },
+                ]}
+              />
+            </>
+          ) : null}
+          {useCross ? (
+            <p className="text-xs leading-snug text-muted">
+              Cross: this position is backed by your whole account, not only its own margin. It is liquidated when the account&apos;s equity falls under its requirement, and withdrawals that would leave it too thin are refused.
+            </p>
+          ) : null}
+          <dl>
+            {isLimit ? null : <Row label={<Term term="worstPrice">Worst accepted price</Term>}>{show(p && fmtPrice(p.worstPrice))}</Row>}
+            <Row label={<Term term="fundingRate">Funding rate</Term>}>{show(p && fmtBps(p.fundingRateBps))}</Row>
+          </dl>
+        </Disclosure>
         {p && isLimit ? (
           <p className="text-xs leading-snug text-muted">
             Nothing is reserved while the order waits. The margin and fee are taken from your vault balance when it fills, so keep

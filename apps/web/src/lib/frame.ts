@@ -7,7 +7,7 @@ export const PAGE_FRAME =
 /// The heading of a landing page section, in the voice of the hero title: serif, tight tracking, full
 /// brightness against the dark ground every section now shares with the hero.
 export const SECTION_TITLE =
-    'font-display text-[2.25rem] font-normal leading-[1.1] tracking-[-0.03em] text-text sm:text-[3.25rem]';
+    'font-display text-[2.25rem] font-bold leading-[1.08] tracking-[-0.03em] text-text sm:text-[3.25rem]';
 
 /// For verifiable data only — a contract address, a chain name, a tech-stack tag — never prices or
 /// tickers, which stay in the sans everywhere else so the landing page still matches the terminal.

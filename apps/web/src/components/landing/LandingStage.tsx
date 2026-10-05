@@ -254,7 +254,7 @@ export function LandingStage() {
                                     </p>
                                     <Heading
                                         id={`${section.id}-title`}
-                                        className="mt-5 font-display text-[clamp(2.75rem,min(6.4vw,12dvh),7.5rem)] font-light md:whitespace-nowrap leading-[0.95] tracking-[-0.045em] text-text"
+                                        className="mt-5 font-display text-[clamp(2.5rem,min(6vw,11dvh),6.75rem)] font-bold md:whitespace-nowrap leading-[0.98] tracking-[-0.04em] text-text"
                                     >
                                         {section.title[0]}
                                         <br />
@@ -332,7 +332,7 @@ export function LandingStage() {
                                         <>
                                             <div className="mt-9 flex flex-wrap items-center gap-4">
                                                 <Link href="/perpetuals" className={primary}>
-                                                    Open app
+                                                    Open the terminal
                                                     <ArrowIcon />
                                                 </Link>
                                                 <button
@@ -344,6 +344,7 @@ export function LandingStage() {
                                                     <Plus />
                                                 </button>
                                             </div>
+                                            <p className="mt-4 text-sm text-muted">No wallet needed. Start in sample mode.</p>
                                             <ContractAddressBadge className="mt-6 md:hidden" />
                                             <TrustStrip className="mt-12 max-w-[46rem] max-md:hidden" />
                                         </>
@@ -351,7 +352,7 @@ export function LandingStage() {
                                     {index === SECTIONS.length - 1 ? (
                                         <div className="mt-9 flex flex-wrap items-center gap-4">
                                             <Link href="/perpetuals" className={primary}>
-                                                Open app
+                                                Open the terminal
                                                 <ArrowIcon />
                                             </Link>
                                             <a href="#contracts" className={secondary}>

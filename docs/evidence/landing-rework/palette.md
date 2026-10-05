@@ -27,3 +27,13 @@ Contrast computed from the sRGB relative-luminance formula against the values in
 | elevation: surface / raised / line vs ground | 1.06 / 1.14 / 1.43 |
 
 All body-text pairs are at least 4.5:1. The two rejected pairs are not used anywhere.
+
+## Amendment, chart candles (Ship 5)
+
+| Pair | Ratio |
+| --- | --- |
+| candle-up `#00E676` on surface / ground | 11.05 / 11.70 |
+| candle-down `#FF3B4E` on surface / ground | 5.26 / 5.57 |
+| candle-up against candle-down (luminance) | 2.10 |
+
+Chart-only tokens. Text, buttons and PNL keep `up` and `down`.

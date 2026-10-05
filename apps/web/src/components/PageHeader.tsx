@@ -10,7 +10,7 @@ export function PageHeader({ title, children, actions }: { title: string; childr
   return (
     <div className="mb-5 flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
       <div>
-        <h1 className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[2rem] font-bold leading-10 tracking-[-0.03em]">
+        <h1 className="flex flex-wrap items-center gap-x-3 gap-y-1 font-display text-[2rem] font-bold leading-10 tracking-[-0.03em]">
           {title}
           <SampleMark />
         </h1>

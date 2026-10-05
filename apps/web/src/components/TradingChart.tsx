@@ -70,8 +70,8 @@ export function TradingChart({ data, levels, onHover, resetToken }: TradingChart
     const el = box.current;
     if (!el) return;
     const line = css("--color-line");
-    const up = css("--color-up");
-    const down = css("--color-down");
+    const up = css("--color-candle-up");
+    const down = css("--color-candle-down");
     const chart = createChart(el, {
       autoSize: true,
       layout: {
@@ -92,7 +92,7 @@ export function TradingChart({ data, levels, onHover, resetToken }: TradingChart
     chartRef.current = chart;
 
     if (mode === "candles") {
-      const main = chart.addSeries(CandlestickSeries, { upColor: up, downColor: down, wickUpColor: up, wickDownColor: down, borderVisible: false, priceFormat });
+      const main = chart.addSeries(CandlestickSeries, { upColor: up, downColor: down, wickUpColor: up, wickDownColor: down, borderUpColor: up, borderDownColor: down, priceFormat });
       main.priceScale().applyOptions({ scaleMargins: { top: 0.08, bottom: 0.28 } });
       const volume = chart.addSeries(HistogramSeries, { priceFormat: { type: "volume" }, priceScaleId: "", lastValueVisible: false, priceLineVisible: false });
       volume.priceScale().applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
@@ -130,8 +130,8 @@ export function TradingChart({ data, levels, onHover, resetToken }: TradingChart
     } else {
       const rows = data.candles.map((candle) => ({ time: utc(candle.time), open: candle.open, high: candle.high, low: candle.low, close: candle.close }));
       if (rows.length === 0) return;
-      const up = fade(css("--color-up"), 0.45);
-      const down = fade(css("--color-down"), 0.45);
+      const up = fade(css("--color-candle-up"), 0.6);
+      const down = fade(css("--color-candle-down"), 0.6);
       const bars = data.candles.map((candle) => ({ time: utc(candle.time), value: candle.volume, color: candle.close >= candle.open ? up : down }));
       const series = main as ISeriesApi<"Candlestick">;
       if (first) {

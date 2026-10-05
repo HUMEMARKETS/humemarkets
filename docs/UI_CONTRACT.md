@@ -52,7 +52,10 @@ Written in `DEVELOPMENT_PHASES.md` Phase 3, enforced by every later phase. Rules
 
 1. **The Section 4 palette is the only palette.** Four brand colours plus the derived tokens there,
    all living in `globals.css`. No new colours, radii or fonts. A raw hex literal in `apps/web/src` or
-   `packages/ui/src` fails CI.
+   `packages/ui/src` fails CI. The type is Geist (body, tables, forms), Space Grotesk (display: hero,
+   page and section titles, big figures; weights 600 to 700, tight tracking, short phrases) and Geist
+   Mono (addresses and verifiable data); amended 2026-10-06, replacing Tomorrow, which only came in
+   light weights. The one other exception is the pair of chart-only candle colours in Section 4.
 2. **Seven states per screen: loading, empty, error, success, paused, not-connected, sample.** A screen
    missing one is unfinished.
 3. **No money-moving action reaches a signature without a review step** showing cost and downside.
@@ -63,7 +66,7 @@ Written in `DEVELOPMENT_PHASES.md` Phase 3, enforced by every later phase. Rules
 7. **Works at 375 px** with a 16 px gutter and no horizontal page scroll.
 9. **Layout (amended 2026-10-06).** The shell is `h-dvh` with one scroll region. Every page that is not a
    terminal uses `AppPage`: full width (capped at 1920 px), the shared `APP_GUTTER` (16 / 24 / 40 px) that
-   the header also uses, a body that grows to fill the space under the title, and a footer pinned to the
+   the header also uses, a body that grows to fill the space under the title, and a thin footer line (brand, tagline, network, Features, Docs, X; not a menu) pinned to the
    bottom. Terminals (`/perpetuals`, `/options`) fill the scroll region at `lg` and above. Panels stretch
    to the bottom of the screen. An empty, loading, error or not-connected state fills its panel with one
    sentence and one next step (`PanelState`), never a one-line strip at the top of a blank box. A width
@@ -136,6 +139,11 @@ Four colours cannot build a dense terminal. These are derived, and nothing beyon
 | `down-hover` / `down-press` | `#D08575` / `#B46554` | 6.78 / 4.58   | — | — | The down control's states                 |
 | `up-soft` / `down-soft`     | the up/down colour at 0.12 alpha | — | — | — | The hover fill behind an up/down control |
 | `up-line` / `down-line`     | the up/down colour at 0.35 alpha | — | — | — | Focus ring, the direction twin of `accent-line` |
+
+Chart-only: `candle-up` `#00E676` (11.05:1 on `surface`) and `candle-down` `#FF3B4E` (5.26:1 on
+`surface`). A candle chart is read at a glance across hundreds of bodies, so it uses fully saturated
+colours; text, buttons and PNL keep `up` and `down`. Direction is also carried by shape (the body sits
+above or below the open), so the pair does not rely on hue alone. They are never used for text.
 
 Shadows: `shadow-accent-glow` (`0 0 24px` accent at 0.35 alpha) marks the primary button on hover, the
 active tab and the lit 3D scene. It is a halo of the accent itself, not a new hue.

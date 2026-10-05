@@ -15,6 +15,7 @@ import { useFillStore } from "@/stores/fills";
 import { AdjustPosition } from "./AdjustPosition";
 import { PnlCardLink } from "./PnlCardLink";
 import { PositionTriggers } from "./TriggerOrders";
+import { Term } from "./Term";
 
 const head = "px-3 py-2 text-right text-xs font-normal text-muted first:text-left";
 const cell = "px-3 py-2 text-right tabular-nums first:text-left";
@@ -54,8 +55,8 @@ function PositionRow({ position, decimals }: { position: PerpPosition; decimals:
         <td className={cell}>{fmtUsd(position.collateral, decimals)}</td>
         <td className={cell}>{fmtPrice(position.entryPrice)}</td>
         <td className={cell}>{fmtPrice(mark)}</td>
-        <td className={cell} title={isCross ? "A cross position is liquidated when the whole account's equity falls under its requirement, not at a price of its own." : undefined}>
-          {isCross ? "Account" : fmtPrice(liquidation)}
+        <td className={cell}>
+          {isCross ? <Term term="crossLiquidation">Account</Term> : fmtPrice(liquidation)}
         </td>
         <td className={cell}>{fmtBps(ratio)}</td>
         <td className={cell}>

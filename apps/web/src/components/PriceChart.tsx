@@ -6,7 +6,7 @@ import dynamic from "next/dynamic";
 import { formatUnits } from "viem";
 import { useEffect, useMemo, useState } from "react";
 import { useCandles, usePerpMarket, usePositions, usePriceHistory, useSettlementDecimals } from "@/hooks/queries";
-import { candleTimeLabel, mergeSeries, toCandlePoints, type CandlePoint } from "@/lib/chart";
+import { candleTimeLabel, defaultChartMode, mergeSeries, toCandlePoints, type CandlePoint } from "@/lib/chart";
 import { env } from "@/lib/env";
 import { PRICE_DECIMALS, fmtCompact } from "@/lib/format";
 import { symbolOf } from "@/lib/market";
@@ -53,7 +53,7 @@ export function PriceChart() {
   const { data: positions } = usePositions();
   const { data: history } = usePriceHistory(symbol, "24h");
   const { data: decimals = 6 } = useSettlementDecimals();
-  const [mode, setMode] = useState<Mode>("line");
+  const [mode, setMode] = useState<Mode>(defaultChartMode(env.apiUrl));
   const [interval, setInterval] = useState<CandleInterval>("15m");
   const { data: rawCandles, isPending: loadingCandles } = useCandles(mode === "candles" ? symbol : "", interval);
   const [live, setLive] = useState<{ time: number; value: number }[]>([]);

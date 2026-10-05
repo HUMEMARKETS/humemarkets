@@ -13,6 +13,7 @@ import { fmt, fmtUsd } from "@/lib/format";
 import { humeRead } from "@/lib/hume";
 import { fallToLiquidationBps, fmtHealth, HF_NO_DEBT, healthBand, healthFactorBps, healthWords, liquidationPrice, ltvBps, statusSentence, type HealthBand } from "@/lib/lending";
 import { ConnectButton } from "./ConnectButton";
+import { Term } from "./Term";
 
 const pct = (bps: bigint) => `${(Number(bps) / 100).toFixed(bps % 100n === 0n ? 0 : 1)}%`;
 
@@ -37,7 +38,7 @@ function HealthReadout({ hf, price, liquidationBonusBps, symbol }: { hf: bigint;
   return (
     <div>
       <div className="flex flex-wrap items-baseline gap-x-3">
-        <Num tone={bandTone[band]} className="text-[2.5rem] font-light leading-tight">
+        <Num tone={bandTone[band]} className="font-display text-[2.5rem] font-semibold leading-tight">
           {fmtHealth(hf)}
         </Num>
         <span className="text-sm font-medium">{healthWords[band].label}</span>
@@ -91,7 +92,7 @@ function HealthCalculator({ maxLtv, liquidationLtv, price, priceFromPair, exampl
   const shareLtv = BigInt(share) * 100n;
 
   return (
-    <Panel className="lg:col-start-2 lg:row-span-2 lg:row-start-1" title="How a health factor works" sample={useAccountMode() === "sample"}>
+    <Panel className="lg:col-start-2 lg:row-span-2 lg:row-start-1" title={<Term term="healthFactor">How a health factor works</Term>} sample={useAccountMode() === "sample"}>
       <div className="flex flex-col gap-4 p-4">
         <p className="max-w-prose text-sm leading-snug text-muted">
           Lending here means you lock {symbol} as collateral and borrow USDG against it. How much you may borrow, and how close you are to losing the

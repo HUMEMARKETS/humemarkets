@@ -58,7 +58,7 @@ function Section({
         >
             <h2
                 id={`${id}-title`}
-                className="font-display text-[1.75rem] font-normal leading-[1.15] tracking-[-0.02em] text-text sm:text-[2.25rem]"
+                className="font-display text-[1.75rem] font-bold leading-[1.15] tracking-[-0.025em] text-text sm:text-[2.25rem]"
             >
                 {title}
             </h2>
@@ -116,7 +116,7 @@ export default function Docs() {
 
                 <article className="min-w-0">
                     <header className="mb-16 max-w-[68ch] lg:mb-24">
-                        <h1 className="font-display text-[2.75rem] font-normal leading-[1.05] tracking-[-0.03em] text-text sm:text-[4rem]">
+                        <h1 className="font-display text-[2.75rem] font-bold leading-[1.05] tracking-[-0.035em] text-text sm:text-[4rem]">
                             Documentation
                         </h1>
                         <SampleMark className="mt-3" />

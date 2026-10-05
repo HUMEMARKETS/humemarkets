@@ -26,6 +26,8 @@ import {
 } from "@/lib/options";
 import { useOptionOrder } from "@/stores/optionOrder";
 import { useTerminal } from "@/stores/terminal";
+import type { TermKey } from "@/lib/glossary";
+import { Term } from "./Term";
 
 const head = "px-3 py-2 text-right text-xs font-normal text-muted";
 /// A header cell that spans a group of columns and centres over them.
@@ -48,6 +50,8 @@ interface CellContext {
 interface Column {
   id: string;
   header: string;
+  /// A glossary entry for the heading, when it is a term a newcomer will not know.
+  term?: TermKey;
   /// The cell's contents. Numbers here are the pricing service's display analytics or the
   /// indexer's counts, never the price an order is charged: the ticket signs that.
   render: (context: CellContext) => ReactNode;
@@ -93,16 +97,16 @@ const columnsByView: Record<View, Column[]> = {
   market: [
     askColumn,
     { id: "bid", header: "Bid", render: ({ quote }) => quoted(quote, (data) => fmtQuotePremium(data.bid)) },
-    { id: "iv", header: "IV", muted: true, render: ({ quote }) => quoted(quote, (data) => fmtQuoteIv(data.iv)) },
-    { id: "oi", header: "Open int.", muted: true, render: (context) => counted(context.stats, context, (row) => row.openInterest) },
+    { id: "iv", header: "IV", term: "iv", muted: true, render: ({ quote }) => quoted(quote, (data) => fmtQuoteIv(data.iv)) },
+    { id: "oi", header: "Open int.", term: "openInterest", muted: true, render: (context) => counted(context.stats, context, (row) => row.openInterest) },
     { id: "vol", header: "Vol 24h", muted: true, render: (context) => counted(context.stats, context, (row) => row.volume24h) },
   ],
   greeks: [
     askColumn,
-    { id: "delta", header: "Delta", muted: true, render: ({ quote }) => quoted(quote, (data) => fmtQuoteDelta(data.delta)) },
-    { id: "gamma", header: "Gamma", muted: true, render: ({ quote }) => quoted(quote, (data) => fmtQuoteGamma(data.gamma)) },
-    { id: "theta", header: "Theta/day", muted: true, render: ({ quote }) => quoted(quote, (data) => fmtQuoteTheta(data.theta)) },
-    { id: "vega", header: "Vega/pt", muted: true, render: ({ quote }) => quoted(quote, (data) => fmtQuoteVega(data.vega)) },
+    { id: "delta", header: "Delta", term: "delta", muted: true, render: ({ quote }) => quoted(quote, (data) => fmtQuoteDelta(data.delta)) },
+    { id: "gamma", header: "Gamma", term: "gamma", muted: true, render: ({ quote }) => quoted(quote, (data) => fmtQuoteGamma(data.gamma)) },
+    { id: "theta", header: "Theta/day", term: "theta", muted: true, render: ({ quote }) => quoted(quote, (data) => fmtQuoteTheta(data.theta)) },
+    { id: "vega", header: "Vega/pt", term: "vega", muted: true, render: ({ quote }) => quoted(quote, (data) => fmtQuoteVega(data.vega)) },
   ],
 };
 
@@ -244,13 +248,13 @@ export function OptionChain() {
               <tr>
                 {orderedColumns(view, "CALL").map((column) => (
                   <th key={`c-${column.id}`} className={head}>
-                    {column.header}
+                    {column.term ? <Term term={column.term}>{column.header}</Term> : column.header}
                   </th>
                 ))}
                 <th className={groupHead}>Price</th>
                 {orderedColumns(view, "PUT").map((column) => (
                   <th key={`p-${column.id}`} className={head}>
-                    {column.header}
+                    {column.term ? <Term term={column.term}>{column.header}</Term> : column.header}
                   </th>
                 ))}
               </tr>
