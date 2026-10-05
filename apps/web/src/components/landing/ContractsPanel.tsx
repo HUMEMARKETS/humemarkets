@@ -42,15 +42,42 @@ export function ContractsPanel({
     const [filter, setFilter] = useState<Filter>('All');
     const [query, setQuery] = useState('');
     const closeButton = useRef<HTMLButtonElement>(null);
+    const dialog = useRef<HTMLElement>(null);
 
+    // While open: focus moves into the panel, Tab stays inside it, Escape closes it, and focus goes back
+    // to whatever opened it. The panel is `inert` while closed, so nothing outside can reach it.
     useEffect(() => {
         if (!open) return;
+        const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
         closeButton.current?.focus();
         const onKey = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') onClose();
+            if (event.key === 'Escape') {
+                onClose();
+                return;
+            }
+            if (event.key !== 'Tab' || !dialog.current) return;
+            const focusable = Array.from(
+                dialog.current.querySelectorAll<HTMLElement>(
+                    'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+                ),
+            ).filter((element) => element.tabIndex >= 0);
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (!first || !last) return;
+            const current = document.activeElement;
+            if (event.shiftKey && (current === first || !dialog.current.contains(current))) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && (current === last || !dialog.current.contains(current))) {
+                event.preventDefault();
+                first.focus();
+            }
         };
         window.addEventListener('keydown', onKey);
-        return () => window.removeEventListener('keydown', onKey);
+        return () => {
+            window.removeEventListener('keydown', onKey);
+            if (opener && document.contains(opener)) opener.focus();
+        };
     }, [open, onClose]);
 
     const rows = useMemo(() => {
@@ -82,6 +109,7 @@ export function ContractsPanel({
                 className="absolute inset-0 cursor-default bg-ground/70"
             />
             <aside
+                ref={dialog}
                 role="dialog"
                 aria-modal="true"
                 aria-label="Smart contracts"

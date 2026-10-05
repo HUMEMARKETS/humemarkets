@@ -84,6 +84,36 @@ export function LandingCanvas(props: Props) {
 
         const rig = new THREE.Group();
         scene.add(rig);
+
+        // A soft green glow behind the scene in view: one additive sprite with a radial gradient, so it
+        // costs a single draw call and needs no post-processing pass.
+        // The gradient is computed into a small data texture (white, with a falling alpha), so no colour
+        // literal is needed; the sprite's own material colour tints it with the accent.
+        const GLOW = 64;
+        const glowData = new Uint8Array(GLOW * GLOW * 4);
+        for (let y = 0; y < GLOW; y += 1) {
+            for (let x = 0; x < GLOW; x += 1) {
+                const d = Math.min(1, Math.hypot(x - GLOW / 2 + 0.5, y - GLOW / 2 + 0.5) / (GLOW / 2));
+                const alpha = (1 - d) ** 2.2;
+                const i = (y * GLOW + x) * 4;
+                glowData[i] = glowData[i + 1] = glowData[i + 2] = 255;
+                glowData[i + 3] = Math.round(alpha * 255);
+            }
+        }
+        const glowTexture = new THREE.DataTexture(glowData, GLOW, GLOW, THREE.RGBAFormat);
+        glowTexture.needsUpdate = true;
+        const glowMaterial = new THREE.SpriteMaterial({
+            map: glowTexture,
+            color: palette.accent,
+            transparent: true,
+            opacity: 0,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending,
+        });
+        const glow = new THREE.Sprite(glowMaterial);
+        glow.scale.setScalar(8.5);
+        glow.position.set(0, 0, -2.2);
+        rig.add(glow);
         const floor = buildFloor(palette);
         rig.add(floor.group);
         const scenes = buildScenes(palette);
@@ -192,6 +222,18 @@ export function LandingCanvas(props: Props) {
                 Math.min(scenes.length - 1, Math.round(progress)),
             );
 
+            // The camera travels with the scroll: a slow orbit and a small rise and dolly between scenes,
+            // so moving from one section to the next reads as going somewhere. It is scaled by the motion
+            // state, and sits still when motion is off.
+            const angle = (progress - 2) * 0.1 * allowed;
+            camera.position.set(
+                Math.sin(angle) * DISTANCE,
+                1.7 + Math.sin(progress * 1.3) * 0.2 * allowed,
+                Math.cos(angle) * DISTANCE - Math.sin(progress * 0.8) * 0.35 * allowed,
+            );
+            camera.lookAt(0, -0.15, 0);
+            camera.updateMatrixWorld();
+
             const ease = Math.min(1, dt * 4);
             pointer.x += (pointer.tx - pointer.x) * ease;
             pointer.y += (pointer.ty - pointer.y) * ease;
@@ -247,6 +289,9 @@ export function LandingCanvas(props: Props) {
                     current ? state.hover : null,
                 );
             });
+
+            glowMaterial.opacity =
+                0.16 * smooth(1 - Math.abs(activeIndex - progress) * 1.3) * (0.6 + 0.4 * allowed);
 
             const currentScene = scenes[activeIndex];
             const fadeActive = smooth(1 - Math.abs(activeIndex - progress) * 1.3);
@@ -309,6 +354,8 @@ export function LandingCanvas(props: Props) {
             window.removeEventListener('pointerup', onUp);
             for (const item of scenes) item.dispose();
             floor.dispose();
+            glowTexture.dispose();
+            glowMaterial.dispose();
             renderer.dispose();
         };
     }, [pointerTarget]);

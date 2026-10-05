@@ -159,9 +159,15 @@ function createBuilder(palette: Palette) {
                         1,
                         part.base * fade * emphasis * (hot ? 1.8 : 1),
                     );
+                    // The scene in view is washed green, so the page has a colour and not only a line weight;
+                    // the part under the pointer goes to the full accent.
+                    const wash = 0.65 * fade;
                     part.material.color
                         .copy(part.rest)
-                        .lerp(palette.accent, hot ? 0.8 : current ? 0.35 : 0);
+                        .lerp(
+                            palette.accent,
+                            hot ? 1 : current ? Math.min(1, wash + 0.25) : wash,
+                        );
                 }
             },
             dispose() {
@@ -240,7 +246,8 @@ function doorsScene(palette: Palette): SceneHandle {
         });
         group.add(door);
         doors.push(door);
-        anchors.push(anchorAt(door, index === 0 ? 0.85 : index === 1 ? 0.5 : 0, 0.4, 0.05));
+        // The middle door's marker sits lower, so its label cannot run into the right-hand door's flipped label.
+        anchors.push(anchorAt(door, index === 0 ? 0.85 : index === 1 ? 0.5 : 0, index === 1 ? -0.45 : 0.4, 0.05));
     }
     group.rotation.x = 0.08;
     return finish(anchors, 0, 0.74, (time, motion) => {
@@ -389,14 +396,18 @@ export function buildFloor(palette: Palette) {
     const geometries: THREE.BufferGeometry[] = [];
     const materials: THREE.Material[] = [];
 
-    function lines(positions: number[], opacity: number): THREE.LineSegments {
+    function lines(
+        positions: number[],
+        opacity: number,
+        color: THREE.Color = palette.text,
+    ): THREE.LineSegments {
         const geometry = new THREE.BufferGeometry();
         geometry.setAttribute(
             'position',
             new THREE.BufferAttribute(new Float32Array(positions), 3),
         );
         const material = new THREE.LineBasicMaterial({
-            color: palette.text,
+            color,
             transparent: true,
             opacity,
             depthWrite: false,
@@ -423,8 +434,12 @@ export function buildFloor(palette: Palette) {
         return out;
     }
 
-    group.add(lines(circle(3.3, 160), 0.5));
-    group.add(lines(circle(4.1, 160), 0.2));
+    group.add(lines(circle(3.3, 160), 0.55, palette.accent));
+    group.add(lines(circle(4.1, 160), 0.25, palette.accent));
+    // A ring that travels outward from the centre and fades, the slow scan across the floor.
+    const pulse = lines(circle(1, 160), 0.6, palette.accent);
+    const pulseMaterial = pulse.material as THREE.LineBasicMaterial;
+    group.add(pulse);
     const tickPositions: number[] = [];
     for (let index = 0; index < 120; index += 1) {
         const angle = (index / 120) * Math.PI * 2;
@@ -440,13 +455,13 @@ export function buildFloor(palette: Palette) {
             Math.sin(angle) * outer,
         );
     }
-    const ticks = lines(tickPositions, 0.35);
+    const ticks = lines(tickPositions, 0.4, palette.accent);
     group.add(ticks);
 
-    const grid = new THREE.GridHelper(20, 20, palette.muted, palette.muted);
+    const grid = new THREE.GridHelper(20, 20, palette.accent, palette.accent);
     const gridMaterial = grid.material as THREE.LineBasicMaterial;
     gridMaterial.transparent = true;
-    gridMaterial.opacity = 0.09;
+    gridMaterial.opacity = 0.1;
     gridMaterial.depthWrite = false;
     group.add(grid);
 
@@ -454,6 +469,9 @@ export function buildFloor(palette: Palette) {
         group,
         update(time: number, motion: number) {
             ticks.rotation.y = time * 0.02 * motion;
+            const phase = (time * 0.14) % 1;
+            pulse.scale.setScalar(0.5 + phase * 4);
+            pulseMaterial.opacity = 0.5 * (1 - phase) * (1 - phase) * motion;
         },
         dispose() {
             for (const geometry of geometries) geometry.dispose();

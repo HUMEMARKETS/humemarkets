@@ -75,6 +75,34 @@ export function LandingStage() {
         return () => window.removeEventListener('hashchange', sync);
     }, []);
 
+    // A section id in the address (`/#vault`) opens at that section, and a rail move writes it back, so a
+    // section can be linked to and survives a reload. `#contracts` belongs to the drawer, not a section.
+    useEffect(() => {
+        const toHash = () => {
+            const index = SECTIONS.findIndex(
+                (section) => section.id === window.location.hash.slice(1),
+            );
+            if (index >= 0) {
+                sectionEls.current[index]?.scrollIntoView({ block: 'start' });
+            }
+        };
+        toHash();
+        window.addEventListener('hashchange', toHash);
+        return () => window.removeEventListener('hashchange', toHash);
+    }, []);
+
+    useEffect(() => {
+        if (window.location.hash === '#contracts') return;
+        const id = SECTIONS[active]?.id;
+        const hash = active === 0 || !id ? '' : `#${id}`;
+        if (window.location.hash === hash) return;
+        window.history.replaceState(
+            null,
+            '',
+            window.location.pathname + window.location.search + hash,
+        );
+    }, [active]);
+
     const closePanel = useCallback(() => {
         setPanel(false);
         window.history.replaceState(
