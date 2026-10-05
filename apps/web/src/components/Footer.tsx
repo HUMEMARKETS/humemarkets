@@ -19,7 +19,7 @@ export function Footer() {
                 className={`w-full ${APP_GUTTER} flex flex-wrap items-center justify-center gap-x-6 gap-y-3 py-6 sm:justify-between`}
             >
                 <div className="flex flex-wrap items-center gap-3">
-                    <Logo />
+                    <Logo size="sm" />
                     <p className="text-muted">
                         Onchain Derivatives for Stock Tokens.
                     </p>

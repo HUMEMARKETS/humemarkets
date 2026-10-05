@@ -4,6 +4,7 @@ import { preconnect } from "react-dom";
 import type { ReactNode } from "react";
 import { AppShell } from "@/components/AppShell";
 import { env } from "@/lib/env";
+import { X_HANDLE } from "@/lib/social";
 import { THEME_GROUND } from "@/lib/theme-colors";
 import { Providers } from "../providers";
 import "./globals.css";
@@ -30,6 +31,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
+    site: X_HANDLE,
+    creator: X_HANDLE,
     title: "Hume",
     description: "Derivatives for tokenized equities.",
   },

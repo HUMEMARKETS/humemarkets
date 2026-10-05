@@ -13,8 +13,8 @@ import {
 import { ArrowIcon } from '@/components/ArrowIcon';
 import { ContractAddressBadge } from '@/components/ContractAddressBadge';
 import { TrustStrip } from '@/components/TrustStrip';
-import { PAGE_FRAME, SPACED_CAPS } from '@/lib/frame';
-import { X_URL } from '@/lib/social';
+import { LANDING_FRAME, SPACED_CAPS } from '@/lib/frame';
+import { X_HANDLE, X_URL } from '@/lib/social';
 import { ContractsPanel } from './ContractsPanel';
 import { SECTIONS } from './content';
 import { StaticScene } from './StaticScene';
@@ -227,8 +227,8 @@ export function LandingStage() {
                         >
                             <div
                                 className={cn(
-                                    PAGE_FRAME,
-                                    'pb-20 pt-24 md:pb-44 md:pt-32',
+                                    LANDING_FRAME,
+                                    'pb-20 pt-24 md:pb-44 md:pt-36',
                                 )}
                             >
                                 <div
@@ -254,7 +254,7 @@ export function LandingStage() {
                                     </p>
                                     <Heading
                                         id={`${section.id}-title`}
-                                        className="mt-5 font-display text-[clamp(2.5rem,min(6vw,11dvh),6.75rem)] font-bold md:whitespace-nowrap leading-[0.98] tracking-[-0.04em] text-text"
+                                        className="mt-5 font-display text-[clamp(2.5rem,min(7.5vw,13dvh),9.5rem)] font-bold md:whitespace-nowrap leading-[0.98] tracking-[-0.04em] text-text"
                                     >
                                         {section.title[0]}
                                         <br />
@@ -389,7 +389,7 @@ export function LandingStage() {
 
             <div
                 className={cn(
-                    PAGE_FRAME,
+                    LANDING_FRAME,
                     'absolute inset-x-0 bottom-[4.5rem] z-20 hidden items-center gap-4 md:flex',
                 )}
             >
@@ -414,7 +414,7 @@ export function LandingStage() {
                 aria-label="Landing sections"
                 className="absolute inset-x-0 bottom-0 z-30 bg-ground/70 backdrop-blur-sm"
             >
-                <div className={PAGE_FRAME}>
+                <div className={LANDING_FRAME}>
                     <div className="hidden h-11 items-center justify-between gap-6 md:flex">
                         <a
                             href={X_URL}
@@ -422,7 +422,7 @@ export function LandingStage() {
                             rel="noreferrer"
                             className="text-xs text-muted transition-colors duration-150 hover:text-text"
                         >
-                            @HumeRH
+                            {X_HANDLE}
                         </a>
                         <div className="flex items-center gap-5 text-xs">
                             <button

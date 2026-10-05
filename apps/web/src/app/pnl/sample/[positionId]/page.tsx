@@ -45,7 +45,7 @@ export default function SampleCardPage({ params }: { params: Promise<{ positionI
         </div>
       ) : (
         <div className="flex flex-col gap-5">
-          <PnlCard {...cardProps(cardPartsFromSample(position, symbol, mark.data, decimals))} mark={<Logo />} />
+          <PnlCard {...cardProps(cardPartsFromSample(position, symbol, mark.data, decimals))} mark={<Logo size="sm" />} />
           <p className="max-w-prose text-sm leading-snug text-muted">
             This is a sample card. It shows a simulated position that exists only on this device, so there is no link to share. A position opened with a
             wallet gets a card anyone can open.
