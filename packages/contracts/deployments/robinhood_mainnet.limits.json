@@ -20,5 +20,14 @@
     "defaultSeconds": 32400,
     "overrides": {},
     "note": "9 hours, the in-session limit for all 32 US equity markets. It is a backstop, not the binding rule: the session floor in PriceValidator is what keeps an earlier session's price out, and inside a 420-minute session a price at the 90-minute pre-open grace reaches 510 minutes of age, so the floor always binds first. The limit cannot be tightened below the session: measured over 180 rounds per feed (up to 102 days, 4 to 74 sessions each), 9 of the 32 feeds printed nothing at all during a whole session, because a Chainlink feed here only moves on a 0.5% deviation or a 24-hour heartbeat. A limit short enough to catch a dead feed mid-session would halt a quiet market instead. Per-market overrides stay available for the crypto and FX markets Phase 11 adds, which have no session and should carry the full 24 hours (86400)."
+  },
+  "credit": {
+    "maxLtvBps": 6000,
+    "liquidationLtvBps": 7000,
+    "maxLeverageBps": 25000,
+    "supplyCap": 1000000000000000,
+    "borrowCap": 8000,
+    "oracleStalenessSeconds": 32400,
+    "note": "Credit stack risk parameters for the TSLA/USDG pair (Phase 9). maxLtvBps 6000 = 60% max loan-to-value, liquidationLtvBps 7000 = 70% liquidation threshold. supplyCap is in TSLA base units (18 decimals): 1e15 = 0.001 TSLA, conservative at ~$0.37. borrowCap is in USDG base units (6 decimals): 8000 = 0.008 USDG, matching the perps maxPositionRaw. Both are the smallest coherent values given the unfunded USDG treasury; raise them once USDG is funded. Oracle staleness matches the perps default (9 hours)."
   }
 }

@@ -30,12 +30,18 @@ export interface ContractAddresses {
   fundingManager: Address;
   priceValidator: Address;
   settlementToken: Address;
+  /// Credit stack (Phase 9). All absent until `DeployCreditStack.s.sol` is broadcast.
+  creditOracle?: Address;
+  creditRegistry?: Address;
+  creditRouter?: Address;
+  creditVault?: Address;
+  creditPairTslaUsdg?: Address;
 }
 
 /// Contracts a deployment may not have, because they were added after it was made. They are absent
 /// from the recorded literal below until a deployment includes them, but `HUME_ADDRESSES` may
 /// still supply them (a local or fresh deployment).
-export const OPTIONAL_CONTRACTS = ["perpOrderManager", "insuranceFund", "crossMargin", "subaccountFactory", "rfqManager"] as const satisfies ReadonlyArray<keyof ContractAddresses>;
+export const OPTIONAL_CONTRACTS = ["perpOrderManager", "insuranceFund", "crossMargin", "subaccountFactory", "rfqManager", "creditOracle", "creditRegistry", "creditRouter", "creditVault", "creditPairTslaUsdg"] as const satisfies ReadonlyArray<keyof ContractAddresses>;
 
 /// Mirrors `packages/contracts/deployments/robinhood_testnet.json`. Kept as a checked-in
 /// literal rather than read from disk at build time — there is no deploy-to-config sync step
