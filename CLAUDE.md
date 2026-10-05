@@ -4,8 +4,7 @@ Derivatives for tokenized equities. pnpm + turbo monorepo. Solidity in `packages
 Node services in `services/`, Next.js in `apps/web`.
 
 `docs/DEVELOPMENT_PHASES.md` is the source of truth for what to build.
-`docs/LANES.md` maps phases to lanes, holds the phase line anchors, and holds the path-ownership table.
-`docs/tasks/<lane>.md` holds your lane's slice of each phase, and the handoffs between lanes.
+Work is serial: one session, one phase at a time, in the order of the Phase index below.
 
 ## Hard rules
 
@@ -13,7 +12,7 @@ Node services in `services/`, Next.js in `apps/web`.
   working tree dirty, list the paths you changed, and print the phase's **Ship** block for the
   operator to run. The operator owns every git mutation.
 - **Never read `docs/DEVELOPMENT_PHASES.md` whole.** It is 2198 lines. Read only your phase's line
-  range from `docs/LANES.md`: `sed -n '589,660p' docs/DEVELOPMENT_PHASES.md`.
+  range from the Phase index below: `sed -n '589,660p' docs/DEVELOPMENT_PHASES.md`.
 - **A phase is done only when its acceptance check passes.** Nothing is ticked because it looks
   finished. Report `pass`, `amber` or `fail` in one line, and do not start the next phase.
 - **Secrets never reach a commit, an evidence file or the transcript.** Addresses are fine. Never
@@ -49,21 +48,25 @@ forge test                                  # in packages/contracts
 forge fmt --check
 ```
 
-## Lane path ownership
+## Phase index
 
-Waves run up to three lanes in parallel, one git worktree each. Stay inside your lane.
+Line ranges in `docs/DEVELOPMENT_PHASES.md` (start of phase to start of next). Offsets drift when the
+file is edited; re-check with `grep -n '^#### Phase' docs/DEVELOPMENT_PHASES.md`.
 
-| Lane      | Owns                                                              | Never touches                  |
-| --------- | ----------------------------------------------------------------- | ------------------------------ |
-| contracts | `packages/contracts/**`, `packages/config/**`, `packages/types/**` | `apps/web/**`, `services/**`   |
-| backend   | `services/**`                                                      | `packages/contracts/**`, `apps/web/**` |
-| frontend  | `apps/web/**`, `packages/ui/**`, `packages/sdk/**`                 | `packages/contracts/**`, `services/**` |
-
-`packages/config` and `packages/types` are shared, so the **contracts lane owns both**. If another
-lane needs a change there, stop and report it as a blocker — the lead applies it serially between
-waves.
+| Phase | Lines     | Phase | Lines     |
+| ----- | --------- | ----- | --------- |
+| 0     | 313-381   | 10    | 1160-1235 |
+| 1     | 382-436   | 11    | 1236-1327 |
+| 2     | 437-504   | 12    | 1328-1395 |
+| 3     | 505-588   | 13    | 1396-1457 |
+| 4     | 589-660   | 14    | 1458-1538 |
+| 5     | 661-861   | 14b   | 1539-1647 |
+| 6     | 862-928   | 15    | 1648-1806 |
+| 7     | 929-1006  | 16    | 1807-1883 |
+| 8     | 1007-1082 | 17    | 1884-1981 |
+| 9     | 1083-1159 | 18    | 1982-2052 |
 
 ## Scope
 
 No smart-contract audit is in scope (`docs/DEVELOPMENT_PHASES.md` Section 0.8). The local
-`/security-review` on a lane diff is not an audit and does not change that.
+`/security-review` on a diff is not an audit and does not change that.
