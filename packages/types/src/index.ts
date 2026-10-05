@@ -91,6 +91,58 @@ export type ListingTier = (typeof LISTING_TIERS)[number];
 /// Tiers that are display only: their price never reaches `PriceValidator` or settlement.
 export const DISPLAY_ONLY_TIERS = ["quoted", "listed"] as const satisfies ReadonlyArray<ListingTier>;
 
+// ---------------------------------------------------------------------------
+// Credit stack types (Phase 9)
+// ---------------------------------------------------------------------------
+
+/// Mirrors `HumeCreditRegistry.RiskTier`.
+export enum CreditRiskTier {
+  TierA = 0,
+  TierB = 1,
+  TierC = 2,
+  Experimental = 3,
+}
+
+/// Mirrors `HumeCreditRegistry.MarketStatus`.
+export enum CreditMarketStatus {
+  NORMAL = 0,
+  REDUCE_ONLY = 1,
+  PAUSED = 2,
+}
+
+/// Mirrors the return type of `HumeCreditPair.getPosition(address)`.
+export interface CreditPosition {
+  collateralAmount: bigint;
+  debtAmount: bigint;
+  /// USD value of the collateral, scaled 1e18.
+  collateralValueUsd: bigint;
+  /// Health factor in basis points: 10000 = 1.00x (at liquidation threshold). Higher is safer.
+  /// A position with healthFactorBps < 10000 is liquidatable. No debt returns 9990000 (999.00x).
+  healthFactorBps: bigint;
+}
+
+/// Mirrors `HumeCreditRegistry.MarketConfig`.
+export interface CreditMarketConfig {
+  marketId: Hex;
+  slug: string;
+  collateralToken: Address;
+  debtToken: Address;
+  pairAddress: Address;
+  oracle: Address;
+  riskTier: CreditRiskTier;
+  status: CreditMarketStatus;
+  /// Maximum loan-to-value in basis points (e.g. 6000 = 60%).
+  maxLtvBps: bigint;
+  /// Liquidation threshold in basis points (e.g. 7000 = 70%).
+  liquidationLtvBps: bigint;
+  /// Maximum leverage in basis points (e.g. 25000 = 2.5x, basis 10000 = 1x).
+  maxLeverageBps: bigint;
+  /// Total collateral deposit cap in collateral token base units.
+  supplyCap: bigint;
+  /// Total borrow cap in debt token base units.
+  borrowCap: bigint;
+}
+
 export function isMarketGroup(value: unknown): value is MarketGroup {
   return typeof value === "string" && (MARKET_GROUPS as readonly string[]).includes(value);
 }
