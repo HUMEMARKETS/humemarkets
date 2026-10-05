@@ -11,6 +11,7 @@ import { useOnline } from "@/hooks/useOnline";
 import { fmtSigned, fmtUsd, shortHash, signTone } from "@/lib/format";
 import { fmtSignedBps, rankEntries, SAMPLE_SELF, sampleSelfEntry } from "@/lib/leaderboard";
 import { useSampleStore } from "@/stores/sample";
+import { PanelState } from "./PanelState";
 
 const metrics: Array<{ value: LeaderboardMetric; label: string }> = [
   { value: "pnl", label: "PNL" },
@@ -39,12 +40,7 @@ function Skeletons() {
 }
 
 function Notice({ children, action }: { children: string; action?: React.ReactNode }) {
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-3 p-4">
-      <p className="max-w-prose text-muted">{children}</p>
-      {action}
-    </div>
-  );
+  return <PanelState action={action}>{children}</PanelState>;
 }
 
 function Table({ entries, decimals, metric, self, boardSample }: { entries: LeaderboardEntry[]; decimals: number; metric: LeaderboardMetric; self?: string; boardSample: boolean }) {
@@ -122,13 +118,13 @@ export function LeaderboardView() {
   );
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-1 flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Segmented label="Rank by" value={metric} onChange={setMetric} options={metrics} className="w-full sm:w-72" />
         <p className="text-xs text-muted">All time{board.data?.updatedAt ? ` · updated ${new Date(board.data.updatedAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })}` : ""}</p>
       </div>
 
-      <Panel title={`Top traders by ${metrics.find((m) => m.value === metric)?.label}`} sample={sample || board.data?.sample}>
+      <Panel className="flex-1" title={`Top traders by ${metrics.find((m) => m.value === metric)?.label}`} sample={sample || board.data?.sample}>
         {!online && !board.data ? (
           <Notice action={retry}>You are offline, so the leaderboard cannot load. It will refresh by itself when you reconnect.</Notice>
         ) : board.isPending ? (

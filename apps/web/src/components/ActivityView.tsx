@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useAccountMode } from "@/hooks/useAccountMode";
 import { ConnectButton } from "./ConnectButton";
 import { FundingTable, HistoryTable } from "./ActivityTables";
+import { PanelState } from "./PanelState";
 
 type Tab = "history" | "funding";
 
@@ -21,18 +22,15 @@ export function ActivityView() {
 
   if (mode === "disconnected") {
     return (
-      <Panel>
-        <div className="flex flex-wrap items-center justify-between gap-3 p-3">
-          <p className="text-muted">Connect a wallet to see its transactions and funding payments.</p>
-          <ConnectButton />
-        </div>
+      <Panel className="flex-1">
+        <PanelState action={<ConnectButton />}>Connect a wallet to see its transactions and funding payments.</PanelState>
       </Panel>
     );
   }
 
   return (
-    <Panel title={<Tabs label="Activity sections" tabs={tabs} value={tab} onChange={setTab} />} sample={mode === "sample"}>
-      <div role="tabpanel" className="overflow-x-auto">
+    <Panel className="flex-1" title={<Tabs label="Activity sections" tabs={tabs} value={tab} onChange={setTab} />} sample={mode === "sample"}>
+      <div role="tabpanel" className="flex-1 overflow-x-auto">
         {tab === "history" ? <HistoryTable /> : <FundingTable />}
       </div>
     </Panel>

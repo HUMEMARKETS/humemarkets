@@ -12,10 +12,12 @@ import {
 } from 'react';
 import { ArrowIcon } from '@/components/ArrowIcon';
 import { ContractAddressBadge } from '@/components/ContractAddressBadge';
+import { TrustStrip } from '@/components/TrustStrip';
 import { PAGE_FRAME, SPACED_CAPS } from '@/lib/frame';
 import { X_URL } from '@/lib/social';
 import { ContractsPanel } from './ContractsPanel';
 import { SECTIONS } from './content';
+import { StaticScene } from './StaticScene';
 
 const LandingCanvas = dynamic(
     () => import('./LandingCanvas').then((module) => module.LandingCanvas),
@@ -26,7 +28,7 @@ const MOTION_KEY = 'hume.landing.motion';
 const pad = (index: number) => String(index).padStart(2, '0');
 
 const primary =
-    'inline-flex h-14 items-center justify-between gap-10 rounded-sharp bg-accent px-6 text-base font-medium text-accent-ink transition-[background-color,box-shadow] duration-150 hover:bg-accent-hover hover:shadow-[0_0_0_3px_var(--color-accent-line)] active:bg-accent-press active:shadow-none';
+    'inline-flex h-14 items-center justify-between gap-10 rounded-sharp bg-accent px-6 text-base font-medium text-accent-ink transition-[background-color,box-shadow] duration-150 hover:bg-accent-hover hover:shadow-[0_0_0_3px_var(--color-accent-line),var(--shadow-accent-glow)] active:bg-accent-press active:shadow-none';
 const secondary =
     'inline-flex h-14 items-center gap-3 px-2 text-base text-muted transition-colors duration-150 hover:text-text';
 
@@ -72,6 +74,34 @@ export function LandingStage() {
         window.addEventListener('hashchange', sync);
         return () => window.removeEventListener('hashchange', sync);
     }, []);
+
+    // A section id in the address (`/#vault`) opens at that section, and a rail move writes it back, so a
+    // section can be linked to and survives a reload. `#contracts` belongs to the drawer, not a section.
+    useEffect(() => {
+        const toHash = () => {
+            const index = SECTIONS.findIndex(
+                (section) => section.id === window.location.hash.slice(1),
+            );
+            if (index >= 0) {
+                sectionEls.current[index]?.scrollIntoView({ block: 'start' });
+            }
+        };
+        toHash();
+        window.addEventListener('hashchange', toHash);
+        return () => window.removeEventListener('hashchange', toHash);
+    }, []);
+
+    useEffect(() => {
+        if (window.location.hash === '#contracts') return;
+        const id = SECTIONS[active]?.id;
+        const hash = active === 0 || !id ? '' : `#${id}`;
+        if (window.location.hash === hash) return;
+        window.history.replaceState(
+            null,
+            '',
+            window.location.pathname + window.location.search + hash,
+        );
+    }, [active]);
 
     const closePanel = useCallback(() => {
         setPanel(false);
@@ -148,7 +178,7 @@ export function LandingStage() {
 
     return (
         <div className="relative h-full min-h-[34rem] overflow-hidden bg-ground">
-            {failed ? null : (
+            {failed ? <StaticScene /> : (
                 <LandingCanvas
                     progress={progress}
                     active={active}
@@ -164,9 +194,20 @@ export function LandingStage() {
             )}
 
             <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-x-0 bottom-0 z-[5] h-[68%] bg-gradient-to-t from-ground from-65% to-transparent md:hidden"
+            />
+
+            <div
                 ref={setScroller}
                 onScroll={onScroll}
-                className="absolute inset-0 z-10 snap-y snap-mandatory overflow-y-auto overscroll-contain scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                tabIndex={0}
+                role="region"
+                aria-label="Hume, in five sections"
+                className={cn(
+                    'absolute inset-0 z-10 snap-y snap-mandatory overflow-y-auto overscroll-contain [scrollbar-width:none] focus-visible:outline-offset-[-2px] [&::-webkit-scrollbar]:hidden',
+                    motion && 'scroll-smooth',
+                )}
             >
                 {SECTIONS.map((section, index) => {
                     const isActive = index === active;
@@ -181,12 +222,13 @@ export function LandingStage() {
                                 sectionEls.current[index] = element;
                             }}
                             aria-labelledby={`${section.id}-title`}
-                            className="relative flex min-h-full snap-start items-center"
+                            inert={!isActive}
+                            className="relative flex min-h-full snap-start items-end md:items-center"
                         >
                             <div
                                 className={cn(
                                     PAGE_FRAME,
-                                    'pb-32 pt-28 md:pb-44 md:pt-32',
+                                    'pb-20 pt-24 md:pb-44 md:pt-32',
                                 )}
                             >
                                 <div
@@ -212,7 +254,7 @@ export function LandingStage() {
                                     </p>
                                     <Heading
                                         id={`${section.id}-title`}
-                                        className="mt-5 font-serif text-[clamp(2.75rem,min(6.4vw,12dvh),7.5rem)] font-light md:whitespace-nowrap leading-[0.95] tracking-[-0.045em] text-text"
+                                        className="mt-5 font-display text-[clamp(2.75rem,min(6.4vw,12dvh),7.5rem)] font-light md:whitespace-nowrap leading-[0.95] tracking-[-0.045em] text-text"
                                     >
                                         {section.title[0]}
                                         <br />
@@ -255,7 +297,7 @@ export function LandingStage() {
                                                                     : 'border-transparent text-faint hover:text-text',
                                                             )}
                                                         >
-                                                            <span className="text-[10px] tracking-[0.18em] text-faint">
+                                                            <span className="text-[11px] tracking-[0.18em] text-faint">
                                                                 {pad(position + 1)}
                                                             </span>
                                                             {item.label}
@@ -303,6 +345,7 @@ export function LandingStage() {
                                                 </button>
                                             </div>
                                             <ContractAddressBadge className="mt-6 md:hidden" />
+                                            <TrustStrip className="mt-12 max-w-[46rem] max-md:hidden" />
                                         </>
                                     ) : null}
                                     {index === SECTIONS.length - 1 ? (
@@ -315,32 +358,20 @@ export function LandingStage() {
                                                 View contracts
                                                 <Plus />
                                             </a>
+                                            <Link href="/features" className={secondary}>
+                                                All features
+                                                <Plus />
+                                            </Link>
                                         </div>
+                                    ) : null}
+                                    {index === SECTIONS.length - 1 ? (
+                                        <TrustStrip className="mt-8 max-w-[40rem] md:hidden" />
                                     ) : null}
                                 </div>
                             </div>
                         </section>
                     );
                 })}
-            </div>
-
-            <div
-                aria-hidden="true"
-                className={cn(
-                    PAGE_FRAME,
-                    'pointer-events-none absolute inset-x-0 top-28 z-20 hidden justify-end xl:flex',
-                )}
-            >
-                <div className="flex flex-col items-center gap-4 text-faint">
-                    <span className="text-[10px] tracking-[0.2em]">{pad(active)}</span>
-                    <span className="h-8 w-px bg-line" />
-                    <span
-                        className={cn(SPACED_CAPS, 'text-[9px] tracking-[0.3em]')}
-                        style={{ writingMode: 'vertical-rl' }}
-                    >
-                        Drag or move to explore perspective
-                    </span>
-                </div>
             </div>
 
             <div
@@ -384,13 +415,6 @@ export function LandingStage() {
             >
                 <div className={PAGE_FRAME}>
                     <div className="hidden h-11 items-center justify-between gap-6 md:flex">
-                        <p className={cn(SPACED_CAPS, 'flex items-center gap-3 text-[10px] text-muted')}>
-                            <span aria-hidden="true" className="text-base leading-none">+</span>
-                            Scroll to travel
-                        </p>
-                        <p className={cn(SPACED_CAPS, 'hidden text-[9px] tracking-[0.2em] text-faint lg:block')}>
-                            Independent by design. Built for Robinhood Chain.
-                        </p>
                         <a
                             href={X_URL}
                             target="_blank"
@@ -422,11 +446,11 @@ export function LandingStage() {
                             </button>
                         </div>
                     </div>
-                    <ol className="grid grid-cols-5 border-t border-line">
+                    <ol className="flex border-t border-line">
                         {SECTIONS.map((section, index) => {
                             const isActive = index === active;
                             return (
-                                <li key={section.id} className="relative">
+                                <li key={section.id} className={cn('relative min-w-0 md:flex-1', isActive ? 'flex-[2.6]' : 'flex-1')}>
                                     <span
                                         aria-hidden="true"
                                         className={cn(
@@ -444,8 +468,8 @@ export function LandingStage() {
                                             isActive ? 'text-text' : 'text-faint hover:text-text',
                                         )}
                                     >
-                                        <span className="text-[10px] tracking-[0.18em]">{pad(index)}</span>
-                                        <span className="hidden truncate md:inline">{section.nav}</span>
+                                        <span className="text-[11px] tracking-[0.18em]">{pad(index)}</span>
+                                        <span className={cn('truncate', isActive ? 'inline' : 'hidden md:inline')}>{section.nav}</span>
                                         {isActive ? (
                                             <span
                                                 aria-hidden="true"

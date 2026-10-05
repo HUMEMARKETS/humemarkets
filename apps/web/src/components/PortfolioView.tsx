@@ -14,6 +14,7 @@ import { SampleMark } from "./SampleMark";
 import { FundingTable, HistoryTable } from "./ActivityTables";
 import { OptionPositionsTable } from "./OptionPositionsTable";
 import { OrdersTable } from "./OrdersTable";
+import { PanelState } from "./PanelState";
 import { PerpPositionsTable } from "./PositionsTable";
 
 type Tab = "all" | "options" | "perps" | "orders" | "funding" | "history";
@@ -63,18 +64,15 @@ export function PortfolioView() {
 
   if (mode === "disconnected") {
     return (
-      <Panel>
-        <div className="flex flex-wrap items-center justify-between gap-3 p-3">
-          <p className="text-muted">Connect a wallet to see your collateral, positions and history.</p>
-          <ConnectButton />
-        </div>
+      <Panel className="flex-1">
+        <PanelState action={<ConnectButton />}>Connect a wallet to see your collateral, positions and history.</PanelState>
       </Panel>
     );
   }
   if (error) {
     return (
-      <Panel>
-        <p className="p-3 text-down">Could not read your portfolio from the chain. Check NEXT_PUBLIC_RPC_URL.</p>
+      <Panel className="flex-1">
+        <PanelState>Could not read your portfolio from the chain. Check NEXT_PUBLIC_RPC_URL.</PanelState>
       </Panel>
     );
   }
@@ -86,7 +84,7 @@ export function PortfolioView() {
   const value = summary ? summary.balances.balance + summary.unrealizedPerpPnl : undefined;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-1 flex-col gap-4">
       <div className="rounded-panel border border-line/70 bg-surface p-6">
         <p className="flex items-center gap-2 text-xs text-muted">
           Portfolio value
@@ -127,10 +125,11 @@ export function PortfolioView() {
       </div>
 
       <Panel
+        className="flex-1"
         title={<Tabs label="Portfolio sections" tabs={tabList} value={tab} onChange={setTab} />}
         sample={sample}
       >
-        <div role="tabpanel" className="overflow-x-auto">
+        <div role="tabpanel" className="flex-1 overflow-x-auto">
           {tab === "all" || tab === "perps" ? (
             <section aria-label="Perpetual positions">
               {tab === "all" ? <h3 className="px-3 pt-3 text-xs text-muted">Perpetuals</h3> : null}

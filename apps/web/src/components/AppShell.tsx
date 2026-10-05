@@ -13,10 +13,9 @@ import { TxToasts } from "./TxToasts";
 
 /// The frame every page shares: the markets ticker, header, a warning when the RPC is not configured,
 /// the scrolling page area and the transaction toasts. Pages render only their own content. The ticker
-/// sits above the header on every page, not just the landing page it started on, so the same live
-/// strip of prices is always the first thing on screen — one consistent top of page, not a landing-only
-/// flourish. It stays in normal flow (never floats), so the header's own float-over-the-hero behaviour
-/// on the landing page anchors to the space right below the ticker, not the very top of the viewport.
+/// sits above the header on every app page so the same live strip of prices is the first thing on
+/// screen. The landing page leaves it out: the hero has to win against a clean top of page, and the
+/// landing page owns its own scroller, so its `main` does not scroll as well.
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   return (
@@ -28,7 +27,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         Skip to content
       </a>
 
-      <LandingTicker />
+      {pathname === "/" ? null : <LandingTicker />}
       <div className="relative flex min-h-0 flex-1 flex-col">
         <Header />
         {env.rpcConfigured || pathname === "/" ? null : (
@@ -36,7 +35,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             NEXT_PUBLIC_RPC_URL is not set, so no market data can load. Add it to .env and restart.
           </p>
         )}
-        <main id="main" className="min-h-0 flex-1 overflow-y-auto">
+        <main id="main" className={pathname === "/" ? "min-h-0 flex-1 overflow-hidden" : "min-h-0 flex-1 overflow-y-auto"}>
           {children}
         </main>
       </div>

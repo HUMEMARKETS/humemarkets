@@ -46,10 +46,13 @@ export function LandingTicker() {
   const { data: markets, isPending } = usePerpMarkets();
   const symbols = (markets ?? []).map((market) => symbolOf(market.marketId));
   const run = symbols.length === 0 ? [] : Array.from({ length: Math.ceil(MIN_ITEMS_PER_RUN / symbols.length) }, () => symbols).flat();
+  // With nothing listed (or the registry unreadable) the strip would only announce an empty venue above
+  // every page, so it is not rendered; the Markets page says it, with a reason, where it matters.
+  if (run.length === 0 && !isPending) return null;
   return (
     <div className="ticker flex h-11 shrink-0 items-center overflow-hidden border-b border-line bg-ground text-sm" aria-label="Perpetual markets">
       {run.length === 0 ? (
-        <p className="px-4 text-muted sm:px-6 lg:px-[32px]">{isPending ? "Loading markets…" : "No perpetual markets are listed yet."}</p>
+        <p className="px-4 text-muted sm:px-6 lg:px-[32px]">Loading markets…</p>
       ) : (
         <div className="ticker-track flex w-max items-center">
           <Run symbols={run} hidden={false} />

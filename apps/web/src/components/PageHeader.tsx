@@ -8,7 +8,7 @@ import { SampleMark } from "./SampleMark";
 /// or a position or a ranking, and none of it may be taken for real.
 export function PageHeader({ title, children, actions }: { title: string; children?: ReactNode; actions?: ReactNode }) {
   return (
-    <div className="mb-8 flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
+    <div className="mb-5 flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
       <div>
         <h1 className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[2rem] font-bold leading-10 tracking-[-0.03em]">
           {title}

@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAccount } from "wagmi";
 import { useDismiss } from "@/hooks/useDismiss";
-import { CHIP_LABEL, PAGE_FRAME, SPACED_CAPS } from "@/lib/frame";
+import { APP_GUTTER, CHIP_LABEL, PAGE_FRAME } from "@/lib/frame";
 import { X_URL } from "@/lib/social";
 import { chip, cn, interactive, menuItem } from "@hume/ui";
 import { ArrowIcon } from "./ArrowIcon";
@@ -17,7 +17,7 @@ import { WalletButton } from "./WalletButton";
 import { XIcon } from "./XIcon";
 
 /// PROJECT_BRIEF.md Section 22, plus the strategy builder from Section 41.
-const items = [
+const items: Array<{ label: string; href: string; wideOnly?: boolean }> = [
   { label: "Markets", href: "/markets" },
   { label: "Options", href: "/options" },
   { label: "Perpetuals", href: "/perpetuals" },
@@ -26,6 +26,9 @@ const items = [
   { label: "Lending", href: "/lending" },
   { label: "Portfolio", href: "/portfolio" },
   { label: "Activity", href: "/activity" },
+  // Ninth item: it does not fit beside the other eight and the buttons at 1280 px, so the bar shows it from
+  // 2xl. Below that it is in the footer, and in the mobile sheet.
+  { label: "Features", href: "/features", wideOnly: true },
 ];
 
 /// Primary nav is plain text on the header's own blur, not another row of boxes: full-brightness
@@ -68,24 +71,21 @@ export function Header() {
         landing ? "absolute inset-x-0 top-0" : "relative",
       )}
     >
-      <div className={cn("flex h-20 items-center justify-between gap-3", landing ? PAGE_FRAME : "px-4")}>
+      <div className={cn("flex h-20 items-center justify-between gap-3", landing ? PAGE_FRAME : APP_GUTTER)}>
         <div className="flex h-full items-center gap-6">
           <Link href="/" aria-label="Hume home" className="flex h-full shrink-0 items-center">
             <Logo />
           </Link>
           {landing ? (
             <div className="hidden h-10 items-center gap-6 border-l border-line pl-6 lg:flex">
-              <div className="flex flex-col gap-1">
-                <p className={cn(SPACED_CAPS, "text-[9px] tracking-[0.3em] text-faint")}>A different kind of market</p>
-                <ContractAddressBadge className="py-1" />
-              </div>
+              <ContractAddressBadge className="py-1" />
             </div>
           ) : (
             <nav aria-label="Primary" className="hidden h-full items-center gap-5 xl:flex 2xl:gap-8">
               {items.map((item) => {
                 const current = isCurrent(pathname, item.href);
                 return (
-                  <Link key={item.href} href={item.href} aria-current={current ? "page" : undefined} className={navLink(current)}>
+                  <Link key={item.href} href={item.href} aria-current={current ? "page" : undefined} className={cn(navLink(current), item.wideOnly && "max-2xl:hidden")}>
                     {item.label}
                   </Link>
                 );
@@ -96,8 +96,8 @@ export function Header() {
         <div className="flex items-center gap-3 sm:gap-6">
           {landing ? (
             <nav aria-label="Landing" className="hidden items-center gap-6 text-sm xl:flex">
-              <Link href="/docs" className="text-muted transition-colors duration-150 hover:text-text">
-                How it works
+              <Link href="/features" className="text-muted transition-colors duration-150 hover:text-text">
+                Features
               </Link>
               <a href="#contracts" className="text-muted transition-colors duration-150 hover:text-text">
                 Contracts
@@ -119,11 +119,13 @@ export function Header() {
           </a>
           {/* On a phone the wallet button lives at the bottom of the menu, which leaves the bar to the logo, X and the menu button — Trade goes with it, since "Markets"/"Perpetuals" in the sheet already cover that entry point on mobile. */}
           <div className="hidden items-center gap-3 xl:flex 2xl:gap-6">
-            <Link href="/perpetuals" className={cn(tradeLink, !landing && "max-2xl:hidden")}>
-              {landing ? "Open app" : "Trade"}
-              <ArrowIcon />
-            </Link>
-            <WalletButton />
+            {landing ? null : (
+              <Link href="/perpetuals" className={cn(tradeLink, "max-2xl:hidden")}>
+                Trade
+                <ArrowIcon />
+              </Link>
+            )}
+            <WalletButton variant={landing ? "secondary" : "primary"} />
           </div>
           <button
             type="button"

@@ -28,7 +28,7 @@ function explorerAddressUrl(address: `0x${string}`): string | undefined {
 /// Connect, switch network, or open the account menu — whichever the wallet needs next. In the mobile
 /// menu it fills the width (`block`), takes that menu's button size (`className`) and opens its lists
 /// upward (`menuAbove`), because it sits at the bottom of the sheet.
-export function WalletButton({ className = bubble, block = false, menuAbove = false }: { className?: string; block?: boolean; menuAbove?: boolean }) {
+export function WalletButton({ className = bubble, block = false, menuAbove = false, variant = "primary" }: { className?: string; block?: boolean; menuAbove?: boolean; variant?: "primary" | "secondary" }) {
   const { address, isConnected, chainId } = useAccount();
   const mode = useAccountMode();
   const setPreference = useModeStore((state) => state.setPreference);
@@ -40,7 +40,7 @@ export function WalletButton({ className = bubble, block = false, menuAbove = fa
   const close = useCallback(() => setOpen(false), []);
   useDismiss(ref, open, close);
 
-  if (!isConnected || !address) return <ConnectButton size="sm" className={className} block={block} menuAbove={menuAbove} />;
+  if (!isConnected || !address) return <ConnectButton variant={variant} size="sm" className={className} block={block} menuAbove={menuAbove} />;
 
   // A wallet is connected but the person is on the sample account: say what the button does.
   if (mode === "sample") {

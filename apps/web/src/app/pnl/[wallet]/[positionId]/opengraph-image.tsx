@@ -3,14 +3,14 @@ import { join } from "node:path";
 import { ImageResponse } from "next/og";
 import { cardPartsFromApi, cardProps } from "@/lib/pnlCard";
 import { loadPnlCard } from "@/lib/pnlCardApi";
-import { THEME_ACCENT, THEME_CARD_MUTED, THEME_DOWN_PRESS, THEME_GROUND, THEME_TEXT } from "@/lib/theme-colors";
+import { THEME_CARD_ACCENT, THEME_CARD_MUTED, THEME_DOWN_PRESS, THEME_GROUND, THEME_TEXT } from "@/lib/theme-colors";
 
 export const alt = "A Hume PNL card";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 /// The shareable PNL card as an image. It is the in-app `PnlCard` laid out for 1200 x 630: ivory ground,
-/// charcoal figure, sage frame, one number that dominates (docs/UI_CONTRACT.md Sections 4 and 5). Same
+/// charcoal figure, green frame, one number that dominates (docs/UI_CONTRACT.md Sections 4 and 5). Same
 /// formatter as the page (`cardProps`), so the image and the page can never disagree on a figure. The edge
 /// renderer takes inline styles only, which is why the colours come from `theme-colors.ts`.
 export default async function PnlCardImage({ params }: { params: Promise<{ wallet: string; positionId: string }> }) {
@@ -22,7 +22,7 @@ export default async function PnlCardImage({ params }: { params: Promise<{ walle
   if (result.kind !== "ok") {
     return new ImageResponse(
       (
-        <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 96px", background: THEME_TEXT, color: THEME_GROUND, border: `8px solid ${THEME_ACCENT}` }}>
+        <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 96px", background: THEME_TEXT, color: THEME_GROUND, border: `8px solid ${THEME_CARD_ACCENT}` }}>
           <div style={{ fontSize: 56, letterSpacing: 14, fontWeight: 500 }}>HUME</div>
           <div style={{ fontSize: 34, color: THEME_CARD_MUTED, marginTop: 24 }}>This PNL card is not available.</div>
         </div>
@@ -32,7 +32,7 @@ export default async function PnlCardImage({ params }: { params: Promise<{ walle
   }
 
   const p = cardProps(cardPartsFromApi(result.card));
-  const barColour = p.direction === "loss" ? THEME_DOWN_PRESS : p.direction === "gain" ? THEME_ACCENT : THEME_CARD_MUTED;
+  const barColour = p.direction === "loss" ? THEME_DOWN_PRESS : p.direction === "gain" ? THEME_CARD_ACCENT : THEME_CARD_MUTED;
   const label = (text: string, value: string) => (
     <div style={{ display: "flex", flexDirection: "column", marginRight: 64 }}>
       <div style={{ fontSize: 24, color: THEME_CARD_MUTED }}>{text}</div>
@@ -42,7 +42,7 @@ export default async function PnlCardImage({ params }: { params: Promise<{ walle
 
   return new ImageResponse(
     (
-      <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "56px 72px", background: THEME_TEXT, color: THEME_GROUND, border: `8px solid ${THEME_ACCENT}` }}>
+      <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "56px 72px", background: THEME_TEXT, color: THEME_GROUND, border: `8px solid ${THEME_CARD_ACCENT}` }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}

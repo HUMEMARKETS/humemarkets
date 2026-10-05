@@ -1,11 +1,10 @@
+import { AppPage } from "@/components/AppPage";
 import { MarketsTable } from "@/components/MarketsTable";
-import { PageHeader } from "@/components/PageHeader";
 
-export default function MarketsPage() {
+export default function Page() {
   return (
-    <div className="p-6 lg:p-10">
-      <PageHeader title="Markets">Every listed market. Open a row to trade its perpetual, or go straight to its options.</PageHeader>
+    <AppPage title="Markets" description="Every listed market. Open a row to trade its perpetual, or go straight to its options.">
       <MarketsTable />
-    </div>
+    </AppPage>
   );
 }

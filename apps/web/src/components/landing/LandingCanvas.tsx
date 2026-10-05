@@ -84,11 +84,42 @@ export function LandingCanvas(props: Props) {
 
         const rig = new THREE.Group();
         scene.add(rig);
+
+        // A soft green glow behind the scene in view: one additive sprite with a radial gradient, so it
+        // costs a single draw call and needs no post-processing pass.
+        // The gradient is computed into a small data texture (white, with a falling alpha), so no colour
+        // literal is needed; the sprite's own material colour tints it with the accent.
+        const GLOW = 64;
+        const glowData = new Uint8Array(GLOW * GLOW * 4);
+        for (let y = 0; y < GLOW; y += 1) {
+            for (let x = 0; x < GLOW; x += 1) {
+                const d = Math.min(1, Math.hypot(x - GLOW / 2 + 0.5, y - GLOW / 2 + 0.5) / (GLOW / 2));
+                const alpha = (1 - d) ** 2.2;
+                const i = (y * GLOW + x) * 4;
+                glowData[i] = glowData[i + 1] = glowData[i + 2] = 255;
+                glowData[i + 3] = Math.round(alpha * 255);
+            }
+        }
+        const glowTexture = new THREE.DataTexture(glowData, GLOW, GLOW, THREE.RGBAFormat);
+        glowTexture.needsUpdate = true;
+        const glowMaterial = new THREE.SpriteMaterial({
+            map: glowTexture,
+            color: palette.accent,
+            transparent: true,
+            opacity: 0,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending,
+        });
+        const glow = new THREE.Sprite(glowMaterial);
+        glow.scale.setScalar(8.5);
+        glow.position.set(0, 0, -2.2);
+        rig.add(glow);
         const floor = buildFloor(palette);
         rig.add(floor.group);
         const scenes = buildScenes(palette);
         for (const item of scenes) rig.add(item.group);
 
+        let lastKey = '';
         const size = { width: 1, height: 1 };
         function resize() {
             const width = hostEl!.clientWidth;
@@ -96,15 +127,18 @@ export function LandingCanvas(props: Props) {
             if (width === 0 || height === 0) return;
             size.width = width;
             size.height = height;
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, width < 768 ? 1.5 : 2));
             renderer.setSize(width, height, false);
+            // setSize clears the canvas; make sure the next frame draws even if nothing else changed.
+            lastKey = '';
             camera.aspect = width / height;
             camera.updateProjectionMatrix();
             const wide = camera.aspect >= 1.1;
             const halfWidth =
                 Math.tan((FOV / 2) * (Math.PI / 180)) * DISTANCE * camera.aspect;
-            rig.position.set(wide ? halfWidth * 0.46 : 0, wide ? 0.05 : -1.3, 0);
-            rig.scale.setScalar(wide ? Math.min(1, camera.aspect / 1.7 + 0.35) : 0.6);
+            // On a phone the scene sits in the top third, above the text block that is anchored to the bottom.
+            rig.position.set(wide ? halfWidth * 0.46 : 0, wide ? 0.05 : 1.15, 0);
+            rig.scale.setScalar(wide ? Math.min(1, camera.aspect / 1.7 + 0.35) : 0.55);
         }
         resize();
         const observer = new ResizeObserver(resize);
@@ -165,6 +199,9 @@ export function LandingCanvas(props: Props) {
 
         const spinAngles: number[] = scenes.map(() => 0);
         let motionFactor = 0;
+        // 1 while motion is allowed, 0 when it is off (the toggle or prefers-reduced-motion). Unlike
+        // `motionFactor` it stays 1 while a hotspot is hovered, so the pointer tilt does not drop out.
+        let allowed = 0;
         let animTime = 0;
         const clock = new THREE.Clock();
         let frameId = 0;
@@ -177,22 +214,40 @@ export function LandingCanvas(props: Props) {
             motionFactor += (motionTarget - motionFactor) * Math.min(1, dt * 5);
             animTime += dt * motionFactor;
             const time = animTime;
-            const motion = 1;
+            allowed += ((state.motion ? 1 : 0) - allowed) * Math.min(1, dt * 5);
+            const motion = allowed;
             const progress = state.progress.current;
             const activeIndex = Math.max(
                 0,
                 Math.min(scenes.length - 1, Math.round(progress)),
             );
 
+            // The camera travels with the scroll: a slow orbit and a small rise and dolly between scenes,
+            // so moving from one section to the next reads as going somewhere. It is scaled by the motion
+            // state, and sits still when motion is off.
+            const angle = (progress - 2) * 0.1 * allowed;
+            camera.position.set(
+                Math.sin(angle) * DISTANCE,
+                1.7 + Math.sin(progress * 1.3) * 0.2 * allowed,
+                Math.cos(angle) * DISTANCE - Math.sin(progress * 0.8) * 0.35 * allowed,
+            );
+            camera.lookAt(0, -0.15, 0);
+            camera.updateMatrixWorld();
+
             const ease = Math.min(1, dt * 4);
             pointer.x += (pointer.tx - pointer.x) * ease;
             pointer.y += (pointer.ty - pointer.y) * ease;
             if (!drag.active) {
-                drag.yaw += drag.velocity * dt;
-                drag.velocity *= Math.pow(0.04, dt);
+                // A drag is a direct action and always works; its coasting is motion and stops with it.
+                drag.yaw += drag.velocity * dt * allowed;
+                drag.velocity = state.motion ? drag.velocity * Math.pow(0.04, dt) : 0;
             }
-            rig.rotation.y = pointer.x * 0.22;
-            rig.rotation.x = pointer.y * 0.07;
+            // With motion off nothing changes between frames unless the person acts, so skip the render.
+            const key = [progress.toFixed(3), state.tab, state.hover, pointer.x.toFixed(3), pointer.y.toFixed(3), drag.yaw.toFixed(3), allowed.toFixed(3), motionFactor.toFixed(3), size.width, size.height].join('|');
+            if (!state.motion && allowed < 0.001 && motionFactor < 0.001 && key === lastKey) return;
+            lastKey = key;
+            rig.rotation.y = pointer.x * 0.22 * allowed;
+            rig.rotation.x = pointer.y * 0.07 * allowed;
             floor.update(time, motion);
 
             if (pointer.dirty && pointer.inside && !drag.active) {
@@ -235,6 +290,9 @@ export function LandingCanvas(props: Props) {
                 );
             });
 
+            glowMaterial.opacity =
+                0.16 * smooth(1 - Math.abs(activeIndex - progress) * 1.3) * (0.6 + 0.4 * allowed);
+
             const currentScene = scenes[activeIndex];
             const fadeActive = smooth(1 - Math.abs(activeIndex - progress) * 1.3);
             for (let tab = 0; tab < 3; tab += 1) {
@@ -257,10 +315,38 @@ export function LandingCanvas(props: Props) {
 
             renderer.render(scene, camera);
         }
-        frame();
+        // The loop runs only while the tab is visible and the canvas is on screen.
+        let tabVisible = !document.hidden;
+        let inView = true;
+        function sync() {
+            if (tabVisible && inView) {
+                if (frameId === 0) {
+                    clock.getDelta();
+                    lastKey = '';
+                    frame();
+                }
+            } else if (frameId !== 0) {
+                cancelAnimationFrame(frameId);
+                frameId = 0;
+            }
+        }
+        function onVisibility() {
+            tabVisible = !document.hidden;
+            sync();
+        }
+        document.addEventListener('visibilitychange', onVisibility);
+        const viewObserver = new IntersectionObserver((entries) => {
+            inView = entries[entries.length - 1]?.isIntersecting ?? true;
+            sync();
+        });
+        viewObserver.observe(hostEl);
+        sync();
 
         return () => {
             cancelAnimationFrame(frameId);
+            frameId = 0;
+            document.removeEventListener('visibilitychange', onVisibility);
+            viewObserver.disconnect();
             observer.disconnect();
             pointerTarget.removeEventListener('pointermove', onMove);
             pointerTarget.removeEventListener('pointerdown', onDown);
@@ -268,6 +354,8 @@ export function LandingCanvas(props: Props) {
             window.removeEventListener('pointerup', onUp);
             for (const item of scenes) item.dispose();
             floor.dispose();
+            glowTexture.dispose();
+            glowMaterial.dispose();
             renderer.dispose();
         };
     }, [pointerTarget]);
@@ -277,9 +365,9 @@ export function LandingCanvas(props: Props) {
             <canvas
                 ref={canvas}
                 aria-hidden="true"
-                className="absolute inset-0 size-full opacity-40 md:opacity-100"
+                className="absolute inset-0 size-full opacity-70 md:opacity-100"
             />
-            <div className="pointer-events-none absolute inset-0 z-20 hidden md:block">
+            <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-20 hidden md:block">
                 {[0, 1, 2].map((tab) => {
                     const label = props.hotspotLabels[tab];
                     if (!label) return null;
@@ -295,6 +383,7 @@ export function LandingCanvas(props: Props) {
                         >
                             <button
                                 type="button"
+                                tabIndex={-1}
                                 aria-pressed={selected}
                                 aria-label={label}
                                 onPointerEnter={() => props.onHover(tab)}

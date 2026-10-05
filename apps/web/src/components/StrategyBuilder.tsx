@@ -27,7 +27,7 @@ const selectClass = cn(fieldBorder, "h-8 rounded-md border bg-raised px-2 text-s
 
 /// A payoff-at-expiry line chart. Green above zero, red below, with the price and break-evens on
 /// the axis. Drawn as plain SVG: it is a display of the analysis, nothing here is signed.
-function PayoffChart({ legs, low, high, spot, breakEvens }: { legs: Leg[]; low: number; high: number; spot: number; breakEvens: number[] }) {
+export function PayoffChart({ legs, low, high, spot, breakEvens }: { legs: Leg[]; low: number; high: number; spot: number; breakEvens: number[] }) {
   const width = 640;
   const height = 220;
   const pad = 28;
@@ -41,7 +41,7 @@ function PayoffChart({ legs, low, high, spot, breakEvens }: { legs: Leg[]; low: 
   const path = curve.map(([price, value], index) => `${index === 0 ? "M" : "L"}${x(price).toFixed(1)},${y(value).toFixed(1)}`).join(" ");
 
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Payoff at expiry" className="w-full max-w-[720px]">
+    <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Payoff at expiry" className="w-full">
       <line x1={pad} x2={width - pad} y1={y(0)} y2={y(0)} stroke="currentColor" strokeOpacity={0.35} />
       <clipPath id="above">
         <rect x={0} y={0} width={width} height={y(0)} />
@@ -157,9 +157,9 @@ export function StrategyBuilder() {
   const range = result && spot !== undefined ? chartRange(result.legs.flatMap((leg) => (leg.strike === undefined ? [] : [leg.strike])), result.breakEvens, spot) : undefined;
 
   return (
-    <div className="flex flex-col gap-6">
-      <Panel>
-        <div className="flex flex-col gap-4 p-3">
+    <div className="flex flex-1 flex-col">
+      <Panel className="flex-1">
+        <div className="flex flex-1 flex-col gap-4 p-3 lg:p-5">
           <div className="flex flex-wrap items-end gap-3">
             <label className="flex flex-col gap-1 text-xs text-muted">
               Underlying
@@ -218,7 +218,8 @@ export function StrategyBuilder() {
           ) : !result || !range || spot === undefined ? (
             <p className="text-muted">Loading quotes…</p>
           ) : (
-            <>
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+              <div className="flex flex-col gap-4">
               <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <Stat label="Net premium">{fmtNet(result.netPremium)}</Stat>
                 <Stat label="Max profit">{fmtLimit(result.maxProfit)}</Stat>
@@ -226,7 +227,9 @@ export function StrategyBuilder() {
                 <Stat label="Break-even">{result.breakEvens.length === 0 ? "–" : result.breakEvens.map((price) => price.toFixed(2)).join(" · ")}</Stat>
               </dl>
               <PayoffChart legs={result.legs} low={range[0]} high={range[1]} spot={spot} breakEvens={result.breakEvens} />
-              <table className="w-full min-w-[520px] text-sm">
+              </div>
+              <div className="flex min-w-0 flex-col gap-4 overflow-x-auto">
+              <table className="w-full min-w-[420px] text-sm">
                 <thead>
                   <tr className="text-xs text-muted">
                     <th className="px-3 py-2 text-left font-normal">Leg</th>
@@ -262,7 +265,8 @@ export function StrategyBuilder() {
                   ? "Every leg can be opened today: open each option from the Options ticket (an underlying leg is a 1x long perp)."
                   : "This strategy has a short option leg. The contracts only let a user buy options, so it cannot be opened yet; the figures show what it would do."}
               </p>
-            </>
+              </div>
+            </div>
           )}
         </div>
       </Panel>

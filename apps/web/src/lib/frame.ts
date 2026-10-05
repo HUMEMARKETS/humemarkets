@@ -7,7 +7,7 @@ export const PAGE_FRAME =
 /// The heading of a landing page section, in the voice of the hero title: serif, tight tracking, full
 /// brightness against the dark ground every section now shares with the hero.
 export const SECTION_TITLE =
-    'font-serif text-[2.25rem] font-normal leading-[1.1] tracking-[-0.03em] text-text sm:text-[3.25rem]';
+    'font-display text-[2.25rem] font-normal leading-[1.1] tracking-[-0.03em] text-text sm:text-[3.25rem]';
 
 /// For verifiable data only — a contract address, a chain name, a tech-stack tag — never prices or
 /// tickers, which stay in the sans everywhere else so the landing page still matches the terminal.
@@ -22,3 +22,8 @@ export const SPACED_CAPS = 'text-[11px] font-medium uppercase tracking-[0.28em]'
 /// terminal convention (PROJECT_BRIEF.md's "precise typography"), not the generic eyebrow-label tell;
 /// this only removes the duplication.
 export const CHIP_LABEL = 'text-[13px] font-medium uppercase tracking-[0.04em]';
+
+/// The side gutter of every app page and of the header above it, so their edges line up. 16px on a
+/// phone (docs/UI_CONTRACT.md Section 3 rule 7), then 24px and 40px. Pages are full width by default:
+/// a width cap is what creates dead gutters on a wide screen.
+export const APP_GUTTER = 'px-4 sm:px-6 lg:px-10';
