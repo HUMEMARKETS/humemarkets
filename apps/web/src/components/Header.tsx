@@ -5,10 +5,11 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAccount } from "wagmi";
 import { useDismiss } from "@/hooks/useDismiss";
-import { CHIP_LABEL, PAGE_FRAME } from "@/lib/frame";
+import { CHIP_LABEL, PAGE_FRAME, SPACED_CAPS } from "@/lib/frame";
 import { X_URL } from "@/lib/social";
 import { chip, cn, interactive, menuItem } from "@hume/ui";
 import { ArrowIcon } from "./ArrowIcon";
+import { ContractAddressBadge } from "./ContractAddressBadge";
 import { Logo } from "./Logo";
 import { MenuIcon } from "./MenuIcon";
 import { ModeMenu } from "./ModeMenu";
@@ -72,18 +73,40 @@ export function Header() {
           <Link href="/" aria-label="Hume home" className="flex h-full shrink-0 items-center">
             <Logo />
           </Link>
-          <nav aria-label="Primary" className="hidden h-full items-center gap-5 xl:flex 2xl:gap-8">
-            {items.map((item) => {
-              const current = isCurrent(pathname, item.href);
-              return (
-                <Link key={item.href} href={item.href} aria-current={current ? "page" : undefined} className={navLink(current)}>
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
+          {landing ? (
+            <div className="hidden h-10 items-center gap-6 border-l border-line pl-6 lg:flex">
+              <div className="flex flex-col gap-1">
+                <p className={cn(SPACED_CAPS, "text-[9px] tracking-[0.3em] text-faint")}>A different kind of market</p>
+                <ContractAddressBadge className="py-1" />
+              </div>
+            </div>
+          ) : (
+            <nav aria-label="Primary" className="hidden h-full items-center gap-5 xl:flex 2xl:gap-8">
+              {items.map((item) => {
+                const current = isCurrent(pathname, item.href);
+                return (
+                  <Link key={item.href} href={item.href} aria-current={current ? "page" : undefined} className={navLink(current)}>
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
+          )}
         </div>
         <div className="flex items-center gap-3 sm:gap-6">
+          {landing ? (
+            <nav aria-label="Landing" className="hidden items-center gap-6 text-sm xl:flex">
+              <Link href="/docs" className="text-muted transition-colors duration-150 hover:text-text">
+                How it works
+              </Link>
+              <a href="#contracts" className="text-muted transition-colors duration-150 hover:text-text">
+                Contracts
+              </a>
+              <Link href="/markets" className="text-muted transition-colors duration-150 hover:text-text">
+                Markets
+              </Link>
+            </nav>
+          ) : null}
           <ModeMenu />
           <a
             href={X_URL}
@@ -96,8 +119,8 @@ export function Header() {
           </a>
           {/* On a phone the wallet button lives at the bottom of the menu, which leaves the bar to the logo, X and the menu button — Trade goes with it, since "Markets"/"Perpetuals" in the sheet already cover that entry point on mobile. */}
           <div className="hidden items-center gap-3 xl:flex 2xl:gap-6">
-            <Link href="/perpetuals" className={cn(tradeLink, "max-2xl:hidden")}>
-              Trade
+            <Link href="/perpetuals" className={cn(tradeLink, !landing && "max-2xl:hidden")}>
+              {landing ? "Open app" : "Trade"}
               <ArrowIcon />
             </Link>
             <WalletButton />

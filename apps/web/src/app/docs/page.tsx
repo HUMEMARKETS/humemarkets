@@ -158,7 +158,7 @@ export default function Docs() {
                         <p className={bodyText}>
                             Hume runs on {chain.name} mainnet (chain ID <Term>{String(env.chainId)}</Term>), an
                             Ethereum L2. Gas is paid in ETH. Every contract address is listed in full under{' '}
-                            <Link href="/#landing-contracts" className="text-accent underline underline-offset-4">
+                            <Link href="/#contracts" className="text-accent underline underline-offset-4">
                                 Smart contracts
                             </Link>{' '}
                             on the home page.
@@ -470,7 +470,7 @@ put payout  = max(strike − settlement, 0) × contract size × contracts`}</For
                     <Section id="verify" title="Verify it yourself">
                         <p className={bodyText}>
                             Do not rely on this page alone. Every contract address, in full, is listed under{' '}
-                            <Link href="/#landing-contracts" className="text-accent underline underline-offset-4">
+                            <Link href="/#contracts" className="text-accent underline underline-offset-4">
                                 Smart contracts
                             </Link>{' '}
                             on the home page, with a link to the block explorer.

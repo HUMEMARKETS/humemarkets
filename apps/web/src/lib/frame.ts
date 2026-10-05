@@ -13,6 +13,10 @@ export const SECTION_TITLE =
 /// tickers, which stay in the sans everywhere else so the landing page still matches the terminal.
 export const MONO = 'font-mono tabular-nums';
 
+/// The wide-tracked small caps of the landing page's section labels and rail, after the reference's
+/// `01 / ROUTING, CONSIDERED` line. Same sans and palette as the rest of the app.
+export const SPACED_CAPS = 'text-[11px] font-medium uppercase tracking-[0.28em]';
+
 /// A small tracked uppercase label, on a button or a chip-style link. One source instead of the same
 /// string re-typed in every caller — the tracked-caps treatment itself is a deliberate financial-
 /// terminal convention (PROJECT_BRIEF.md's "precise typography"), not the generic eyebrow-label tell;

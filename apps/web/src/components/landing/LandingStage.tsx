@@ -1,0 +1,466 @@
+'use client';
+
+import { cn } from '@hume/ui';
+import dynamic from 'next/dynamic';
+import Link from 'next/link';
+import {
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+    type KeyboardEvent,
+} from 'react';
+import { ArrowIcon } from '@/components/ArrowIcon';
+import { ContractAddressBadge } from '@/components/ContractAddressBadge';
+import { PAGE_FRAME, SPACED_CAPS } from '@/lib/frame';
+import { X_URL } from '@/lib/social';
+import { ContractsPanel } from './ContractsPanel';
+import { SECTIONS } from './content';
+
+const LandingCanvas = dynamic(
+    () => import('./LandingCanvas').then((module) => module.LandingCanvas),
+    { ssr: false },
+);
+
+const MOTION_KEY = 'hume.landing.motion';
+const pad = (index: number) => String(index).padStart(2, '0');
+
+const primary =
+    'inline-flex h-14 items-center justify-between gap-10 rounded-sharp bg-accent px-6 text-base font-medium text-accent-ink transition-[background-color,box-shadow] duration-150 hover:bg-accent-hover hover:shadow-[0_0_0_3px_var(--color-accent-line)] active:bg-accent-press active:shadow-none';
+const secondary =
+    'inline-flex h-14 items-center gap-3 px-2 text-base text-muted transition-colors duration-150 hover:text-text';
+
+function Plus() {
+    return (
+        <span aria-hidden="true" className="text-xl leading-none">
+            +
+        </span>
+    );
+}
+
+/// The landing page: five full-height sections that snap as you scroll, one shared WebGL canvas
+/// behind them, and a numbered rail at the bottom. All five sections are in the page at once, so
+/// the text reads without WebGL, without motion and without a pointer; the canvas only adds the
+/// scene. Extended motion is allowed here and nowhere else (docs/UI_CONTRACT.md Section 8).
+export function LandingStage() {
+    const [scroller, setScroller] = useState<HTMLDivElement | null>(null);
+    const sectionEls = useRef<(HTMLElement | null)[]>([]);
+    const progress = useRef(0);
+    const [active, setActive] = useState(0);
+    const [tabs, setTabs] = useState<number[]>(() => SECTIONS.map(() => 0));
+    const [hover, setHover] = useState<number | null>(null);
+    const [motion, setMotion] = useState(true);
+    const [failed, setFailed] = useState(false);
+    const [panel, setPanel] = useState(false);
+
+    useEffect(() => {
+        let stored: string | null = null;
+        try {
+            stored = window.localStorage.getItem(MOTION_KEY);
+        } catch {
+            stored = null;
+        }
+        const reduced = window.matchMedia(
+            '(prefers-reduced-motion: reduce)',
+        ).matches;
+        setMotion(stored === null ? !reduced : stored === 'on');
+    }, []);
+
+    useEffect(() => {
+        const sync = () => setPanel(window.location.hash === '#contracts');
+        sync();
+        window.addEventListener('hashchange', sync);
+        return () => window.removeEventListener('hashchange', sync);
+    }, []);
+
+    const closePanel = useCallback(() => {
+        setPanel(false);
+        window.history.replaceState(
+            null,
+            '',
+            window.location.pathname + window.location.search,
+        );
+    }, []);
+
+    const toggleMotion = () => {
+        const next = !motion;
+        setMotion(next);
+        try {
+            window.localStorage.setItem(MOTION_KEY, next ? 'on' : 'off');
+        } catch {
+            // Storage can be blocked; the toggle still works for this visit.
+        }
+    };
+
+    const onScroll = useCallback(() => {
+        if (!scroller) return;
+        const tops = sectionEls.current.map((element) => element?.offsetTop ?? 0);
+        const top = scroller.scrollTop;
+        let index = 0;
+        tops.forEach((start, position) => {
+            if (top >= start - 1) index = position;
+        });
+        const start = tops[index] ?? 0;
+        const end = tops[index + 1];
+        progress.current =
+            end === undefined
+                ? index
+                : index + Math.min(1, Math.max(0, (top - start) / (end - start)));
+        const nearest = Math.round(progress.current);
+        setActive((current) => (current === nearest ? current : nearest));
+    }, [scroller]);
+
+    useEffect(() => {
+        onScroll();
+    }, [onScroll]);
+
+    const goTo = (index: number) => {
+        const target = sectionEls.current[
+            Math.max(0, Math.min(SECTIONS.length - 1, index))
+        ];
+        target?.scrollIntoView({
+            behavior: motion ? 'smooth' : 'auto',
+            block: 'start',
+        });
+    };
+
+    const selectTab = (section: number, tab: number) => {
+        setTabs((current) => current.map((value, index) => (index === section ? tab : value)));
+    };
+
+    const onTabKey = (event: KeyboardEvent, section: number, count: number) => {
+        const current = tabs[section] ?? 0;
+        const next =
+            event.key === 'ArrowRight'
+                ? (current + 1) % count
+                : event.key === 'ArrowLeft'
+                  ? (current + count - 1) % count
+                  : null;
+        if (next === null) return;
+        event.preventDefault();
+        selectTab(section, next);
+        document.getElementById(`tab-${section}-${next}`)?.focus();
+    };
+
+    const current = SECTIONS[active] ?? SECTIONS[0]!;
+    const previous = SECTIONS[active - 1];
+    const next = SECTIONS[active + 1];
+
+    return (
+        <div className="relative h-full min-h-[34rem] overflow-hidden bg-ground">
+            {failed ? null : (
+                <LandingCanvas
+                    progress={progress}
+                    active={active}
+                    tab={tabs[active] ?? 0}
+                    hover={hover}
+                    motion={motion}
+                    hotspotLabels={current.tabs.map((tab) => tab.label)}
+                    pointerTarget={scroller}
+                    onHover={setHover}
+                    onSelect={(tab) => selectTab(active, tab)}
+                    onFailed={() => setFailed(true)}
+                />
+            )}
+
+            <div
+                ref={setScroller}
+                onScroll={onScroll}
+                className="absolute inset-0 z-10 snap-y snap-mandatory overflow-y-auto overscroll-contain scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            >
+                {SECTIONS.map((section, index) => {
+                    const isActive = index === active;
+                    const tab = tabs[index] ?? 0;
+                    const detail = section.tabs[tab];
+                    const Heading = index === 0 ? 'h1' : 'h2';
+                    return (
+                        <section
+                            key={section.id}
+                            id={section.id}
+                            ref={(element) => {
+                                sectionEls.current[index] = element;
+                            }}
+                            aria-labelledby={`${section.id}-title`}
+                            className="relative flex min-h-full snap-start items-center"
+                        >
+                            <div
+                                className={cn(
+                                    PAGE_FRAME,
+                                    'pb-32 pt-28 md:pb-44 md:pt-32',
+                                )}
+                            >
+                                <div
+                                    data-ui
+                                    className={cn(
+                                        'max-w-[46rem] transition-[opacity,transform] duration-700',
+                                        isActive
+                                            ? 'translate-y-0 opacity-100'
+                                            : 'translate-y-4 opacity-0',
+                                    )}
+                                >
+                                    <p
+                                        className={cn(
+                                            SPACED_CAPS,
+                                            'flex items-center gap-3 text-muted',
+                                        )}
+                                    >
+                                        <span
+                                            aria-hidden="true"
+                                            className="size-1.5 bg-text"
+                                        />
+                                        {section.eyebrow}
+                                    </p>
+                                    <Heading
+                                        id={`${section.id}-title`}
+                                        className="mt-5 font-serif text-[clamp(2.75rem,min(6.4vw,12dvh),7.5rem)] font-light md:whitespace-nowrap leading-[0.95] tracking-[-0.045em] text-text"
+                                    >
+                                        {section.title[0]}
+                                        <br />
+                                        {section.title[1]}
+                                    </Heading>
+                                    <p className="mt-6 max-w-[34rem] text-base leading-relaxed text-muted sm:text-lg">
+                                        {section.summary}
+                                    </p>
+
+                                    {section.tabs.length > 0 ? (
+                                        <div className="mt-8 max-w-[28rem]">
+                                            <div
+                                                role="tablist"
+                                                aria-label={`${section.nav} steps`}
+                                                className="flex border-b border-line"
+                                            >
+                                                {section.tabs.map((item, position) => {
+                                                    const selected = position === tab;
+                                                    return (
+                                                        <button
+                                                            key={item.label}
+                                                            id={`tab-${index}-${position}`}
+                                                            type="button"
+                                                            role="tab"
+                                                            aria-selected={selected}
+                                                            aria-controls={`panel-${index}`}
+                                                            tabIndex={selected ? 0 : -1}
+                                                            onClick={() => selectTab(index, position)}
+                                                            onKeyDown={(event) =>
+                                                                onTabKey(event, index, section.tabs.length)
+                                                            }
+                                                            onPointerEnter={() =>
+                                                                isActive && setHover(position)
+                                                            }
+                                                            onPointerLeave={() => setHover(null)}
+                                                            className={cn(
+                                                                '-mb-px flex flex-1 items-center gap-2 border-b py-3 text-left text-sm transition-colors duration-150',
+                                                                selected
+                                                                    ? 'border-text text-text'
+                                                                    : 'border-transparent text-faint hover:text-text',
+                                                            )}
+                                                        >
+                                                            <span className="text-[10px] tracking-[0.18em] text-faint">
+                                                                {pad(position + 1)}
+                                                            </span>
+                                                            {item.label}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                            <div
+                                                id={`panel-${index}`}
+                                                role="tabpanel"
+                                                aria-labelledby={`tab-${index}-${tab}`}
+                                                className="pt-5"
+                                            >
+                                                <p className="text-text">{detail?.lead}</p>
+                                                <p className="mt-2 leading-relaxed text-muted">
+                                                    {detail?.body}
+                                                </p>
+                                            </div>
+                                            {section.link ? (
+                                                <Link
+                                                    href={section.link.href}
+                                                    className="group mt-6 inline-flex items-center gap-2 text-sm text-accent-hover transition-colors duration-150 hover:text-text"
+                                                >
+                                                    {section.link.label}
+                                                    <ArrowIcon className="size-3 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                                                </Link>
+                                            ) : null}
+                                        </div>
+                                    ) : null}
+
+                                    {index === 0 ? (
+                                        <>
+                                            <div className="mt-9 flex flex-wrap items-center gap-4">
+                                                <Link href="/perpetuals" className={primary}>
+                                                    Open app
+                                                    <ArrowIcon />
+                                                </Link>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => goTo(1)}
+                                                    className={secondary}
+                                                >
+                                                    Explore Hume
+                                                    <Plus />
+                                                </button>
+                                            </div>
+                                            <ContractAddressBadge className="mt-6 md:hidden" />
+                                        </>
+                                    ) : null}
+                                    {index === SECTIONS.length - 1 ? (
+                                        <div className="mt-9 flex flex-wrap items-center gap-4">
+                                            <Link href="/perpetuals" className={primary}>
+                                                Open app
+                                                <ArrowIcon />
+                                            </Link>
+                                            <a href="#contracts" className={secondary}>
+                                                View contracts
+                                                <Plus />
+                                            </a>
+                                        </div>
+                                    ) : null}
+                                </div>
+                            </div>
+                        </section>
+                    );
+                })}
+            </div>
+
+            <div
+                aria-hidden="true"
+                className={cn(
+                    PAGE_FRAME,
+                    'pointer-events-none absolute inset-x-0 top-28 z-20 hidden justify-end xl:flex',
+                )}
+            >
+                <div className="flex flex-col items-center gap-4 text-faint">
+                    <span className="text-[10px] tracking-[0.2em]">{pad(active)}</span>
+                    <span className="h-8 w-px bg-line" />
+                    <span
+                        className={cn(SPACED_CAPS, 'text-[9px] tracking-[0.3em]')}
+                        style={{ writingMode: 'vertical-rl' }}
+                    >
+                        Drag or move to explore perspective
+                    </span>
+                </div>
+            </div>
+
+            <div
+                key={current.id}
+                aria-hidden="true"
+                className="pointer-events-none absolute bottom-40 left-[52%] z-20 hidden animate-[landing-fade_0.7s_ease-out] md:block"
+            >
+                <p className={cn(SPACED_CAPS, 'flex items-center gap-3 text-text')}>
+                    <span className="text-base leading-none">+</span>
+                    {current.caption[0]}
+                </p>
+                <p className="mt-1 pl-6 text-xs text-faint">{current.caption[1]}</p>
+            </div>
+
+            <div
+                className={cn(
+                    PAGE_FRAME,
+                    'absolute inset-x-0 bottom-[4.5rem] z-20 hidden items-center gap-4 md:flex',
+                )}
+            >
+                <button
+                    type="button"
+                    aria-pressed={motion}
+                    onClick={toggleMotion}
+                    className="flex items-center gap-2 text-xs text-muted transition-colors duration-150 hover:text-text"
+                >
+                    <span
+                        aria-hidden="true"
+                        className={cn(
+                            'size-1.5 rounded-pill',
+                            motion ? 'bg-text' : 'border border-faint',
+                        )}
+                    />
+                    Immersive motion
+                </button>
+            </div>
+
+            <nav
+                aria-label="Landing sections"
+                className="absolute inset-x-0 bottom-0 z-30 bg-ground/70 backdrop-blur-sm"
+            >
+                <div className={PAGE_FRAME}>
+                    <div className="hidden h-11 items-center justify-between gap-6 md:flex">
+                        <p className={cn(SPACED_CAPS, 'flex items-center gap-3 text-[10px] text-muted')}>
+                            <span aria-hidden="true" className="text-base leading-none">+</span>
+                            Scroll to travel
+                        </p>
+                        <p className={cn(SPACED_CAPS, 'hidden text-[9px] tracking-[0.2em] text-faint lg:block')}>
+                            Independent by design. Built for Robinhood Chain.
+                        </p>
+                        <a
+                            href={X_URL}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-xs text-muted transition-colors duration-150 hover:text-text"
+                        >
+                            @HumeRH
+                        </a>
+                        <div className="flex items-center gap-5 text-xs">
+                            <button
+                                type="button"
+                                disabled={!previous}
+                                onClick={() => goTo(active - 1)}
+                                className="flex items-center gap-2 text-muted transition-colors duration-150 hover:text-text disabled:opacity-30"
+                            >
+                                {previous ? <ArrowIcon className="size-3 rotate-180" /> : null}
+                                <span className="sr-only">Previous: </span>
+                                {previous?.nav ?? ''}
+                            </button>
+                            <button
+                                type="button"
+                                disabled={!next}
+                                onClick={() => goTo(active + 1)}
+                                className="flex items-center gap-2 text-text transition-colors duration-150 hover:text-accent-hover disabled:opacity-30"
+                            >
+                                <span className="sr-only">Next: </span>
+                                {next?.nav ?? ''}
+                                {next ? <ArrowIcon className="size-3" /> : null}
+                            </button>
+                        </div>
+                    </div>
+                    <ol className="grid grid-cols-5 border-t border-line">
+                        {SECTIONS.map((section, index) => {
+                            const isActive = index === active;
+                            return (
+                                <li key={section.id} className="relative">
+                                    <span
+                                        aria-hidden="true"
+                                        className={cn(
+                                            'absolute inset-x-0 -top-px h-px transition-colors duration-300',
+                                            isActive ? 'bg-text' : 'bg-transparent',
+                                        )}
+                                    />
+                                    <button
+                                        type="button"
+                                        aria-current={isActive ? 'step' : undefined}
+                                        aria-label={`${pad(index)} ${section.nav}`}
+                                        onClick={() => goTo(index)}
+                                        className={cn(
+                                            'flex h-14 w-full items-center gap-3 border-l border-line px-3 text-left text-xs transition-colors duration-150 first:border-l-0 md:h-[4.5rem] md:px-4 md:text-[13px]',
+                                            isActive ? 'text-text' : 'text-faint hover:text-text',
+                                        )}
+                                    >
+                                        <span className="text-[10px] tracking-[0.18em]">{pad(index)}</span>
+                                        <span className="hidden truncate md:inline">{section.nav}</span>
+                                        {isActive ? (
+                                            <span
+                                                aria-hidden="true"
+                                                className="ml-auto hidden size-1 rounded-pill bg-text md:block"
+                                            />
+                                        ) : null}
+                                    </button>
+                                </li>
+                            );
+                        })}
+                    </ol>
+                </div>
+            </nav>
+
+            <ContractsPanel open={panel} onClose={closePanel} />
+        </div>
+    );
+}

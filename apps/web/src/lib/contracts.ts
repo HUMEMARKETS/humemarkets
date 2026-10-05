@@ -5,7 +5,7 @@ import { env } from "@/lib/env";
 /// custody and settlement on trust, matching what the landing page's own FAQ already claims ("every
 /// contract Hume runs on is listed"). The five marked optional in `ContractAddresses` (limit
 /// orders, the insurance fund, cross margin, subaccounts, RFQ) were added after the first deployment
-/// and are `undefined` on a deployment made before they existed; `LandingContracts` already renders
+/// and are `undefined` on a deployment made before they existed; the landing page's contracts panel already renders
 /// an `undefined` address as "not yet deployed", so listing them here costs nothing on an older chain.
 export const CONTRACTS = [
   { label: "Market registry", description: "Lists every tokenized equity market and its parameters.", address: env.addresses.marketRegistry },

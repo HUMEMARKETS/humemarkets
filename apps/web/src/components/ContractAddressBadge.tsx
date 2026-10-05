@@ -39,7 +39,7 @@ function CopyIcon({ copied }: { copied: boolean }) {
 }
 
 /// An always-visible pointer to the protocol token's full contract address — for the hero and
-/// footer, where `LandingContracts` full address list (`#landing-contracts`) would be too much: a
+/// footer, where the contracts panel (`#contracts`) would be too much: a
 /// trader skimming the top or bottom of the page should still be able to read and verify the CA
 /// without scrolling to the contracts section. Shown in full, `break-all` (matching `ContractCard`
 /// there): a partial address isn't something a reader can actually verify against the explorer.

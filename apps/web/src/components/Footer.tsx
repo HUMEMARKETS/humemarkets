@@ -14,7 +14,7 @@ import { XIcon } from './XIcon';
 /// repeat that list), the chain status and the X link — spaced out on the right. Wraps and centres on
 /// a phone the same way the rest of this file's rows do. The CA badge is the one address shown here
 /// directly, truncated: a quick copy for a trader already at the bottom of the page, not a repeat of
-/// the full verification list `#landing-contracts` owns.
+/// the full verification list `#contracts` panel owns.
 export function Footer() {
     return (
         <footer className="border-t border-line bg-surface">
@@ -44,7 +44,7 @@ export function Footer() {
                     <Link href="/portfolio" className={listLink}>
                         Portfolio
                     </Link>
-                    <a href="/#landing-contracts" className={listLink}>
+                    <a href="/#contracts" className={listLink}>
                         Smart contracts
                     </a>
                     <Link href="/docs" className={listLink}>
