@@ -21,10 +21,10 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "Hume",
+  title: "Hume: onchain derivatives for stock tokens",
   description: "Derivatives for tokenized equities.",
   openGraph: {
-    title: "Hume",
+    title: "Hume: onchain derivatives for stock tokens",
     description: "Derivatives for tokenized equities.",
     siteName: "Hume",
     type: "website",
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     site: X_HANDLE,
     creator: X_HANDLE,
-    title: "Hume",
+    title: "Hume: onchain derivatives for stock tokens",
     description: "Derivatives for tokenized equities.",
   },
 };

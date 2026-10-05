@@ -192,7 +192,10 @@ body {
 }
 
 .route-in {
-  animation: route-in 0.16s ease-out both;
+  /* `backwards`, not `both`: once the animation ends nothing stays applied, so the wrapper does not keep a
+     stacking context of its own (a finished `opacity` animation with fill-forwards would trap the
+     contracts drawer, which has to sit above the header). */
+  animation: route-in 0.16s ease-out backwards;
 }
 
 @keyframes ticker-run {

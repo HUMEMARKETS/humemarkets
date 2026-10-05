@@ -8,9 +8,9 @@ import mark from "@/assets/hume-mark.png";
 /// share-card size.
 export function Logo({ size = "md" }: { size?: "md" | "sm" }) {
   return (
-    <span className="inline-flex items-center gap-3">
-      <Image src={mark} alt="" priority className={size === "sm" ? "h-8 w-auto" : "h-11 w-auto"} />
-      <span className={size === "sm" ? "font-display text-xl font-bold tracking-[-0.02em]" : "font-display text-[1.65rem] font-bold leading-none tracking-[-0.03em]"}>
+    <span className="inline-flex items-center gap-2 sm:gap-3">
+      <Image src={mark} alt="" priority className={size === "sm" ? "h-8 w-auto" : "h-8 w-auto sm:h-11"} />
+      <span className={size === "sm" ? "font-display text-xl font-bold tracking-[-0.02em]" : "font-display text-[1.35rem] font-bold leading-none tracking-[-0.03em] sm:text-[1.65rem]"}>
         Hume
       </span>
     </span>

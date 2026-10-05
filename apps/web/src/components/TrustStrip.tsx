@@ -38,10 +38,10 @@ export function TrustStrip({ className, stacked = false }: { className?: string;
         <dd className={value}>{chains[env.chainId].name}</dd>
       </div>
       <div>
-        <dt className={label}>Audit</dt>
+        <dt className={label}>Source code</dt>
         <dd className={value}>
-          <Link href="/docs#limits" className="underline decoration-line underline-offset-4 transition-colors duration-150 hover:text-accent-hover">
-            Unaudited
+          <Link href="/docs#verify" className="underline decoration-line underline-offset-4 transition-colors duration-150 hover:text-accent-hover">
+            Verified
           </Link>
         </dd>
       </div>
