@@ -1,15 +1,18 @@
 "use client";
 
-import { Button, Num } from "@hume/ui";
-import { margin } from "@hume/sdk";
+import { Button, Num, ReviewStep } from "@hume/ui";
+import { DEFAULT_SLIPPAGE_BPS, margin } from "@hume/sdk";
+import { useQuery } from "@tanstack/react-query";
 import type { PerpPosition } from "@hume/types";
 import { useState } from "react";
-import { useCrossPositions, usePerpMarket, useTriggerSupport } from "@/hooks/queries";
+import { useCrossPositions, usePerpMarket, usePerpMarketConfig, useTriggerSupport } from "@/hooks/queries";
 import { useAccountMode } from "@/hooks/useAccountMode";
 import { useWalletHume } from "@/hooks/useHume";
 import { useTx } from "@/hooks/useTx";
 import { fmt, fmtBps, fmtPrice, fmtSigned, fmtUsd, signTone } from "@/lib/format";
-import { perpLabel, symbolOf } from "@/lib/market";
+import { humeRead } from "@/lib/hume";
+import { perpLabel, symbolOf, tradeBlocker } from "@/lib/market";
+import { perpCloseReview } from "@/lib/review";
 import { replayLiquidation } from "@/lib/sampleClient";
 import { useFillStore } from "@/stores/fills";
 import { AdjustPosition } from "./AdjustPosition";
@@ -41,6 +44,25 @@ function PositionRow({ position, decimals }: { position: PerpPosition; decimals:
   const isCross = crossIds?.has(position.positionId.toString()) ?? false;
   const [adjusting, setAdjusting] = useState(false);
   const [triggers, setTriggers] = useState(false);
+  const [closing, setClosing] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const paused = tradeBlocker(usePerpMarketConfig(symbol)?.active);
+  // The close fee is the market's taker fee, read from FeeManager for the sample as well, as its engine does.
+  const { data: fees } = useQuery({ queryKey: ["fees", symbol], queryFn: () => humeRead.fees.get(symbol), enabled: closing, staleTime: 60_000 });
+  const review =
+    closing && mark !== undefined && fees
+      ? perpCloseReview(position, { symbol, decimals, mark, feeBps: fees.takerFee, slippageBps: BigInt(DEFAULT_SLIPPAGE_BPS) })
+      : undefined;
+
+  async function close() {
+    if (!wallet) return;
+    setBusy(true);
+    const result = await run({ title: "Close position", summary: `${perpLabel(position.marketId)} · ${fmtUsd(position.size, decimals, 0)}` }, (tx) =>
+      wallet.perps.closePosition(position.positionId, { tx }),
+    );
+    if (result.ok) setClosing(false);
+    setBusy(false);
+  }
 
   return (
     <>
@@ -49,6 +71,7 @@ function PositionRow({ position, decimals }: { position: PerpPosition; decimals:
           <span className="font-medium">{perpLabel(position.marketId)}</span>
           <span className={position.isLong ? "ml-2 text-up" : "ml-2 text-down"}>{position.isLong ? "Long" : "Short"}</span>
           {isCross ? <span className="ml-2 text-xs text-muted">Cross</span> : null}
+          {paused ? <p className="mt-0.5 max-w-64 whitespace-normal text-xs leading-snug text-down">{paused}</p> : null}
         </td>
         <td className={cell}>{fmtUsd(position.size, decimals)}</td>
         <td className={cell}>{`${leverage}x`}</td>
@@ -94,21 +117,33 @@ function PositionRow({ position, decimals }: { position: PerpPosition; decimals:
                 </Button>
               </>
             ) : null}
-            <Button
-              size="sm"
-              disabled={!wallet}
-              onClick={() =>
-                run(
-                  { title: "Close position", summary: `${perpLabel(position.marketId)} · ${fmtUsd(position.size, decimals, 0)}` },
-                  (tx) => wallet!.perps.closePosition(position.positionId, { tx }),
-                )
-              }
-            >
+            <Button size="sm" disabled={!wallet} aria-expanded={closing} onClick={() => setClosing((open) => !open)}>
               Close
             </Button>
           </div>
         </td>
       </tr>
+      {closing ? (
+        <tr className="border-t border-line bg-raised/40">
+          <td colSpan={11} className="p-3 text-left">
+            {review?.rows ? (
+              <ReviewStep
+                title={`Close ${perpLabel(position.marketId)}`}
+                className="max-w-md"
+                rows={review.rows}
+                worstCase={review.worstCase}
+                note={sample ? "Sample close: it fills at the real index price, with no slippage. Nothing is sent to a wallet." : undefined}
+                busy={busy}
+                confirmLabel="Confirm close"
+                onBack={() => setClosing(false)}
+                onConfirm={close}
+              />
+            ) : (
+              <p className="text-muted">Pricing the close…</p>
+            )}
+          </td>
+        </tr>
+      ) : null}
       {adjusting ? (
         <tr className="border-t border-line bg-raised/40">
           <td colSpan={11} className="p-0 text-left">

@@ -242,10 +242,12 @@ export function usePriceHistory(symbol: string, range: "1h" | "6h" | "24h" | "7d
 }
 
 /// Markets the registry allows options on. The underlying selector on the Options page reads this.
+/// Paused markets stay in: the chain keeps pricing one, the ticket refuses it and the strategy builder marks it
+/// (CLAUDE.md, "a paused market is a shipped market"). Dropping it here made it vanish instead.
 export function useOptionUnderlyings() {
   return useQuery({
     queryKey: ["option-underlyings"],
-    queryFn: async () => (await humeRead.markets.list()).filter((market) => market.optionsEnabled && market.active),
+    queryFn: async () => (await humeRead.markets.list()).filter((market) => market.optionsEnabled),
     refetchInterval: 30_000,
   });
 }
