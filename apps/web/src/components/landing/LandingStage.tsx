@@ -15,6 +15,7 @@ import { ContractAddressBadge } from '@/components/ContractAddressBadge';
 import { TrustStrip } from '@/components/TrustStrip';
 import { LANDING_FRAME, SPACED_CAPS } from '@/lib/frame';
 import { X_HANDLE, X_URL } from '@/lib/social';
+import { useTheme } from '@/lib/theme';
 import { ContractsPanel } from './ContractsPanel';
 import { SECTIONS } from './content';
 import { StaticScene } from './StaticScene';
@@ -45,6 +46,7 @@ function Plus() {
 /// the text reads without WebGL, without motion and without a pointer; the canvas only adds the
 /// scene. Extended motion is allowed here and nowhere else (docs/UI_CONTRACT.md Section 8).
 export function LandingStage() {
+    const theme = useTheme();
     const [scroller, setScroller] = useState<HTMLDivElement | null>(null);
     const sectionEls = useRef<(HTMLElement | null)[]>([]);
     const progress = useRef(0);
@@ -180,6 +182,8 @@ export function LandingStage() {
         <div className="relative h-full min-h-[34rem] overflow-hidden bg-ground">
             {failed ? <StaticScene /> : (
                 <LandingCanvas
+                    // The scene reads the colour tokens once when it is built, so a theme change rebuilds it.
+                    key={theme}
                     progress={progress}
                     active={active}
                     tab={tabs[active] ?? 0}
@@ -203,7 +207,7 @@ export function LandingStage() {
                 onScroll={onScroll}
                 tabIndex={0}
                 role="region"
-                aria-label="Hume, in five sections"
+                aria-label="HUME, in five sections"
                 className={cn(
                     'absolute inset-0 z-10 snap-y snap-mandatory overflow-y-auto overscroll-contain [scrollbar-width:none] focus-visible:outline-offset-[-2px] [&::-webkit-scrollbar]:hidden',
                     motion && 'scroll-smooth',
@@ -335,14 +339,10 @@ export function LandingStage() {
                                                     Open App
                                                     <ArrowIcon />
                                                 </Link>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => goTo(1)}
-                                                    className={secondary}
-                                                >
-                                                    Explore Hume
-                                                    <Plus />
-                                                </button>
+                                                <Link href="/markets" className={secondary}>
+                                                    Explore Markets
+                                                    <ArrowIcon />
+                                                </Link>
                                             </div>
                                             <p className="mt-4 text-sm text-muted">No wallet needed. Start in sample mode. The contracts are unaudited: trade only what you can lose.</p>
                                             <ContractAddressBadge className="mt-6 md:hidden" />

@@ -23,7 +23,7 @@ export const SECTIONS: LandingSection[] = [
         title: ['Equities,', 'unchained.'],
         summary:
             'Perpetuals and options on tokenized stocks. Priced in real time, settled onchain, built for Robinhood Chain.',
-        caption: ['The Hume landscape', 'A perspective on the Hume architecture'],
+        caption: ['The HUME landscape', 'A perspective on the HUME architecture'],
         tabs: [],
     },
     {
@@ -113,7 +113,7 @@ export const SECTIONS: LandingSection[] = [
         eyebrow: '04 / Make your move',
         title: ['Verify it.', 'Then trade.'],
         summary:
-            'Every contract Hume runs on is listed in full. Try sample mode first, no wallet needed. The contracts are unaudited: trade only what you can lose.',
+            'Every contract HUME runs on is listed in full. Try sample mode first, no wallet needed. The contracts are unaudited: trade only what you can lose.',
         caption: ['The landscape ahead', 'Sample mode and mainnet, side by side'],
         tabs: [],
     },

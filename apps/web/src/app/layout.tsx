@@ -1,18 +1,19 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
+import { Geist_Mono, Inter, Playfair_Display } from "next/font/google";
 import { preconnect } from "react-dom";
 import type { ReactNode } from "react";
 import { AppShell } from "@/components/AppShell";
 import { env } from "@/lib/env";
 import { X_HANDLE } from "@/lib/social";
+import { THEME_SCRIPT } from "@/lib/theme-script";
 import { THEME_GROUND } from "@/lib/theme-colors";
 import { Providers } from "../providers";
 import "./globals.css";
 
-const geist = Geist({ subsets: ["latin"], variable: "--font-geist", display: "swap" });
-// The display face for headings and big figures: a bold geometric grotesk with a technical edge, which
-// suits short headlines and holds up at 700 (see globals.css's --font-display comment).
-const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], weight: ["500", "600", "700"], variable: "--font-space-grotesk", display: "swap" });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
+// The display face for headings and big figures: an editorial serif set at 600 to 700 for short phrases
+// (see the --font-display comment in globals.css).
+const playfair = Playfair_Display({ subsets: ["latin"], weight: ["600", "700"], variable: "--font-playfair", display: "swap" });
 // Verifiable data only (contract addresses, chain name, tech-stack tags) — Geist's own mono companion,
 // so it pairs with the sans instead of reading as a bolted-on font.
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono", display: "swap" });
@@ -21,20 +22,20 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "Hume: onchain derivatives for stock tokens",
-  description: "Derivatives for tokenized equities.",
+  title: "HUME — Markets are beliefs in motion",
+  description: "Global markets, onchain.",
   openGraph: {
-    title: "Hume: onchain derivatives for stock tokens",
-    description: "Derivatives for tokenized equities.",
-    siteName: "Hume",
+    title: "HUME — Markets are beliefs in motion",
+    description: "Global markets, onchain.",
+    siteName: "HUME",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
     site: X_HANDLE,
     creator: X_HANDLE,
-    title: "Hume: onchain derivatives for stock tokens",
-    description: "Derivatives for tokenized equities.",
+    title: "HUME — Markets are beliefs in motion",
+    description: "Global markets, onchain.",
   },
 };
 
@@ -55,7 +56,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     if (target) preconnect(target, { crossOrigin: "anonymous" });
   }
   return (
-    <html lang="en" className={`${geist.variable} ${spaceGrotesk.variable} ${geistMono.variable}`}>
+    // The theme script sets data-theme before hydration, so React must not flag the attribute as a mismatch.
+    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${playfair.variable} ${geistMono.variable}`}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body>
         <Providers>
           <AppShell>{children}</AppShell>

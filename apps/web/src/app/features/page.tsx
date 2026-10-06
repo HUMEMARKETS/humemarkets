@@ -16,7 +16,7 @@ import { MONO, SPACED_CAPS } from '@/lib/frame';
 import { cn } from '@hume/ui';
 
 export const metadata: Metadata = {
-    title: 'Features · Hume',
+    title: 'Features · HUME',
     description:
         'Perpetuals, options and a shared vault for tokenized stocks on Robinhood Chain: how each works, what it costs, and how to check it yourself.',
 };
@@ -30,7 +30,7 @@ const STEPS = [
 
 const FAQ = [
     {
-        q: 'Is Hume audited?',
+        q: 'Is HUME audited?',
         a: 'No. The contracts are unaudited, so trade only what you can lose. Every contract is listed in full below so you can read it on the explorer.',
     },
     {
@@ -76,7 +76,7 @@ function Block({ id, eyebrow, title, children }: { id?: string; eyebrow: string;
 export default function FeaturesPage() {
     const modules = SECTIONS.filter((section) => section.id in PREVIEWS);
     return (
-        <AppPage title="Features" description="What Hume does, what it costs, and how to check it yourself.">
+        <AppPage title="Features" description="What HUME does, what it costs, and how to check it yourself.">
             <TrustStrip className="mb-12" />
 
             {modules.map((section, index) => (
@@ -138,7 +138,7 @@ export default function FeaturesPage() {
             <Block id="contracts" eyebrow="Verify it" title={`Every contract, on ${chains[env.chainId].name}.`}>
                 <div className="overflow-x-auto rounded-panel border border-line/70 bg-surface">
                     <table className="w-full min-w-[40rem] border-collapse text-sm">
-                        <caption className="sr-only">Every contract Hume runs on, with its address and a link to the explorer</caption>
+                        <caption className="sr-only">Every contract HUME runs on, with its address and a link to the explorer</caption>
                         <thead>
                             <tr className="border-b border-line text-left text-xs text-muted">
                                 <th scope="col" className="px-4 py-3 font-medium">Contract</th>

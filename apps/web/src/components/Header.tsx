@@ -13,6 +13,7 @@ import { ContractAddressBadge } from "./ContractAddressBadge";
 import { Logo } from "./Logo";
 import { MenuIcon } from "./MenuIcon";
 import { ModeMenu } from "./ModeMenu";
+import { ThemeToggle } from "./ThemeToggle";
 import { WalletButton } from "./WalletButton";
 import { XIcon } from "./XIcon";
 
@@ -73,7 +74,7 @@ export function Header() {
     >
       <div className={cn("flex items-center justify-between gap-3", landing ? `h-[96px] ${LANDING_FRAME}` : `h-20 ${APP_GUTTER}`)}>
         <div className="flex h-full items-center gap-6">
-          <Link href="/" aria-label="Hume home" className="flex h-full shrink-0 items-center">
+          <Link href="/" aria-label="HUME home" className="flex h-full shrink-0 items-center">
             <Logo />
           </Link>
           {landing ? (
@@ -108,11 +109,13 @@ export function Header() {
             </nav>
           ) : null}
           <ModeMenu />
+          {/* Below xl the bar has no room beside the logo; the toggle moves into the menu sheet. */}
+          <ThemeToggle className="max-xl:hidden" />
           <a
             href={X_URL}
             target="_blank"
             rel="noreferrer"
-            aria-label="Hume on X"
+            aria-label="HUME on X"
             className={cn(chip, "size-11 shrink-0 justify-center rounded-control! max-xl:size-10")}
           >
             <XIcon />
@@ -159,8 +162,11 @@ export function Header() {
               </Link>
             );
           })}
-          <div className="p-4">
-            <WalletButton className="h-12! rounded-control! text-[13px]! uppercase tracking-[0.04em]" block menuAbove />
+          <div className="flex gap-3 p-4">
+            <div className="min-w-0 flex-1">
+              <WalletButton className="h-12! rounded-control! text-[13px]! uppercase tracking-[0.04em]" block menuAbove />
+            </div>
+            <ThemeToggle className="size-12!" />
           </div>
         </nav>
       ) : null}

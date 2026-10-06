@@ -21,7 +21,7 @@ export function Footer() {
                 <div className="flex flex-wrap items-center gap-3">
                     <Logo size="sm" />
                     <p className="text-muted">
-                        Onchain Derivatives for Stock Tokens.
+                        Global markets, onchain.
                     </p>
                     <ContractAddressBadge />
                 </div>

@@ -10,6 +10,7 @@ import { candleTimeLabel, defaultChartMode, mergeSeries, toCandlePoints, type Ca
 import { env } from "@/lib/env";
 import { PRICE_DECIMALS, fmtCompact } from "@/lib/format";
 import { symbolOf } from "@/lib/market";
+import { useTheme } from "@/lib/theme";
 import { useTerminal } from "@/stores/terminal";
 import { margin } from "@hume/sdk";
 import type { ChartLevel } from "./TradingChart";
@@ -53,6 +54,8 @@ export function PriceChart() {
   const { data: positions } = usePositions();
   const { data: history } = usePriceHistory(symbol, "24h");
   const { data: decimals = 6 } = useSettlementDecimals();
+  // The chart reads the colour tokens once when it is created, so a theme change remounts it.
+  const theme = useTheme();
   const [mode, setMode] = useState<Mode>(defaultChartMode(env.apiUrl));
   const [interval, setInterval] = useState<CandleInterval>("15m");
   const { data: rawCandles, isPending: loadingCandles } = useCandles(mode === "candles" ? symbol : "", interval);
@@ -131,7 +134,7 @@ export function PriceChart() {
             <p className="text-muted">Not enough price samples for {interval} candles yet. The indexer samples the index price once a minute.</p>
           ) : (
             <div className="relative h-full min-h-[240px] w-full">
-              <TradingChart key={`candles-${symbol}-${interval}`} data={{ mode: "candles", candles }} levels={levels} onHover={setHoverTime} resetToken={resetToken} />
+              <TradingChart key={`candles-${symbol}-${interval}-${theme}`} data={{ mode: "candles", candles }} levels={levels} onHover={setHoverTime} resetToken={resetToken} />
               {shown ? <CandleReadout candle={shown} interval={interval} /> : null}
             </div>
           )
@@ -139,7 +142,7 @@ export function PriceChart() {
           <p className="text-muted">Collecting prices… the line builds as they arrive.</p>
         ) : (
           <div className="relative h-full min-h-[240px] w-full">
-            <TradingChart key={`line-${symbol}`} data={{ mode: "line", points }} levels={levels} resetToken={resetToken} />
+            <TradingChart key={`line-${symbol}-${theme}`} data={{ mode: "line", points }} levels={levels} resetToken={resetToken} />
           </div>
         )}
       </div>

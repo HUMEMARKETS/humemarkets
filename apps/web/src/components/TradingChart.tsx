@@ -44,7 +44,7 @@ const fade = (color: string, alpha: number) =>
 const utc = (time: number) => time as UTCTimestamp;
 const priceFormat = { type: "price", precision: 2, minMove: 0.01 } as const;
 
-/// The chart TradingView's own library draws, fed with Hume prices. Dragging pans, the wheel
+/// The chart TradingView's own library draws, fed with HUME prices. Dragging pans, the wheel
 /// or a pinch zooms, and a double click on an axis resets it. This component keeps that view: a
 /// refetch sends only the rows from the last one drawn, so it never moves what the user is looking at.
 /// Mount it with a `key` that changes with the market and the interval, so each starts at its own range.

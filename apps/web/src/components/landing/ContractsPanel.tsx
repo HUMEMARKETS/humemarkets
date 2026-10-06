@@ -124,7 +124,7 @@ export function ContractsPanel({
                             Smart contracts
                         </p>
                         <p className="mt-2 text-muted">
-                            All {CONTRACTS.length} contracts Hume runs on.
+                            All {CONTRACTS.length} contracts HUME runs on.
                             Collateral, positions and settlement are checkable
                             onchain.
                         </p>

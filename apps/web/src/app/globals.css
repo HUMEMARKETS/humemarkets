@@ -1,97 +1,68 @@
 @import "tailwindcss";
 @source "../../../../packages/ui/src";
 
-/* Type: Geist, a light-leaning grotesk. Large text is set light with tight tracking; small text stays
-   regular and muted. Panels are softly rounded fills separated by gaps rather than hard seams.
+/* HUME tokens, from docs/UI_CONTRACT.md Section 4 (amended 2026-10-06, UI rework): monochrome ivory and
+   charcoal in two themes. Light is the default and lives in @theme; dark is the inverse and overrides the
+   same names under :root[data-theme="dark"], so no component is renamed. Charcoal is the accent in light
+   and ivory in dark; the only hues on the page are direction (up/down) and the chart-only candles.
 
-   Hume terminal tokens, from docs/UI_CONTRACT.md Section 4: a green-black charcoal ground, ivory text,
-   one signal-green accent for what you can act on (primary button, selected item, focus, the price
-   line, the lit 3D scene), and stone for the quiet half of the page. Direction gets its own derived
-   pair — a pale mint for up and a clay for down — separated from the accent by brightness and
-   saturation, and always carried by a sign or an arrow as well as by colour. Direction is direction:
-   `up` and `down` never decorate.
-
-   Every value is measured, not assumed; docs/evidence/landing-rework/palette.md carries the full
-   table and re-runs it whenever one changes. Three measurements shape the tokens below:
-     1. Charcoal ink on a signal-green fill is 11.11:1 and ivory on it is 1.56:1, so
-        `--color-accent-ink` is charcoal, and nothing ever puts ivory on the accent.
-     2. The accent is 9.74:1 even on `raised`, so accent-coloured TEXT is safe on every elevation step.
-     3. The PNL card is the one light surface (ivory). The bright accent is 1.56:1 on ivory and cannot
-        draw a frame or a bar there, so the card uses `--color-card-accent`, a deep green at 3.70:1. */
+   Every value is measured, not assumed: docs/evidence/ui-rework/palette.md carries the full table for
+   both themes and is re-run whenever a value changes. The soft fills, rings and glows are derived from
+   their base colour with color-mix, so they follow the theme without a second set of values. */
 @theme {
-  /* Near-flat radius for cards that carry data (the hero's market ring, ticker-style surfaces) —
-     matches the reference hero's own card radius and replaces the one-off rounded-[2px] the audit
-     found with no home. Generates the `rounded-sharp` utility. */
+  /* Radius as a hierarchy signal: sharp (data cards), control, panel, feature, pill. */
   --radius-sharp: 2px;
-  /* Radius as a hierarchy signal, replacing 5 uncoordinated ad-hoc values (rounded-lg/-md and three
-     different bracket radii) with named roles: control (buttons/inputs/small chips), panel (Panel
-     and anything reimplementing it), feature (the hero's few large marketing/stat cards), pill
-     (status/market badges). Each generates its matching `rounded-*` utility. */
   --radius-control: 6px;
   --radius-panel: 10px;
   --radius-feature: 14px;
   --radius-pill: 9999px;
-  /* A low-alpha halo built from the up/down colours themselves (not new hues). Used sparingly —
-     one showcase spot, not applied across dense tables. */
-  /* The elevation shadow under a lifted card (the hero carousel). A shadow is a shade of the ground,
-     not a palette colour, so it lives here with the other shadow tokens rather than as a literal in a
-     component — rule 1 admits no literal anywhere else. */
-  --shadow-lift: 0 20px 45px -20px rgb(0 0 0 / 0.7);
-  --shadow-up-glow: 0 0 20px rgb(185 232 201 / 0.25);
-  /* The signal-green halo on a primary button, the active tab and the lit 3D scene. */
-  --shadow-accent-glow: 0 0 24px rgb(34 224 107 / 0.35);
-  --shadow-down-glow: 0 0 20px rgb(196 112 95 / 0.25);
-  /* Elevation. Four steps from the page to a hairline, each a charcoal with a faint green cast, so
-     the page has a temperature and the signal-green accent is the only saturated colour on it. */
-  --color-ground: #0a0d0b;
-  --color-surface: #101512;
-  --color-raised: #171d19;
-  --color-line: #26302a;
-  /* Text. Ivory 17.28:1, stone-dimmed 7.72:1, faint 5.48:1 on ground — all above 4.5:1 on ground,
-     surface and raised (faint is 4.81:1 on raised). */
-  --color-text: #f3f1ea;
-  --color-muted: #a8a29a;
-  --color-faint: #8c8780;
-  /* Direction, never decoration. A pale mint (14.37:1) and a clay (5.42:1): told apart by brightness,
-     so they survive the common red-green colour blindness that a Binance red/green does not, and
-     the mint is paler and less saturated than the accent so a price is never mistaken for a button.
-     Charcoal is the ink on both when they are used as a fill. */
-  --color-up: #b9e8c9;
-  --color-down: #c4705f;
-  /* The soft fills sit at 0.12, not 0.2: at 0.2 the hover fill lifts the background enough that
-     `down` text on it drops to 3.56:1. At 0.12 the matching *-hover ink clears 4.5:1. */
-  --color-up-soft: rgb(185 232 201 / 0.12);
-  --color-down-soft: rgb(196 112 95 / 0.12);
-  /* The one accent. Signal green marks what you can act on and nothing else. Hover lifts the fill,
-     press darkens it; charcoal ink stays above 8.9:1 on all three. */
-  --color-accent: #22e06b;
-  --color-accent-hover: #4aea88;
-  --color-accent-ink: #0a0d0b;
-  --color-accent-soft: #0f2418;
-  --color-accent-line: rgb(34 224 107 / 0.4);
-  --color-accent-press: #1fc95f;
-  /* The accent on the PNL card's ivory ground, where the bright green would be 1.56:1. */
-  --color-card-accent: #0f8f3e;
-  /* Candles only. A chart is read at a glance across hundreds of bodies, so it uses a fully saturated
-     green and red; text, buttons and PnL keep the calmer `up`/`down` pair above. Direction is still
-     carried by shape (body above or below the open, wick), so the pair does not rely on hue alone.
-     6-digit hex on purpose: the chart fades them to an alpha for the volume bars. */
-  --color-candle-up: #00e676;
-  --color-candle-down: #ff3b4e;
-  --color-up-hover: #cbefd8;
-  --color-up-press: #a6d9b9;
-  --color-down-hover: #d08575;
-  --color-down-press: #b46554;
-  /* Focus rings on the up/down buttons, the direction equivalent of `--color-accent-line`. They
-     replace two raw rgb literals that were still carrying the outgoing green and red. */
-  --color-up-line: rgb(185 232 201 / 0.35);
-  --color-down-line: rgb(196 112 95 / 0.35);
-  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
-  /* Display face for the hero, section titles, page titles and big figures: Space Grotesk, a geometric
-     grotesk with a technical edge, set bold (600 to 700) with tight tracking and short phrases. It
-     replaces Tomorrow, which only came in light weights and read as quiet. Body, tables and forms stay
-     Geist; addresses and verifiable data stay Geist Mono. */
-  --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  /* A shadow is a shade, not a palette colour, so it lives here rather than as a literal in a component. */
+  --shadow-lift: 0 20px 45px -20px rgb(0 0 0 / 0.35);
+  --shadow-up-glow: 0 0 20px color-mix(in srgb, var(--color-up) 25%, transparent);
+  --shadow-accent-glow: 0 0 24px color-mix(in srgb, var(--color-accent) 35%, transparent);
+  --shadow-down-glow: 0 0 20px color-mix(in srgb, var(--color-down) 25%, transparent);
+  /* Elevation, light theme: ivory ground, panels and inputs step slightly darker, like paper. */
+  --color-ground: #f3f1ea;
+  --color-surface: #ece9e1;
+  --color-raised: #e3dfd5;
+  --color-line: #cfc9bc;
+  /* Text: charcoal 17.42:1, muted 6.76:1, faint 5.77:1 on ground; all above 4.5:1 on raised. */
+  --color-text: #0b0b0b;
+  --color-muted: #57534c;
+  --color-faint: #625d56;
+  /* Direction, never decoration, and always carried by a sign or arrow as well as colour. In light a
+     deep green and a brick red (5.76 and 5.59 on ground); the ground is the ink on both as a fill. */
+  --color-up: #1d6b3f;
+  --color-down: #a63d2c;
+  --color-up-hover: #17573a;
+  --color-up-press: #124a2e;
+  --color-down-hover: #8f3324;
+  --color-down-press: #7a2a1d;
+  /* 0.12, not 0.2: at 0.2 the hover fill lifts enough that down text on it drops under 4.5:1. */
+  --color-up-soft: color-mix(in srgb, var(--color-up) 12%, transparent);
+  --color-down-soft: color-mix(in srgb, var(--color-down) 12%, transparent);
+  --color-up-line: color-mix(in srgb, var(--color-up) 35%, transparent);
+  --color-down-line: color-mix(in srgb, var(--color-down) 35%, transparent);
+  /* The accent marks what you can act on. Its ink is always the ground of the theme (17.42:1). */
+  --color-accent: #0b0b0b;
+  --color-accent-hover: #2b2a28;
+  --color-accent-press: #000000;
+  --color-accent-ink: #f3f1ea;
+  --color-accent-soft: #e3dfd5;
+  --color-accent-line: color-mix(in srgb, var(--color-accent) 40%, transparent);
+  /* Candles only, never text. Direction is also carried by the body shape. 6-digit hex on purpose: the
+     chart fades them to an alpha for the volume bars. */
+  --color-candle-up: #0e8a4a;
+  --color-candle-down: #d63a3a;
+  /* Fixed in both themes: the PNL card is always ivory, to match its share image. */
+  --color-ivory: #f3f1ea;
+  --color-charcoal: #0b0b0b;
+  --color-card-accent: #1d6b3f;
+  --color-card-loss: #7a2a1d;
+  /* Body, tables and forms: Inter. Display (hero, page and section titles, big figures): Playfair
+     Display, 600 to 700, short phrases. Addresses and verifiable data: Geist Mono. */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-playfair), ui-serif, Georgia, serif;
   /* Verifiable data only — contract addresses, chain name, tech-stack tags — never prices/tickers,
      which stay in the sans everywhere else in the app. */
   --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
@@ -115,7 +86,33 @@
 }
 
 :root {
+  color-scheme: light;
+}
+
+/* Dark theme: the inverse. Set by the inline script in layout.tsx before first paint. */
+:root[data-theme="dark"] {
   color-scheme: dark;
+  --color-ground: #0b0b0b;
+  --color-surface: #141414;
+  --color-raised: #1c1c1b;
+  --color-line: #2e2d2b;
+  --color-text: #f3f1ea;
+  --color-muted: #a8a29a;
+  --color-faint: #8c8780;
+  --color-up: #b9e8c9;
+  --color-down: #c4705f;
+  --color-up-hover: #cbefd8;
+  --color-up-press: #a6d9b9;
+  --color-down-hover: #d08575;
+  --color-down-press: #b46554;
+  --color-accent: #f3f1ea;
+  --color-accent-hover: #ffffff;
+  --color-accent-press: #d6d2c8;
+  --color-accent-ink: #0b0b0b;
+  --color-accent-soft: #262523;
+  --color-candle-up: #00e676;
+  --color-candle-down: #ff3b4e;
+  --shadow-lift: 0 20px 45px -20px rgb(0 0 0 / 0.7);
 }
 
 html {
