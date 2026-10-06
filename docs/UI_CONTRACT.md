@@ -41,7 +41,7 @@ Zupiter runs on the same chain, which makes it an unusually fair reference.
 | Step-wise flow with `Back` / `Continue`, then a review before authorising                                                                           | **Adopt as the default, not the only, flow**                        | A review turns a signature from a gamble into a decision. A perp trader still needs the dense panel, so Pro stays. Phase 8  |
 | Itemised breakdown before confirm: minimum received, price impact, venue fee                                                                        | **Adopt, translated**                                               | The derivatives equivalents: liquidation price, margin required, funding, fees, max loss. Phase 8                           |
 | Recovery-before-deposit ordering                                                                                                                    | **Adopt the ordering idea**                                         | Hume's version: deposit and caps explained before the first approval                                                        |
-| Dark, high-contrast, **one vivid accent** (amended 2026-10-06: was "no vivid accent")                                                              | **Adopt — one signal-green accent on a green-black ground**         | Charcoal and ivory are higher contrast than the outgoing teal, and the signal-green accent is the only saturated colour on the page. Section 4 |
+| High-contrast, one accent (amended 2026-10-06, UI rework: monochrome, light default plus dark)                                                       | **Adopt — monochrome ivory and charcoal, light and dark themes**    | Charcoal on ivory is 17.42:1 both ways; the only hues left on the page are direction. Section 4 |
 | Large display type, numbered `01`–`04` sections                                                                                                     | Landing page only, Phase 18                                         | Marketing surface, not a drop-off                                                                                           |
 | Heavy motion: "DRAG OR MOVE TO EXPLORE PERSPECTIVE"                                                                                                 | **Reject for the app**                                              | A trading terminal must be fast and still                                                                                   |
 | Chain switcher with isolated sample balances per environment                                                                                        | **Adopt**                                                           | Both chains are already in `packages/config`. Phase 7                                                                       |
@@ -52,10 +52,9 @@ Written in `DEVELOPMENT_PHASES.md` Phase 3, enforced by every later phase. Rules
 
 1. **The Section 4 palette is the only palette.** Four brand colours plus the derived tokens there,
    all living in `globals.css`. No new colours, radii or fonts. A raw hex literal in `apps/web/src` or
-   `packages/ui/src` fails CI. The type is Geist (body, tables, forms), Space Grotesk (display: hero,
-   page and section titles, big figures; weights 600 to 700, tight tracking, short phrases) and Geist
-   Mono (addresses and verifiable data); amended 2026-10-06, replacing Tomorrow, which only came in
-   light weights. The one other exception is the pair of chart-only candle colours in Section 4.
+   `packages/ui/src` fails CI. The type is Inter (body, tables, forms), Playfair Display (display: hero,
+   page and section titles, big figures; weights 600 to 700, short phrases) and Geist Mono (addresses
+   and verifiable data); amended 2026-10-06 (UI rework), replacing Geist and Space Grotesk. The one other exception is the pair of chart-only candle colours in Section 4.
 2. **Seven states per screen: loading, empty, error, success, paused, not-connected, sample.** A screen
    missing one is unfinished.
 3. **No money-moving action reaches a signature without a review step** showing cost and downside.
@@ -79,103 +78,98 @@ Written in `DEVELOPMENT_PHASES.md` Phase 3, enforced by every later phase. Rules
 
 ## 4. Palette
 
-Decided 2026-10-03 (charcoal, ivory, sage, stone). **Amended 2026-10-06:** the sage accent is replaced by a
-signal green, and the dark elevation steps gain a faint green cast. Reason: the sage page read as grey
-line art with one muted accent. Ivory text, the stone secondary and the clay `down` are unchanged.
-Token names are unchanged, so no component is renamed. The full measured table is
-`docs/evidence/landing-rework/palette.md`.
+Decided 2026-10-03 (charcoal, ivory, sage, stone). Amended 2026-10-06 to a signal-green accent on a
+green-black ground. **Amended again 2026-10-06 (UI rework, `docs/UI_REWORK_PLAN.md`):** the palette is
+monochrome ivory and charcoal, with two themes. **Light is the default** (charcoal on ivory), and **dark
+is its inverse** (ivory on charcoal). Charcoal is the accent in light and ivory is the accent in dark;
+there is no green brand accent. Green and red survive only as direction (`up`, `down`) and candles. The
+green-black tint and signal green are retired. Reason: the operator chose an editorial, monochrome look,
+and a bright green fails on ivory (1.56:1). Token names are unchanged, so no component is renamed; a
+theme is a set of values for the same names, switched by `data-theme` on `<html>`. The full measured
+table is `docs/evidence/ui-rework/palette.md`.
 
-| Name             | Hex       | Role                                                                   |
-| ---------------- | --------- | ---------------------------------------------------------------------- |
-| **Charcoal**     | `#0A0D0B` | Ground. A green-black, so the page has a temperature                   |
-| **Ivory**        | `#F3F1EA` | Primary text, and the ground of the light surfaces                     |
-| **Signal green** | `#22E06B` | The one accent. Action, selection, focus, the price line, the lit scene |
-| **Stone**        | `#C9C3B8` | Secondary text, labels, borders, the quiet half of the page            |
+| Name         | Hex       | Role                                                                     |
+| ------------ | --------- | ------------------------------------------------------------------------ |
+| **Ivory**    | `#F3F1EA` | Light ground; dark-theme text and accent; the PNL card in both themes     |
+| **Charcoal** | `#0B0B0B` | Light-theme text and accent; dark ground                                 |
+| **Stone**    | `#A8A29A` | Dark-theme secondary text. Its light twin is `#57534C`                    |
 
 #### Measured contrast, not assumed
 
-Computed from the sRGB relative-luminance formula:
-
-| Pair                       | Ratio       | Verdict                                         |
-| -------------------------- | ----------- | ----------------------------------------------- |
-| Ivory on Charcoal          | **17.28:1** | Body text. Excellent                            |
-| Signal green on Charcoal   | **11.11:1** | Text and icons. Excellent, on every elevation   |
-| Charcoal on Signal green   | **11.11:1** | The ink on every accent fill                    |
-| **Ivory on Signal green**  | **1.56:1**  | **FAILS.** Never put ivory on the accent        |
-| **Signal green on Ivory**  | **1.56:1**  | **FAILS.** The PNL card uses `card-accent`      |
-| Charcoal on Ivory          | **17.28:1** | Light surfaces                                  |
+| Pair                  | Ratio       | Verdict                                   |
+| --------------------- | ----------- | ----------------------------------------- |
+| Charcoal on Ivory     | **17.42:1** | Body text, light theme. The accent's ink in dark |
+| Ivory on Charcoal     | **17.42:1** | Body text, dark theme. The accent's ink in light |
 
 **Three findings that are rules, not preferences:**
 
-**1. Every accent-filled control takes charcoal ink, never ivory.** `--color-accent-ink: #0A0D0B`.
+**1. The accent's ink is always the ground of its theme.** `--color-accent-ink` is ivory in light and
+charcoal in dark (17.42:1 either way).
 
-**2. Direction never shares the accent's job.** The accent means "you can act here" and nothing else. `up`
-is a pale mint (lighter and less saturated than the accent) and `down` is clay. Colour alone does not
-carry direction: a price, PNL or change always shows a `+` / `-` sign or a ▲ / ▼ as well, so the pale mint
-is never the only signal.
+**2. Direction never shares the accent's job.** The accent means "you can act here". `up` and `down` are
+the only hues on the page and mean direction only. Colour alone never carries direction: a price, PNL
+or change always shows a `+` / `-` sign or a ▲ / ▼ as well.
 
-**3. The PNL card is the one light surface.** The bright accent is 1.56:1 on ivory, so the card draws its
-frame and bar in `card-accent` (`#0F8F3E`, 3.70:1, enough for a frame or a bar, never for text).
+**3. The PNL card is ivory in both themes.** It is the shareable surface and matches its share image, so
+it uses fixed tokens (`ivory`, `charcoal`, `card-accent`, `card-loss`) that do not switch with the theme.
 
 #### Derived tokens
 
-Four colours cannot build a dense terminal. These are derived, and nothing beyond this list is allowed:
+Nothing beyond this list is allowed. Ratios are on `ground` / `surface` / `raised`.
 
-| Token          | Hex                        | On ground | On surface | On raised | Role                                              |
-| -------------- | -------------------------- | --------- | ---------- | --------- | ------------------------------------------------- |
-| `ground`       | `#0A0D0B` (Charcoal)       | —         | —          | —         | Page                                              |
-| `surface`      | `#101512`                  | 1.06:1    | —          | —         | Panels                                            |
-| `raised`       | `#171D19`                  | 1.14:1    | —          | —         | Inputs, hovered rows, menus                       |
-| `line`         | `#26302A`                  | 1.43:1    | —          | —         | Hairlines, table rules                            |
-| `text`         | `#F3F1EA` (Ivory)          | 17.28:1   | 16.33:1    | 15.15:1   | Body                                              |
-| `muted`        | `#A8A29A` (Stone, dimmed)  | 7.72:1    | 7.29:1     | 6.77:1    | Labels, column heads                              |
-| `faint`        | `#8C8780`                  | 5.48:1    | 5.18:1     | 4.81:1    | Timestamps, hints. Still above 4.5:1              |
-| `accent`       | `#22E06B` (Signal green)   | 11.11:1   | 10.49:1    | 9.74:1    | Action, selection, focus, price line              |
-| `accent-ink`   | `#0A0D0B`                  | —         | —          | —         | Text **on** an accent fill. See finding 1         |
-| `accent-hover` | `#4AEA88`                  | 12.48:1   | 11.79:1    | 10.94:1   | Hover                                             |
-| `accent-soft`  | `#0F2418`                  | 1.20:1    | —          | —         | The hover fill behind an accent control           |
-| `accent-press` | `#1FC95F`                  | 8.91:1    | 8.42:1     | 7.81:1    | Active. Darker than the accent; ink stays 8.91:1  |
-| `accent-line`  | the accent at 0.4 alpha    | —         | —          | —         | Focus ring, hover ring                            |
-| `card-accent`  | `#0F8F3E`                  | —         | —          | —         | PNL card frame and bar on ivory (3.70:1)          |
-| `up`           | `#B9E8C9` (pale mint)      | 14.37:1   | 13.58:1    | 12.60:1   | Direction only, never decoration                  |
-| `down`         | `#C4705F` (clay)           | 5.42:1    | 5.12:1     | 4.75:1    | Direction only, never decoration                  |
-| `up-hover` / `up-press`     | `#CBEFD8` / `#A6D9B9` | 15.70 / 12.32 | — | — | The up control's states                   |
-| `down-hover` / `down-press` | `#D08575` / `#B46554` | 6.78 / 4.58   | — | — | The down control's states                 |
-| `up-soft` / `down-soft`     | the up/down colour at 0.12 alpha | — | — | — | The hover fill behind an up/down control |
-| `up-line` / `down-line`     | the up/down colour at 0.35 alpha | — | — | — | Focus ring, the direction twin of `accent-line` |
+| Token          | Light       | Dark        | Light ratios        | Dark ratios         | Role                                    |
+| -------------- | ----------- | ----------- | ------------------- | ------------------- | --------------------------------------- |
+| `ground`       | `#F3F1EA`   | `#0B0B0B`   | —                   | —                   | Page                                    |
+| `surface`      | `#ECE9E1`   | `#141414`   | 1.07 on ground      | 1.07 on ground      | Panels                                  |
+| `raised`       | `#E3DFD5`   | `#1C1C1B`   | 1.18 on ground      | 1.15 on ground      | Inputs, hovered rows, menus             |
+| `line`         | `#CFC9BC`   | `#2E2D2B`   | 1.46 on ground      | 1.43 on ground      | Hairlines, table rules                  |
+| `text`         | `#0B0B0B`   | `#F3F1EA`   | 17.42 / 16.22 / 14.79 | 17.42 / 16.30 / 15.09 | Body                              |
+| `muted`        | `#57534C`   | `#A8A29A`   | 6.76 / 6.30 / 5.75  | 7.78 / 7.28 / 6.74  | Labels, column heads                    |
+| `faint`        | `#625D56`   | `#8C8780`   | 5.77 / 5.38 / 4.90  | 5.52 / 5.17 / 4.79  | Timestamps, hints                       |
+| `accent`       | `#0B0B0B`   | `#F3F1EA`   | 17.42 / 16.22 / 14.79 | 17.42 / 16.30 / 15.09 | Action, selection, focus, price line |
+| `accent-ink`   | `#F3F1EA`   | `#0B0B0B`   | —                   | —                   | Text on an accent fill. Finding 1       |
+| `accent-hover` | `#2B2A28`   | `#FFFFFF`   | 12.69 / 11.82 / 10.78 | 19.68 / 18.42 / 17.06 | Hover                               |
+| `accent-press` | `#000000`   | `#D6D2C8`   | 18.58 / 17.31 / 15.78 | 13.04 / 12.20 / 11.30 | Active                              |
+| `accent-soft`  | `#E3DFD5`   | `#262523`   | —                   | —                   | The hover fill behind an accent control |
+| `accent-line`  | the accent at 0.4 alpha | same rule | —        | —                   | Focus ring, hover ring                  |
+| `up`           | `#1D6B3F`   | `#B9E8C9`   | 5.76 / 5.36 / 4.89  | 14.48 / 13.55 / 12.55 | Direction only                        |
+| `down`         | `#A63D2C`   | `#C4705F`   | 5.59 / 5.21 / 4.75  | 5.46 / 5.11 / 4.73  | Direction only                          |
+| `up-hover` / `up-press`     | `#17573A` / `#124A2E` | `#CBEFD8` / `#A6D9B9` | 7.55 / 9.09 ink | 15.82 / 12.42 ink | The up control's states |
+| `down-hover` / `down-press` | `#8F3324` / `#7A2A1D` | `#D08575` / `#B46554` | 6.97 / 8.54 ink | 6.84 / 4.62 ink   | The down control's states |
+| `up-soft` / `down-soft`     | the up/down colour at 0.12 alpha | same rule | — | — | The hover fill behind an up/down control |
+| `up-line` / `down-line`     | the up/down colour at 0.35 alpha | same rule | — | — | Focus ring on up/down controls |
+| `ivory` / `charcoal`        | `#F3F1EA` / `#0B0B0B` | fixed | — | — | The PNL card only |
+| `card-accent` / `card-loss` | `#1D6B3F` / `#7A2A1D` | fixed | 5.76 / 8.54 on ivory | — | PNL card frame, gain bar, loss bar |
 
-Chart-only: `candle-up` `#00E676` (11.05:1 on `surface`) and `candle-down` `#FF3B4E` (5.26:1 on
-`surface`). A candle chart is read at a glance across hundreds of bodies, so it uses fully saturated
-colours; text, buttons and PNL keep `up` and `down`. Direction is also carried by shape (the body sits
-above or below the open), so the pair does not rely on hue alone. They are never used for text.
+Chart-only candles: light `#0E8A4A` / `#D63A3A` (3.64 and 3.82 on `surface`), dark `#00E676` /
+`#FF3B4E` (11.04 and 5.25 on `surface`). Never used for text; direction is also carried by the body's
+shape.
 
-Shadows: `shadow-accent-glow` (`0 0 24px` accent at 0.35 alpha) marks the primary button on hover, the
-active tab and the lit 3D scene. It is a halo of the accent itself, not a new hue.
+Shadows: `shadow-accent-glow` is a halo of the current accent at 0.35 alpha; `shadow-up-glow` and
+`shadow-down-glow` are the direction colours at 0.25 alpha. None is a new hue.
 
-### 4.1 Ink and text on fills, measured
+### 4.1 Ink on fills, measured
 
-Because the accent is bright, the sage-era rule "accent text belongs on ground only" is retired: accent
-text clears 4.5:1 on `ground`, `surface`, `raised` and `accent-soft` (9.29:1).
+| Fill           | Light: ivory ink | Dark: charcoal ink |
+| -------------- | ---------------- | ------------------ |
+| `accent`       | **17.42:1**      | **17.42:1**        |
+| `accent-hover` | **12.69:1**      | **19.68:1**        |
+| `accent-press` | **18.58:1**      | **13.04:1**        |
+| `up`           | **5.76:1**       | **14.48:1**        |
+| `down`         | **5.59:1**       | **5.46:1**         |
+| `down-press`   | **8.54:1**       | **4.62:1**         |
 
-| Fill           | Charcoal ink | Ivory ink | Which is used |
-| -------------- | ------------ | --------- | ------------- |
-| `accent`       | **11.11:1**  | 1.56:1    | Charcoal      |
-| `accent-hover` | **12.48:1**  | 1.39:1    | Charcoal      |
-| `accent-press` | **8.91:1**   | 1.94:1    | Charcoal      |
-| `up`           | **14.37:1**  | 1.20:1    | Charcoal      |
-| `down`         | **5.42:1**   | 3.19:1    | Charcoal      |
-| `down-press`   | **4.58:1**   | 3.77:1    | Charcoal      |
-
-Soft fills: `up` on `up-soft` 11.26:1, `up-hover` on `up-soft` 12.31:1, `down` on `down-soft` 4.81:1,
-`down-hover` on `down-soft` 6.02:1.
+Up/down filled controls take `text-ground` as ink, which is the theme's ground, so the same class works
+in both themes. Soft fills: light `up` on `up-soft` 4.86, `down` on `down-soft` 4.68; dark 11.34 and 4.87.
 
 A later change to any value re-runs this arithmetic rather than assuming it still holds.
 
-#### One deliberate use of light
+#### Themes
 
-The app is dark: ivory on charcoal. The **PNL card is the exception** — it renders charcoal and deep green
-on ivory. A shareable card is seen outside the app, usually in a light feed, and the inversion makes it
-unmistakably Hume's rather than one more dark screenshot. It is the only light surface at launch.
+Light is the default for every visitor; the OS `prefers-color-scheme` is not consulted until the visitor
+picks a theme with the header toggle, and the choice persists per device. An inline script sets
+`data-theme` before first paint, so there is no flash of the wrong theme. Canvas surfaces that read the
+tokens at runtime (the price chart, the landing scene) re-read them when the theme changes.
 
 ## 5. How Zupiter's style reaches each Hume surface
 
@@ -183,7 +177,7 @@ Section 2 decides what to borrow. This is where each borrowing lands.
 
 | Hume surface                           | What changes                                                                                                                                                                                                                   | Phase |
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----- |
-| Landing `/`                            | Zupiter's progressive reveal: large display type, numbered `01`–`04` sections, one idea per section, motion allowed within the 200 ms budget. The existing `HeroSilkBackground` is retained but re-tinted to charcoal and signal green | 18    |
+| Landing `/`                            | Zupiter's progressive reveal: large display type, numbered `01`–`04` sections, one idea per section, motion allowed within the 200 ms budget. The landing scene follows the current theme | 18    |
 | Header / `AppShell`                    | Zupiter's network selector becomes a three-way environment switcher: Mainnet, Testnet, Sample — each with isolated balances. Plus the `SAMPLE DATA` chip and the unaudited notice                                              | 6, 7  |
 | First visit, any page                  | No connect wall. The app opens in Sample. Zupiter's "no extension opens, no signatures are requested and no funds move" is the literal behaviour, not a claim                                                                  | 7     |
 | Connect flow                           | Zupiter's considered-connection screen: what a wallet does here, sample balances do not carry over, the caps, the unaudited notice. Shown once, at the moment the user chooses to connect                                      | 7     |

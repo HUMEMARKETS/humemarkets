@@ -3,7 +3,7 @@ import { env } from "@/lib/env";
 /// Every contract in the deployment (`ContractAddresses`, packages/config/src/deployments.ts) —
 /// shown in full so a trader can verify all of it directly on the block explorer instead of taking
 /// custody and settlement on trust, matching what the landing page's own FAQ already claims ("every
-/// contract Hume runs on is listed"). The five marked optional in `ContractAddresses` (limit
+/// contract HUME runs on is listed"). The five marked optional in `ContractAddresses` (limit
 /// orders, the insurance fund, cross margin, subaccounts, RFQ) were added after the first deployment
 /// and are `undefined` on a deployment made before they existed; the landing page's contracts panel already renders
 /// an `undefined` address as "not yet deployed", so listing them here costs nothing on an older chain.

@@ -13,9 +13,9 @@ import { MONO, PAGE_FRAME } from '@/lib/frame';
 import { cn, listLink } from '@hume/ui';
 
 export const metadata: Metadata = {
-    title: 'Docs · Hume',
+    title: 'Docs · HUME',
     description:
-        'How Hume perpetuals, options, margin, liquidation and settlement work on Robinhood Chain mainnet, checked against the deployed contracts.',
+        'How HUME perpetuals, options, margin, liquidation and settlement work on Robinhood Chain mainnet, checked against the deployed contracts.',
 };
 
 /// Every claim on this page comes from the Solidity source in `packages/contracts/src`, and the file
@@ -121,7 +121,7 @@ export default function Docs() {
                         </h1>
                         <SampleMark className="mt-3" />
                         <p className={cn(bodyText, 'mt-5 text-xl')}>
-                            How Hume works, written from the deployed contracts. Each section names the source
+                            How HUME works, written from the deployed contracts. Each section names the source
                             files it was checked against. Fees, leverage and caps are read from the chain, not
                             written here.
                         </p>
@@ -143,7 +143,7 @@ export default function Docs() {
                         sources={['core/HumeVault.sol', 'core/MarketRegistry.sol']}
                     >
                         <p className={bodyText}>
-                            Hume trades perpetuals and options on tokenized stocks. Both products share one
+                            HUME trades perpetuals and options on tokenized stocks. Both products share one
                             vault, one market registry, one price router and one risk manager. There is no order book:
                             you trade against the vault at the oracle price.
                         </p>
@@ -157,7 +157,7 @@ export default function Docs() {
 
                     <Section id="network" title="Network and token">
                         <p className={bodyText}>
-                            Hume runs on {chain.name} mainnet (chain ID <Term>{String(env.chainId)}</Term>), an
+                            HUME runs on {chain.name} mainnet (chain ID <Term>{String(env.chainId)}</Term>), an
                             Ethereum L2. Gas is paid in ETH. Every contract address is listed in full under{' '}
                             <Link href="/#contracts" className="text-accent underline underline-offset-4">
                                 Smart contracts
@@ -349,7 +349,7 @@ payment    = size × change in cumulative rate ÷ 10,000`}</Formula>
                         </p>
                         <p className={bodyText}>
                             <strong className="font-medium text-text">Quotes.</strong> The premium is not computed
-                            onchain. Hume&apos; pricing service signs a quote for your exact trade, and the
+                            onchain. HUME&apos;s pricing service signs a quote for your exact trade, and the
                             contract checks that signature. A quote expires after a short time and works once. A
                             quote for a different account, strike or expiry is rejected. The price you pay is
                             therefore only as fair as that signer, and today it uses simple placeholder inputs.

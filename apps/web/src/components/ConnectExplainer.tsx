@@ -30,7 +30,7 @@ function Caps() {
 
 const items = (caps: React.ReactNode) =>
   [
-    { title: "What a wallet does here", body: "Your wallet holds your USDG and signs each action. Hume never holds your keys, and nothing moves until you approve it in your wallet." },
+    { title: "What a wallet does here", body: "Your wallet holds your USDG and signs each action. HUME never holds your keys, and nothing moves until you approve it in your wallet." },
     { title: "Sample balances do not carry over", body: "The sample account is simulated on this device. Connecting starts from your real balance, and nothing in the sample becomes a position or a payout." },
     { title: "The caps", body: caps },
     { title: "Unaudited contracts", body: "These contracts have not been audited. Trade only what you can lose." },

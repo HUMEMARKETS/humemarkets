@@ -11,9 +11,9 @@ type Props = { params: Promise<{ wallet: string; positionId: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { wallet, positionId } = await params;
   const result = await loadPnlCard(wallet, positionId);
-  if (result.kind !== "ok") return { title: "PNL card · Hume" };
+  if (result.kind !== "ok") return { title: "PNL card · HUME" };
   const p = cardProps(cardPartsFromApi(result.card));
-  const title = `${p.symbol} ${p.side} ${p.pnl} (${p.roi}) · Hume`;
+  const title = `${p.symbol} ${p.side} ${p.pnl} (${p.roi}) · HUME`;
   return { title, openGraph: { title }, twitter: { card: "summary_large_image", title } };
 }
 
@@ -56,7 +56,7 @@ export default async function PnlCardPage({ params }: Props) {
           {result.card.status === "open" && result.card.markPrice === null ? (
             <p className="text-sm leading-snug text-muted">This market has no live price right now, because it is closed or paused. The card shows what the position has booked so far.</p>
           ) : null}
-          <PnlShare path={`/pnl/${result.card.wallet}/${result.card.positionId}`} text={`${result.card.symbol} ${result.card.side}: ${cardProps(cardPartsFromApi(result.card)).pnl} on Hume`} />
+          <PnlShare path={`/pnl/${result.card.wallet}/${result.card.positionId}`} text={`${result.card.symbol} ${result.card.side}: ${cardProps(cardPartsFromApi(result.card)).pnl} on HUME`} />
         </div>
       )}
     </div>

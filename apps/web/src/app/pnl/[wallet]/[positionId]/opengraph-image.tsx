@@ -3,9 +3,9 @@ import { join } from "node:path";
 import { ImageResponse } from "next/og";
 import { cardPartsFromApi, cardProps } from "@/lib/pnlCard";
 import { loadPnlCard } from "@/lib/pnlCardApi";
-import { THEME_CARD_ACCENT, THEME_CARD_MUTED, THEME_DOWN_PRESS, THEME_GROUND, THEME_TEXT } from "@/lib/theme-colors";
+import { THEME_CARD_ACCENT, THEME_CARD_MUTED, THEME_CARD_LOSS, THEME_CHARCOAL, THEME_IVORY } from "@/lib/theme-colors";
 
-export const alt = "A Hume PNL card";
+export const alt = "A HUME PNL card";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -22,7 +22,7 @@ export default async function PnlCardImage({ params }: { params: Promise<{ walle
   if (result.kind !== "ok") {
     return new ImageResponse(
       (
-        <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 96px", background: THEME_TEXT, color: THEME_GROUND, border: `8px solid ${THEME_CARD_ACCENT}` }}>
+        <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 96px", background: THEME_IVORY, color: THEME_CHARCOAL, border: `8px solid ${THEME_CARD_ACCENT}` }}>
           <div style={{ fontSize: 56, letterSpacing: 14, fontWeight: 500 }}>HUME</div>
           <div style={{ fontSize: 34, color: THEME_CARD_MUTED, marginTop: 24 }}>This PNL card is not available.</div>
         </div>
@@ -32,7 +32,7 @@ export default async function PnlCardImage({ params }: { params: Promise<{ walle
   }
 
   const p = cardProps(cardPartsFromApi(result.card));
-  const barColour = p.direction === "loss" ? THEME_DOWN_PRESS : p.direction === "gain" ? THEME_CARD_ACCENT : THEME_CARD_MUTED;
+  const barColour = p.direction === "loss" ? THEME_CARD_LOSS : p.direction === "gain" ? THEME_CARD_ACCENT : THEME_CARD_MUTED;
   const label = (text: string, value: string) => (
     <div style={{ display: "flex", flexDirection: "column", marginRight: 64 }}>
       <div style={{ fontSize: 24, color: THEME_CARD_MUTED }}>{text}</div>
@@ -42,17 +42,17 @@ export default async function PnlCardImage({ params }: { params: Promise<{ walle
 
   return new ImageResponse(
     (
-      <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "56px 72px", background: THEME_TEXT, color: THEME_GROUND, border: `8px solid ${THEME_CARD_ACCENT}` }}>
+      <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "56px 72px", background: THEME_IVORY, color: THEME_CHARCOAL, border: `8px solid ${THEME_CARD_ACCENT}` }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             {/* The ring is pale, so on the ivory card it sits on a charcoal tile. */}
-            <div style={{ display: "flex", background: THEME_GROUND, padding: "10px 14px", marginRight: 20 }}>
+            <div style={{ display: "flex", background: THEME_CHARCOAL, padding: "10px 14px", marginRight: 20 }}>
               <img src={markSrc} width={84} height={45} alt="" />
             </div>
-            <div style={{ fontSize: 40, letterSpacing: -1, fontWeight: 700 }}>Hume</div>
+            <div style={{ fontSize: 40, letterSpacing: -1, fontWeight: 700 }}>HUME</div>
           </div>
-          {p.sample ? <div style={{ display: "flex", fontSize: 22, letterSpacing: 4, background: THEME_GROUND, color: THEME_TEXT, padding: "6px 14px" }}>SAMPLE DATA</div> : null}
+          {p.sample ? <div style={{ display: "flex", fontSize: 22, letterSpacing: 4, background: THEME_CHARCOAL, color: THEME_IVORY, padding: "6px 14px" }}>SAMPLE DATA</div> : null}
         </div>
 
         <div style={{ display: "flex", flexDirection: "column" }}>
