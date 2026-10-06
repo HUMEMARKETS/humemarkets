@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Num, Panel, SampleBadge, Segmented, Skeleton, cn, chip } from "@hume/ui";
+import { Button, Num, Panel, Segmented, Skeleton, cn, chip } from "@hume/ui";
 import type { LeaderboardEntry, LeaderboardMetric } from "@hume/sdk";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -43,7 +43,7 @@ function Notice({ children, action }: { children: string; action?: React.ReactNo
   return <PanelState action={action}>{children}</PanelState>;
 }
 
-function Table({ entries, decimals, metric, self, boardSample }: { entries: LeaderboardEntry[]; decimals: number; metric: LeaderboardMetric; self?: string; boardSample: boolean }) {
+function Table({ entries, decimals, metric, self }: { entries: LeaderboardEntry[]; decimals: number; metric: LeaderboardMetric; self?: string }) {
   const strong = (m: LeaderboardMetric) => (metric === m ? "font-medium text-text" : "text-muted");
   return (
     <div className="overflow-x-auto">
@@ -70,7 +70,6 @@ function Table({ entries, decimals, metric, self, boardSample }: { entries: Lead
                   <span className="inline-flex flex-wrap items-center gap-2">
                     <span title={entry.wallet}>{entry.wallet === SAMPLE_SELF ? "You" : shortHash(entry.wallet)}</span>
                     {mine ? <span className="text-xs text-accent-hover">{entry.wallet === SAMPLE_SELF ? "your sample account" : "you"}</span> : null}
-                    {entry.sample ? <SampleBadge className={boardSample ? "max-sm:hidden" : undefined} /> : null}
                   </span>
                 </td>
                 <td className={cn(cell, metric === "pnl" && "font-medium")}>
@@ -142,7 +141,7 @@ export function LeaderboardView() {
             No one is on the board yet. A trader appears after their first trade.
           </Notice>
         ) : (
-          <Table entries={entries} decimals={board.data?.settlementDecimals ?? 6} metric={metric} self={address?.toLowerCase()} boardSample={sample || Boolean(board.data?.sample)} />
+          <Table entries={entries} decimals={board.data?.settlementDecimals ?? 6} metric={metric} self={address?.toLowerCase()} />
         )}
       </Panel>
 

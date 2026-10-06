@@ -10,7 +10,6 @@ import { useNow } from "@/hooks/useNow";
 import { openOrderCount } from "@/lib/orders";
 import { fmtSigned, fmtUsd, signTone } from "@/lib/format";
 import { ConnectButton } from "./ConnectButton";
-import { SampleMark } from "./SampleMark";
 import { FundingTable, HistoryTable } from "./ActivityTables";
 import { OptionPositionsTable } from "./OptionPositionsTable";
 import { OrdersTable } from "./OrdersTable";
@@ -86,10 +85,7 @@ export function PortfolioView() {
   return (
     <div className="flex flex-1 flex-col gap-4">
       <div className="rounded-panel border border-line/70 bg-surface p-6">
-        <p className="flex items-center gap-2 text-xs text-muted">
-          Portfolio value
-          <SampleMark />
-        </p>
+        <p className="text-xs text-muted">Portfolio value</p>
         <p className="mt-1 font-display text-[2.5rem] font-semibold leading-tight tabular-nums">
           {isPending ? <Skeleton className="h-9 w-56" /> : fmtUsd(value, decimals)}
         </p>

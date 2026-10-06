@@ -2,35 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useAccount } from "wagmi";
 import { useDismiss } from "@/hooks/useDismiss";
 import { APP_GUTTER, CHIP_LABEL, LANDING_FRAME } from "@/lib/frame";
+import { MORE_LINKS, NAV, isCurrent, type NavLink } from "@/lib/nav";
 import { X_URL } from "@/lib/social";
 import { chip, cn, interactive, menuItem } from "@hume/ui";
 import { ArrowIcon } from "./ArrowIcon";
-import { ContractAddressBadge } from "./ContractAddressBadge";
 import { Logo } from "./Logo";
 import { MenuIcon } from "./MenuIcon";
 import { ModeMenu } from "./ModeMenu";
 import { ThemeToggle } from "./ThemeToggle";
 import { WalletButton } from "./WalletButton";
 import { XIcon } from "./XIcon";
-
-/// PROJECT_BRIEF.md Section 22, plus the strategy builder from Section 41.
-const items: Array<{ label: string; href: string; wideOnly?: boolean }> = [
-  { label: "Markets", href: "/markets" },
-  { label: "Options", href: "/options" },
-  { label: "Perpetuals", href: "/perpetuals" },
-  { label: "Strategies", href: "/strategies" },
-  { label: "Leaderboard", href: "/leaderboard" },
-  { label: "Lending", href: "/lending" },
-  { label: "Portfolio", href: "/portfolio" },
-  { label: "Activity", href: "/activity" },
-  // Ninth item: it does not fit beside the other eight and the buttons at 1280 px, so the bar shows it from
-  // 2xl. Below that it is in the footer line, and in the mobile sheet.
-  { label: "Features", href: "/features", wideOnly: true },
-];
 
 /// Primary nav is plain text on the header's own blur, not another row of boxes: full-brightness
 /// text, an accent hairline under the current page, accent text on hover. The hairline is the only
@@ -42,7 +27,49 @@ const navLink = (current: boolean) =>
     current ? "border-accent text-accent" : "border-transparent text-text hover:text-accent",
   );
 
-const isCurrent = (pathname: string, href: string) => pathname === href || pathname.startsWith(`${href}/`);
+const menuLink = (current: boolean) =>
+  cn("flex h-11 items-center px-3 text-sm font-medium", current ? "bg-accent text-accent-ink" : cn("text-text", menuItem));
+
+const sheetLink = (current: boolean) =>
+  cn("flex h-12 items-center px-4 text-base font-medium", current ? "bg-accent text-accent-ink" : cn("bg-raised text-muted", menuItem));
+
+const sheetHeading = "bg-ground px-4 pb-1 pt-4 text-[11px] font-medium uppercase tracking-[0.1em] text-muted";
+
+/// A disclosure: a button that shows or hides a list of links. The links are plain links in the tab order,
+/// so Tab, Enter, Space and touch all work without roving focus. Escape closes it and returns focus to the button.
+function NavGroup({ label, items, pathname, open, onToggle, onClose }: { label: string; items: NavLink[]; pathname: string; open: boolean; onToggle: () => void; onClose: () => void }) {
+  const id = useId();
+  return (
+    <div
+      className="relative flex h-full items-center"
+      // Focus leaving the group, to another group or off the bar, closes it.
+      onBlur={(event) => {
+        if (open && !event.currentTarget.contains(event.relatedTarget)) onClose();
+      }}
+    >
+      <button type="button" aria-expanded={open} aria-controls={id} onClick={onToggle} className={cn(navLink(items.some((item) => isCurrent(pathname, item.href))), "gap-1.5")}>
+        {label}
+        <svg aria-hidden="true" viewBox="0 0 10 6" className={cn("h-1.5 w-2.5 fill-none stroke-current transition-transform duration-150", open && "rotate-180")} strokeWidth="1.5">
+          <path d="M1 1l4 4 4-4" />
+        </svg>
+      </button>
+      {open ? (
+        <ul id={id} className="absolute left-0 top-full z-50 min-w-48 overflow-hidden rounded-panel border border-line bg-raised py-1">
+          {items.map((item) => {
+            const current = isCurrent(pathname, item.href);
+            return (
+              <li key={item.href}>
+                <Link href={item.href} aria-current={current ? "page" : undefined} className={menuLink(current)}>
+                  {item.label}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
 
 /// The header keeps one accent-filled action, not two: Connect wallet is it (the actual next step
 /// for a new visitor), so Trade takes the same secondary chip look as the X icon next to it, rather
@@ -53,16 +80,23 @@ export function Header() {
   const pathname = usePathname();
   const { isConnected } = useAccount();
   const [open, setOpen] = useState(false);
+  const [group, setGroup] = useState<string | null>(null);
   // On the landing page the header floats over the hero only, so the hero reads as the whole first
   // screen; on every other page — and once the landing page scrolls past its hero — it sits in the
   // normal flow above content. The nav text carries no fill of its own, so the bar needs one soft,
   // even scrim behind everything to stay readable over whatever sits under it.
   const landing = pathname === "/";
   const ref = useRef<HTMLElement>(null);
+  const navRef = useRef<HTMLElement>(null);
   const close = useCallback(() => setOpen(false), []);
+  const closeGroup = useCallback(() => setGroup(null), []);
   useDismiss(ref, open, close);
-  // A tap on a link changes the page; the sheet has done its job.
-  useEffect(() => setOpen(false), [pathname]);
+  useDismiss(navRef, group !== null, closeGroup);
+  // A tap on a link changes the page; the sheet and the menus have done their job.
+  useEffect(() => {
+    setOpen(false);
+    setGroup(null);
+  }, [pathname]);
 
   return (
     <header
@@ -77,20 +111,26 @@ export function Header() {
           <Link href="/" aria-label="HUME home" className="flex h-full shrink-0 items-center">
             <Logo />
           </Link>
-          {landing ? (
-            <div className="hidden h-10 items-center gap-6 border-l border-line pl-6 lg:flex">
-              <ContractAddressBadge className="py-1" />
-            </div>
-          ) : (
-            <nav aria-label="Primary" className="hidden h-full items-center gap-5 xl:flex 2xl:gap-8">
-              {items.map((item) => {
-                const current = isCurrent(pathname, item.href);
-                return (
-                  <Link key={item.href} href={item.href} aria-current={current ? "page" : undefined} className={cn(navLink(current), item.wideOnly && "max-2xl:hidden")}>
-                    {item.label}
+          {landing ? null : (
+            <nav
+              ref={navRef}
+              aria-label="Primary"
+              className="hidden h-full items-center gap-5 xl:flex 2xl:gap-8"
+              onKeyDown={(event) => {
+                if (event.key !== "Escape" || group === null) return;
+                event.currentTarget.querySelector<HTMLButtonElement>('button[aria-expanded="true"]')?.focus();
+                setGroup(null);
+              }}
+            >
+              {NAV.map((entry) =>
+                "items" in entry ? (
+                  <NavGroup key={entry.label} label={entry.label} items={entry.items} pathname={pathname} open={group === entry.label} onToggle={() => setGroup((value) => (value === entry.label ? null : entry.label))} onClose={closeGroup} />
+                ) : (
+                  <Link key={entry.href} href={entry.href} aria-current={isCurrent(pathname, entry.href) ? "page" : undefined} className={navLink(isCurrent(pathname, entry.href))}>
+                    {entry.label}
                   </Link>
-                );
-              })}
+                ),
+              )}
             </nav>
           )}
         </div>
@@ -146,22 +186,30 @@ export function Header() {
       </div>
       {open ? (
         <nav id="mobile-nav" aria-label="Primary mobile" className="absolute inset-x-0 top-full max-h-[calc(100dvh-7.125rem)] overflow-y-auto bg-ground xl:hidden">
-          {items.map((item) => {
-            const current = isCurrent(pathname, item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={current ? "page" : undefined}
-                className={cn(
-                  "flex h-12 items-center px-4 text-base font-medium",
-                  current ? "bg-accent text-accent-ink" : cn("bg-raised text-muted", menuItem),
-                )}
-              >
+          {NAV.map((entry) =>
+            "items" in entry ? (
+              <div key={entry.label} role="group" aria-label={entry.label} className="pb-3">
+                <p aria-hidden="true" className={sheetHeading}>{entry.label}</p>
+                {entry.items.map((item) => (
+                  <Link key={item.href} href={item.href} aria-current={isCurrent(pathname, item.href) ? "page" : undefined} className={sheetLink(isCurrent(pathname, item.href))}>
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <Link key={entry.href} href={entry.href} aria-current={isCurrent(pathname, entry.href) ? "page" : undefined} className={sheetLink(isCurrent(pathname, entry.href))}>
+                {entry.label}
+              </Link>
+            ),
+          )}
+          <div role="group" aria-label="More" className="pb-3">
+            <p aria-hidden="true" className={sheetHeading}>More</p>
+            {MORE_LINKS.map((item) => (
+              <Link key={item.href} href={item.href} aria-current={isCurrent(pathname, item.href) ? "page" : undefined} className={sheetLink(isCurrent(pathname, item.href))}>
                 {item.label}
               </Link>
-            );
-          })}
+            ))}
+          </div>
           <div className="flex gap-3 p-4">
             <div className="min-w-0 flex-1">
               <WalletButton className="h-12! rounded-control! text-[13px]! uppercase tracking-[0.04em]" block menuAbove />
