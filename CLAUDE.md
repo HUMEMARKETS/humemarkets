@@ -11,8 +11,8 @@ Work is serial: one session, one phase at a time, in the order of the Phase inde
 - **Never touch git.** No `commit`, `push`, `add`, `stage`, `tag` or `gh pr create`. Leave the
   working tree dirty, list the paths you changed, and print the phase's **Ship** block for the
   operator to run. The operator owns every git mutation.
-- **Never read `docs/DEVELOPMENT_PHASES.md` whole.** It is 2417 lines. Read only your phase's line
-  range from the Phase index below: `sed -n '1302,1379p' docs/DEVELOPMENT_PHASES.md`.
+- **Never read `docs/DEVELOPMENT_PHASES.md` whole.** It is 2454 lines. Read only your phase's line
+  range from the Phase index below: `sed -n '1326,1405p' docs/DEVELOPMENT_PHASES.md`.
 - **A phase is done only when its acceptance check passes.** Nothing is ticked because it looks
   finished. Report `pass`, `amber` or `fail` in one line, and do not start the next phase.
 - **Secrets never reach a commit, an evidence file or the transcript.** Addresses are fine. Never
@@ -53,23 +53,24 @@ forge fmt --check
 Line ranges in `docs/DEVELOPMENT_PHASES.md` (start of phase to start of next). Offsets drift when the
 file is edited; re-check with `grep -n '^#### Phase' docs/DEVELOPMENT_PHASES.md`.
 
-Order (testnet first, re-planned 2026-10-07, `docs/DEVELOPMENT_PHASES.md` Section 0.9):
-0–10 done → **T** → 11 → 12 → 13 → 14 → 14b → 15 (all on testnet `46630`) → **L** → 16 → 17 (mainnet) → 18.
+Order (testnet first, re-planned 2026-10-07, `docs/DEVELOPMENT_PHASES.md` Sections 0.9 and 0.10):
+0–10 done → **T** → 11 → 12 → 13 → 14 → 15 (testnet `46630`; 14b skipped) → **L** → 16 → 17 (mainnet) → 18.
+The open is **2026-10-08, 03:00 WIB** (= 2026-10-07 20:00 UTC, the US equity close).
 
 | Phase | Lines     | Phase | Lines     |
 | ----- | --------- | ----- | --------- |
-| 0     | 364-432   | 11    | 1380-1480 |
-| 1     | 433-487   | 12    | 1481-1548 |
-| 2     | 488-555   | 13    | 1549-1610 |
-| 3     | 556-639   | 14    | 1611-1691 |
-| 4     | 640-711   | 14b   | 1692-1799 |
-| 5     | 712-912   | 15    | 1800-1958 |
-| 6     | 913-979   | **L** | 1959-2016 |
-| 7     | 980-1057  | 16    | 2017-2094 |
-| 8     | 1058-1145 | 17    | 2095-2199 |
-| 9     | 1146-1223 | 18    | 2200-2417 |
-| 10    | 1224-1301 |       |           |
-| **T** | 1302-1379 |       |           |
+| 0     | 388-456   | 11    | 1406-1506 |
+| 1     | 457-511   | 12    | 1507-1574 |
+| 2     | 512-579   | 13    | 1575-1636 |
+| 3     | 580-663   | 14    | 1637-1717 |
+| 4     | 664-735   | 14b   | 1718-1825 |
+| 5     | 736-936   | 15    | 1826-1988 |
+| 6     | 937-1003  | **L** | 1989-2046 |
+| 7     | 1004-1081 | 16    | 2047-2124 |
+| 8     | 1082-1169 | 17    | 2125-2231 |
+| 9     | 1170-1247 | 18    | 2232-2454 |
+| 10    | 1248-1325 |       |           |
+| **T** | 1326-1405 |       |           |
 
 ## Scope
 

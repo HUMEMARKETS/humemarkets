@@ -5,9 +5,10 @@ order. Every phase states its scope, the exact files and commands, and an accept
 can verify.
 
 - **Target:** Hume live on Robinhood Chain mainnet (chain ID `4663`)
-- **Launch:** **date set by the operator** (the original 2026-10-06 passed). Open 30 minutes after the US
-  equity open on a trading day, so the feeds are fresh (Section 3.2): **21:00 WIB = 14:00 UTC** while US
-  daylight time runs, **22:00 WIB = 15:00 UTC** from 2026-11-01
+- **Launch:** **2026-10-08, 03:00 WIB** (= 2026-10-07 20:00 UTC), set by the operator on 2026-10-07. That
+  is the US equity close, so equity feeds are fresh at the open and read closed within minutes; crypto
+  stays live and equities trade again at the next US open, 20:30 WIB (Sections 0.10 and 3.2). If the gate is
+  not green by then, the fallback is 21:00 WIB the same day, not a skipped gate
 - **Launch shape — testnet first (re-planned 2026-10-07).** Every remaining phase builds and verifies on
   Robinhood testnet (chain ID `46630`), where gas and collateral cost nothing. Mainnet money (USDG, the
   mainnet Railway compute, the paid plan) is spent only in **Phase L**, just before the open. Section 0.9
@@ -38,7 +39,7 @@ needed; the prompts are self-contained on purpose, so a phase can be run in a fr
 | Stage                         | Prompt order                                                       |
 | ----------------------------- | ------------------------------------------------------------------ |
 | **Done** (2026-10-04 to 10-07) | Phase 0 to 10. Ambers carried: 5, 6, 8, 9, 10 (Section 0.9)        |
-| **Testnet**                   | **Phase T**, then 11, 12, 13, 14, 14b, 15 — all on chain `46630`   |
+| **Testnet**                   | **Phase T**, then 11, 12, 13, 14, 15 (14b skipped, Section 0.10) — chain `46630` |
 | **Mainnet**                   | **Phase L**, then 16, 17 — the open                                |
 | After                         | Phase 18                                                           |
 
@@ -332,6 +333,29 @@ them. Railway bills measured usage, not allocation, so a service that runs for s
   If the credit runs out, Railway stops the services until the credit renews, so a bad month ends with the
   site dark for its last days. Phase T and Phase L record the measured figure and the operator decides;
   nothing is upgraded without being asked.
+
+### 0.10 Compressed run to a 03:00 WIB open, decided 2026-10-07
+
+The operator set the open at **2026-10-08, 03:00 WIB**, about 20 hours after this was written. The order
+stays serial and every hard gate stays. Three things are cut or changed to make the time:
+
+1. **Phase T skips the 24-hour burn measurement.** Free-plan mode is built and checked for about an hour,
+   and the burn is a rough figure. The real number is read after the open, from Railway metrics, and the
+   operator decides then. The risk is Section 0.9's: over $1 a month ends with the services stopped until
+   the credit renews.
+2. **Phase 14b is skipped.** It becomes Phase 18 item 1c.
+3. **The operator films Phase 15 personally.** Claude writes the shot list and runs every check that is not
+   filmed. The recording is still the hard gate; only who holds the recorder changed.
+
+**Never cut, here as before:** sample mode, the review step, the error mapping, Phase 15 including the
+recording and the fork suite, Phase 16's pauser and alerts, and Phase 17's gate and the operator's
+confirmation before the first unpause.
+
+**Operator tasks that run in parallel with Claude's phases:** fund USDG and gas on chain 4663 (Phase L needs
+them); have `KEEPER_PRIVATE_KEY` in `.env` (Phase T's simulator); film Phase 15; confirm the first unpause.
+
+**Fallback.** If Phase 15 or the gate is not green at 02:00 WIB, open at 21:00 WIB on 2026-10-08, 30
+minutes after the US equity open, with the same sequence. That is a delay, not a failure.
 
 ---
 
@@ -1327,15 +1351,17 @@ environment runs at a time, because the account is on the Trial ($5 one-time cre
    run-once switch (an env flag) to the indexer and the keeper, so one pass does tick() and exits, and
    fold the price sampler into the indexer pass. Set each as a Railway cron service, */5 * * * *. Turn
    Serverless on for the API and redeploy it, since the setting applies only to a new container. Switch
-   the testnet environment to this mode, let it run 24 hours, and read the real burn per service from
-   Railway metrics. Project it to a month and compare it with $1. Keep the loop mode as the default so
-   nothing else changes.
+   the testnet environment to this mode and run it about one hour (Section 0.10 skips the 24-hour wait).
+   Check that a cron pass brings the indexer within 100 blocks of the head, that the API sleeps and wakes,
+   and read whatever burn the hour shows per service from Railway metrics. Project it to a month and compare
+   it with $1 as a rough figure, not a measurement. Keep the loop mode as the default so nothing else
+   changes.
 
 Acceptance: GET /v1/markets on the testnet API lists the testnet markets, with E2E as paused; the indexer
 is within 100 blocks of the testnet head after a cron pass; a simulator price change reaches GET
 /v1/prices within 5 minutes; the mainnet compute is stopped (or kept, by my decision, recorded); the
-testnet burn is measured in normal mode and in free-plan mode, with the monthly projection against $1 and
-the trial runway re-computed; the Phase 8 walk shows a perp and an option review with a liquidation line,
+testnet burn is read in normal mode and, roughly, in free-plan mode, with the monthly projection against $1 and
+the trial runway re-computed (amber by decision: the 24-hour measurement is skipped); the Phase 8 walk shows a perp and an option review with a liquidation line,
 at 375 and 1440 px. Evidence in docs/evidence/phase-T.md.
 
 Do NOT commit, push, stage or open a PR — I do that myself. Leave the working tree dirty.
@@ -1689,7 +1715,7 @@ Phase 18 design is written down.
 
 **Cost.** $0.
 
-#### Phase 14b — The mainnet/testnet toggle (optional, cut first if the open is near)
+#### Phase 14b — The mainnet/testnet toggle (SKIPPED for the 03:00 WIB open, Phase 18 item 1c)
 
 **Prompt.** Paste this to run the phase.
 
@@ -1818,11 +1844,15 @@ chain backfill, so a market that started five minutes ago films badly:
 Use the testnet environment Phase T created; do not create a second one, and do not delete it — Phase L
 does. Deploy what Phase 9 added on testnet if Phase T did not, so every launch feature has something to film.
 
-Record NINE clips, desktop 1440 px, plus 375 px for clips 2 and 6: sample mode with no wallet
-extension, perps, options, a liquidation, lending, leaderboard and PNL card, the crypto group,
-failures one per class, mobile. No China clip and no copy-trading clip — Section 3.1 cut both features
-and filming them would show something that does not exist. This machine is X11 + XFCE, so use
-ffmpeg -f x11grab or simplescreenrecorder.
+THE OPERATOR FILMS THE CLIPS, NOT YOU (Section 0.10). Write docs/evidence/shot-list.md: for each of the
+NINE clips, the URL to open, the exact clicks, the line to say at the start ("This is testnet, with mock
+prices and simulated traders"), and what the clip must show. Desktop 1440 px, plus 375 px for clips 2 and
+6: sample mode with no wallet extension, perps, options, a liquidation, lending, leaderboard and PNL
+card, the crypto group, failures one per class, mobile. No China clip and no copy-trading clip — Section
+3.1 cut both features and filming them would show something that does not exist. Prepare what each clip
+needs before the operator starts (a position to show, a market to nudge). Then ask the operator for the
+nine file names and list them in the evidence. The recorder is the operator's: this machine is X11 +
+XFCE, so ffmpeg -f x11grab or simplescreenrecorder works.
 
 EVERY CLIP AND DESCRIPTION MUST STATE that this is testnet with mock prices and simulated traders.
 The simulator's own README requires it. Presenting bot activity as real users or volume would mislead,
@@ -1833,7 +1863,7 @@ Then the unfilmed checks: the review step on all three money paths, the keyboard
 only check covering real Chainlink staleness and real USDG:
   cd packages/contracts && forge test --match-path test/fork/MainnetFork.t.sol -vv
 
-Acceptance: docs/evidence/dry-run.md shows a pass per Tier A and Tier B item, links all nine clips,
+Acceptance: docs/evidence/dry-run.md shows a pass per Tier A and Tier B item, lists all nine clips the operator recorded,
 and records the fork suite at 7/7 plus the pause and unpause.
 
 Do NOT commit, push, stage or open a PR — I do that myself. Leave the working tree dirty.
@@ -1948,7 +1978,7 @@ users or real volume would mislead anyone who sees it, and the recordings will o
 cd packages/contracts && forge test --match-path test/fork/MainnetFork.t.sol -vv
 ```
 
-**Done when.** `docs/evidence/dry-run.md` shows a pass per Tier A and Tier B item, links all nine clips,
+**Done when.** `docs/evidence/dry-run.md` shows a pass per Tier A and Tier B item, lists all nine clips the operator recorded,
 and records the fork suite at 7/7 plus the pause and unpause. **Any Tier A failure stops the open for
 that feature.**
 
@@ -2092,7 +2122,7 @@ distinct addresses per role, and one alert has been deliberately triggered and r
 
 **Cost.** ~0.00015 ETH of floats, plus a few cents of gas.
 
-#### Phase 17 — Launch gate and open (ends 21:00 WIB)
+#### Phase 17 — Launch gate and open (opens 03:00 WIB, 2026-10-08)
 
 **Prompt.** Paste this to run the phase.
 
@@ -2114,14 +2144,16 @@ stop rule exactly: gates 1-5, 7, 8, 12, 13, 15, 16 and 17 are HARD, so if any is
 Gates 6, 9, 10, 11 and 14 are per feature — a red one keeps that feature paused and does not stop the
 others. Gates 6 and 9 go amber rather than red if USDG was never funded, and amber opens the rest.
 
+The open is 03:00 WIB, the US equity close, so the equity markets will read closed within minutes of it.
+That is correct behaviour and not a failure; crypto stays live and equities trade at the next US open.
 Then unpause in this order with five minutes of clean readings between steps. Crypto goes first on
 purpose: its feeds are fresh at any hour, so it proves the sequence works before the equity markets
 depend on a session that has only just started.
-  20:40 WIB  perps on the crypto set (BTC, ETH, LINK, GLD)
-  20:45 WIB  perps on the 32 equity markets
-  20:50 WIB  options on the equity markets
-  20:55 WIB  the TSLA/USDG credit pair
-  21:00 WIB  verify the leaderboard and PNL card populate, then announce
+  02:40 WIB  perps on the crypto set (BTC, ETH, LINK, GLD)
+  02:45 WIB  perps on the 32 equity markets
+  02:50 WIB  options on the equity markets
+  02:55 WIB  the TSLA/USDG credit pair
+  03:00 WIB  verify the leaderboard and PNL card populate, then announce
 
 Acceptance: the gate table is filled with evidence links and every item is marked open, capped, amber,
 paused or flagged off.
@@ -2182,11 +2214,11 @@ go **amber** rather than red if USDG was never funded (Section 0.3); amber opens
 ##### 17.3 Open sequence
 
 ```
-20:40 WIB  1. Perps on the crypto set             (BTC, ETH, LINK, GLD — fresh at any hour)
-20:45 WIB  2. Perps on the 32 equity markets      (US session now open, feeds refreshing)
-20:50 WIB  3. Options on the equity markets
-20:55 WIB  4. The TSLA/USDG credit pair
-21:00 WIB  5. Verify leaderboard and PNL card populate; announce
+02:40 WIB  1. Perps on the crypto set             (BTC, ETH, LINK, GLD — fresh at any hour)
+02:45 WIB  2. Perps on the 32 equity markets      (US session closes at 03:00 WIB; reads closed after)
+02:50 WIB  3. Options on the equity markets
+02:55 WIB  4. The TSLA/USDG credit pair
+03:00 WIB  5. Verify leaderboard and PNL card populate; announce
 ```
 
 Five minutes of clean readings between steps. Crypto opens **first** on purpose: its feeds are fresh at
@@ -2270,15 +2302,15 @@ mirroring at once; the executor key failing to withdraw from a follower's subacc
 
 ## 3. Schedule and run order
 
-| Day              | Phases                         |
-| ---------------- | ------------------------------ |
-| Day 1 2026-10-04 | 0, 1, 2, 3, 4, 5               |
-| Day 2 2026-10-05 | 6, 7, 8, 9                     |
-| Day 3 2026-10-06 | 10, 11, 12, 13, 14, 15, 16, 17 |
+| Stage                          | Phases                                                        |
+| ------------------------------ | ------------------------------------------------------------- |
+| Done, 2026-10-04 to 2026-10-07 | 0 to 10 (ambers carried: 5, 6, 8, 9, 10)                      |
+| Testnet, 2026-10-07            | T, 11, 12, 13, 14, 15 (14b skipped)                           |
+| Mainnet, to 2026-10-08 03:00   | L, 16, 17. The open is 03:00 WIB, 2026-10-08 (Section 0.10)   |
 
 **There are no hour estimates in this plan, by decision.** Claude is the developer, so a phase takes as
 long as it takes and an estimate only invites a phase to be declared done on the clock instead of on its
-acceptance check. What is fixed is the order, the gates, and the open: 2026-10-06 at 21:00 WIB.
+acceptance check. What is fixed is the order, the gates, and the open: 2026-10-08 at 03:00 WIB.
 
 The day grouping above is a target, not a budget. Run phases back to back and the days collapse; the
 only hard rule is that Phase 15 passes before mainnet opens.
@@ -2301,7 +2333,12 @@ Consequences recorded honestly rather than quietly:
 - The `ListingTier` type still lands in Phase 2, because Pons needs it in Phase 18. Only the **tier
   badges in the UI** (old 11c) defer, since with China gone nothing at launch renders a quoted row.
 
-### 3.2 The open moves to 21:00 WIB, for a technical reason
+### 3.2 The open hour, and why it moved (history, then 2026-10-07)
+
+**Superseded 2026-10-07.** The operator set the open at **03:00 WIB, 2026-10-08 = 20:00 UTC, the US equity
+close.** Equity feeds are fresh at that moment and read closed within minutes; crypto stays live; equities
+trade again at the next US open, 20:30 WIB. The fallback is 21:00 WIB the same day (Section 0.10). What
+follows is why the open had been moved to 21:00 WIB.
 
 14:00 WIB is 07:00 UTC. **US equity markets are closed then**, and `REFERENCE.md` Section 2, finding 4 measured every
 equity feed at 16–27 hours old outside its session. Opening at 14:00 would launch a venue where every
@@ -2310,7 +2347,7 @@ equity market reads "closed" — technically correct and a terrible first impres
 US equity open is 09:30 ET = **20:30 WIB**. Opening at **21:00 WIB (14:00 UTC)** on 2026-10-06, a
 Tuesday, means the feeds go fresh within the first half hour and the crypto set is live regardless.
 
-### 3.3 The last day, in order
+### 3.3 The last day, in order (historical; the current order is Sections 0.9 and 0.10)
 
 ```
 P15.1 Start the simulator             ── FIRST, and leave it running all day
