@@ -56,7 +56,7 @@ export function PerpPreview({ className }: { className?: string }) {
   const liquidation = longLiquidationPrice(view.entry, view.leverage, view.mmr);
   const label = `${view.symbol}-PERP`;
   return (
-    <Panel className={className} title={label} sample={!isLive}>
+    <Panel className={className} title={label}>
       <div className="flex flex-1 flex-col gap-4 p-4">
         <div className="flex items-baseline justify-between gap-3">
           <Num className="font-display text-[2rem] font-semibold leading-tight">{isLive ? `$${fmtPrice(mark)}` : `$${view.entry.toFixed(2)}`}</Num>
@@ -83,7 +83,7 @@ export function PerpPreview({ className }: { className?: string }) {
 export function OptionsPreview({ className }: { className?: string }) {
   const { analysis, spot, low, high, label } = PREVIEW_OPTION;
   return (
-    <Panel className={className} title={`${PREVIEW_PERP.symbol} ${label}, payoff at expiry`} sample>
+    <Panel className={className} title={`${PREVIEW_PERP.symbol} ${label}, payoff at expiry`}>
       <div className="flex flex-1 flex-col gap-4 p-4">
         <dl className="grid grid-cols-3 gap-3">
           <Stat label="Net premium">{fmtNet(analysis.netPremium)}</Stat>
@@ -113,7 +113,7 @@ export function VaultPreview({ className }: { className?: string }) {
   const ltv = (debt * 10_000n) / collateral;
   const tone = band === "safe" ? "up" : band === "watch" ? "neutral" : "down";
   return (
-    <Panel className={className} title={`${env.creditSymbol} collateral, borrowing USDG`} sample>
+    <Panel className={className} title={`${env.creditSymbol} collateral, borrowing USDG`}>
       <div className="flex flex-1 flex-col gap-4 p-4">
         <div className="flex flex-wrap items-baseline gap-x-3">
           <Num tone={tone} className={cn("font-display text-[2rem] font-semibold leading-tight")}>{fmtHealth(hf)}</Num>

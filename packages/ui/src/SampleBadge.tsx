@@ -1,6 +1,6 @@
 import { cn } from "./cn.js";
 
-/// The mark on every sample surface: a balance, a position, a page title, the header. It is a label,
+/// The mark on every sample surface: a balance, a position, a panel header, a table cell. It is a label,
 /// not a control, and nothing dismisses it: an unlabelled simulation is a liability, and a person must
 /// never believe a sample position is theirs. Accent text sits on `accent-soft` here, which is 9.29:1 with
 /// `accent-hover` (UI_CONTRACT.md Section 4.1), so it clears AA at this size.

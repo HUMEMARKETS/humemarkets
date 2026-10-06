@@ -1,17 +1,16 @@
 import { chains } from '@hume/config';
 import Link from 'next/link';
-import { ContractAddressBadge } from './ContractAddressBadge';
 import { env } from '@/lib/env';
 import { APP_GUTTER } from '@/lib/frame';
+import { MORE_LINKS } from '@/lib/nav';
 import { X_URL } from '@/lib/social';
 import { listLink } from '@hume/ui';
 import { Logo } from './Logo';
 import { StatusBadge } from './StatusBadge';
 import { XIcon } from './XIcon';
 
-/// One thin line, not a menu: the brand, the tagline and the CA badge on the left; Features, Docs, the
-/// network status and the X link on the right. The site's pages are in the header, so the footer does not
-/// list them again. Wraps and centres on a phone.
+/// One thin line, not a menu: the brand and the tagline on the left; the pages with no slot in the header
+/// (Activity, Docs, Features), the network status and the X link on the right. Wraps and centres on a phone.
 export function Footer() {
     return (
         <footer className="border-t border-line bg-surface">
@@ -23,18 +22,16 @@ export function Footer() {
                     <p className="text-muted">
                         Global markets, onchain.
                     </p>
-                    <ContractAddressBadge />
                 </div>
                 <nav
                     aria-label="Footer"
                     className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2"
                 >
-                    <Link href="/features" className={listLink}>
-                        Features
-                    </Link>
-                    <Link href="/docs" className={listLink}>
-                        Docs
-                    </Link>
+                    {MORE_LINKS.map((link) => (
+                        <Link key={link.href} href={link.href} className={listLink}>
+                            {link.label}
+                        </Link>
+                    ))}
                     <StatusBadge label={chains[env.chainId].name} />
                     <a
                         href={X_URL}

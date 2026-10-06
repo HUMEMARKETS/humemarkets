@@ -1,0 +1,69 @@
+PASS [1440] /markets: exactly one banner, visible — count=1
+PASS [1440] /markets: no header chip, no CA in header or footer, no horizontal scroll
+PASS [1440] /perpetuals: exactly one banner, visible — count=1
+PASS [1440] /perpetuals: no header chip, no CA in header or footer, no horizontal scroll
+PASS [1440] /options: exactly one banner, visible — count=1
+PASS [1440] /options: no header chip, no CA in header or footer, no horizontal scroll
+PASS [1440] /strategies: exactly one banner, visible — count=1
+PASS [1440] /strategies: no header chip, no CA in header or footer, no horizontal scroll
+PASS [1440] /lending: exactly one banner, visible — count=1
+PASS [1440] /lending: no header chip, no CA in header or footer, no horizontal scroll
+PASS [1440] /leaderboard: exactly one banner, visible — count=1
+PASS [1440] /leaderboard: no header chip, no CA in header or footer, no horizontal scroll
+PASS [1440] /portfolio: exactly one banner, visible — count=1
+PASS [1440] /portfolio: no header chip, no CA in header or footer, no horizontal scroll
+PASS [1440] /activity: exactly one banner, visible — count=1
+PASS [1440] /activity: no header chip, no CA in header or footer, no horizontal scroll
+PASS [1440] /features: exactly one banner, visible — count=1
+PASS [1440] /features: no header chip, no CA in header or footer, no horizontal scroll
+PASS [1440] /docs: exactly one banner, visible — count=1
+PASS [1440] /docs: no header chip, no CA in header or footer, no horizontal scroll
+PASS [1440] /: no banner
+PASS [1440] /: no CA in header
+PASS [375] /markets: exactly one banner, visible — count=1
+PASS [375] /markets: no header chip, no CA in header or footer, no horizontal scroll
+PASS [375] /perpetuals: exactly one banner, visible — count=1
+PASS [375] /perpetuals: no header chip, no CA in header or footer, no horizontal scroll
+PASS [375] /options: exactly one banner, visible — count=1
+PASS [375] /options: no header chip, no CA in header or footer, no horizontal scroll
+PASS [375] /strategies: exactly one banner, visible — count=1
+PASS [375] /strategies: no header chip, no CA in header or footer, no horizontal scroll
+PASS [375] /lending: exactly one banner, visible — count=1
+PASS [375] /lending: no header chip, no CA in header or footer, no horizontal scroll
+PASS [375] /leaderboard: exactly one banner, visible — count=1
+PASS [375] /leaderboard: no header chip, no CA in header or footer, no horizontal scroll
+PASS [375] /portfolio: exactly one banner, visible — count=1
+PASS [375] /portfolio: no header chip, no CA in header or footer, no horizontal scroll
+PASS [375] /activity: exactly one banner, visible — count=1
+PASS [375] /activity: no header chip, no CA in header or footer, no horizontal scroll
+PASS [375] /features: exactly one banner, visible — count=1
+PASS [375] /features: no header chip, no CA in header or footer, no horizontal scroll
+PASS [375] /docs: exactly one banner, visible — count=1
+PASS [375] /docs: no header chip, no CA in header or footer, no horizontal scroll
+PASS [375] /: no banner
+PASS [375] /: no CA in header
+PASS [1440] top level is Markets · Trade · Capital · Social · Portfolio — Markets · Trade · Capital · Social · Portfolio
+PASS [1440] Tab reaches Markets, then the Trade button — Markets|A > Trade|BUTTON
+PASS [1440] Enter opens Trade
+PASS [1440] Tab moves into the open menu, first link Perpetuals — Perpetuals|A
+PASS [1440] Escape closes it and returns focus to Trade
+PASS [1440] Space opens Trade
+PASS [1440] second link is Options — Options|A
+PASS [1440] Enter on Options navigates to /options and closes the menu
+PASS [1440] Trade is marked current on /options
+PASS [1440] Tabbing out of Capital closes it — Social|BUTTON
+PASS [1440] click opens Trade
+PASS [1440] opening Social closes Trade (one at a time)
+PASS [1440] click outside closes the menu
+PASS [1440] footer lists Activity, Docs, Features — Activity · Docs · Features
+PASS [375] desktop nav hidden
+PASS [375] tap opens the sheet
+PASS [375] sheet sections — Trade: Perpetuals, Options, Strategies | Capital: Lending | Social: Leaderboard | More: Activity, Docs, Features
+PASS [375] sheet top-level links — Markets,Portfolio
+PASS [375] every sheet link is at least 42 px tall (the previous sheet rows) — short=0
+PASS [375] the sheet scrolls to the wallet button — {"top":0,"scrollable":false}
+PASS [375] tapping Perpetuals navigates and closes the sheet
+PASS [375] tapping Features (More) navigates
+PASS [375] Enter on the menu button opens the sheet
+PASS [375] Escape closes the sheet
+info: mode storage key = hume-mode-v1

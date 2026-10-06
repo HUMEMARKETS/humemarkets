@@ -14,9 +14,9 @@ import { useSampleStore } from "@/stores/sample";
 
 const item = cn(menuItem, "flex min-h-11 w-full flex-col justify-center px-3 py-1.5 text-left");
 
-/// The environment switcher and the header's `SAMPLE DATA` chip in one control. The chip is what a
-/// person sees on every page: it says the numbers are simulated, and it is not dismissable. Opening it
-/// switches between the sample account and the real network, and resets the sample.
+/// The environment switcher. The `SAMPLE DATA` label is not here: each app page carries it as a banner
+/// (`SampleBanner`). This control names the environment and switches between the sample account and the
+/// real network, and resets the sample.
 ///
 /// Mainnet and testnet are separate deployments of this app, each with its own sample account, so the
 /// switch here is between Sample and this deployment's own network.
@@ -50,17 +50,12 @@ export function ModeMenu({ menuAbove = false }: { menuAbove?: boolean }) {
         type="button"
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label={sample ? "Sample data. Open the environment menu." : `${chain.name}. Open the environment menu.`}
+        aria-label={`${sample ? "Sample account" : chain.name}. Open the environment menu.`}
         onClick={() => setOpen((value) => !value)}
-        className={cn(
-          "flex h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-control border px-2.5 text-[10px] sm:px-3 sm:text-[11px] font-medium uppercase tracking-[0.1em] transition-colors duration-150 max-xl:h-10",
-          sample
-            ? "border-accent-line bg-accent-soft text-accent-hover hover:border-accent"
-            : "border-line bg-raised text-text hover:border-accent hover:bg-accent-soft hover:text-accent-hover",
-        )}
+        className="flex h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-control border border-line bg-raised px-2.5 text-[10px] sm:px-3 sm:text-[11px] font-medium uppercase tracking-[0.1em] text-text transition-colors duration-150 hover:border-accent hover:bg-accent-soft hover:text-accent-hover max-xl:h-10"
       >
         {sample ? (
-          "Sample data"
+          "Sample"
         ) : (
           <>
             <span aria-hidden="true" className="size-1.5 rounded-full bg-up" />
