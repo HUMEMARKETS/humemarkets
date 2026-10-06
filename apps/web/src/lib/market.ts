@@ -1,5 +1,5 @@
 import { hexToString } from "viem";
-import type { Hex, MarketGroup } from "@hume/types";
+import { MARKET_GROUPS, type Hex, type MarketGroup } from "@hume/types";
 
 /// Market ids are ASCII right-padded with zero bytes (see `resolveMarketId` in the SDK), so the
 /// symbol is recoverable without a lookup table — new markets render with no code change.
@@ -22,8 +22,25 @@ export const REGISTRY_ERROR = "The registry could not be read right now. Try aga
 
 /// How a market group (`MARKET_GROUPS` in `@hume/types`, assigned per market in `@hume/config`) is named on screen.
 export const MARKET_GROUP_LABEL: Record<MarketGroup, string> = {
-  "us-equities": "US equities",
-  china: "China",
+  "us-equities": "US",
+  china: "China & Asia",
+  commodities: "Commodities",
+  etf: "ETF",
   crypto: "Crypto",
   pons: "Pons",
 };
+
+export type GroupTab = "all" | MarketGroup;
+
+/// The group tabs for a set of rows: "All", then every group that has at least one row, in
+/// `MARKET_GROUPS` order. A group with no market on this network gets no tab rather than an empty one.
+export function groupTabs(rows: ReadonlyArray<{ group?: MarketGroup }>): Array<{ id: GroupTab; label: string }> {
+  const present = MARKET_GROUPS.filter((group) => rows.some((row) => row.group === group));
+  return present.length === 0 ? [] : [{ id: "all", label: "All" }, ...present.map((group) => ({ id: group, label: MARKET_GROUP_LABEL[group] }))];
+}
+
+/// The rows a tab shows. A row with no recorded group (a market on the registry that `@hume/config` does
+/// not list) appears under "All" only.
+export function inGroup<T extends { group?: MarketGroup }>(rows: readonly T[], tab: GroupTab): T[] {
+  return tab === "all" ? [...rows] : rows.filter((row) => row.group === tab);
+}

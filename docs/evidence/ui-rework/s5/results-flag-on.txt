@@ -1,0 +1,13 @@
+pass  /traders 1440: labelled In development
+pass  /traders 1440: no figure on the page (no $ or %)
+pass  /traders 1440: no horizontal scroll
+pass  /traders/copy 1440: labelled, nothing to sign
+pass  /traders/copy 1440: no horizontal scroll
+pass  /traders 375: labelled In development
+pass  /traders 375: no figure on the page (no $ or %)
+pass  /traders 375: no horizontal scroll
+pass  /traders/copy 375: labelled, nothing to sign
+pass  /traders/copy 375: no horizontal scroll
+pass  /traders/not-a-wallet: not found
+pass  /leaderboard (flag on): a profile link for each real wallet  (12 links, 12 wallets)
+pass  /leaderboard (flag on): Copy stays disabled

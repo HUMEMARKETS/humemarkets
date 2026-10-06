@@ -10,6 +10,7 @@ import {
   marketForSymbol,
   marketsForChain,
   marketsForGroup,
+  groupForSymbol,
   marketsForTier,
   validateMarkets,
   type MarketListing,
@@ -45,29 +46,28 @@ test("the checked-in literal matches deployments/robinhood_mainnet.markets.json"
   );
 });
 
-test("all 32 mainnet markets are tradeable us-equities, and every one has a feed", () => {
+test("all 32 mainnet markets are tradeable, and every one has a feed", () => {
   const all = marketsForChain(ROBINHOOD_MAINNET_CHAIN_ID);
   assert.equal(all.length, 32);
   for (const market of all) {
     assert.equal(market.tier, "tradeable", market.symbol);
-    assert.equal(market.group, "us-equities", market.symbol);
     assert.ok(market.feed, `${market.symbol} has no feed`);
   }
 });
 
-test("marketsForGroup returns the group's set, and a known-but-empty group is [] rather than an error", () => {
-  const equities = marketsForGroup(ROBINHOOD_MAINNET_CHAIN_ID, "us-equities");
-  assert.equal(equities.length, 32);
-  assert.deepEqual(equities.map((m) => m.symbol).slice(0, 3), ["NVDA", "AAPL", "TSLA"]);
-  // china is cut to Phase 18 and crypto arrives in Phase 11, so both are empty today. Empty is a real
-  // answer for a group that exists; it is an unknown group that must throw (next test).
-  for (const group of ["china", "crypto", "pons"] as const) {
-    assert.deepEqual(marketsForGroup(ROBINHOOD_MAINNET_CHAIN_ID, group), []);
-  }
-  // Every group in the data is one of the four.
-  for (const market of marketsForChain(ROBINHOOD_MAINNET_CHAIN_ID)) {
-    assert.ok((MARKET_GROUPS as readonly string[]).includes(market.group), market.symbol);
-  }
+test("marketsForGroup returns each group's set, the groups partition the list, and an empty group is []", () => {
+  const symbols = (group: MarketGroup) => marketsForGroup(ROBINHOOD_MAINNET_CHAIN_ID, group).map((m) => m.symbol);
+  assert.deepEqual(symbols("china"), ["BABA", "EWY", "TSM"]);
+  assert.deepEqual(symbols("commodities"), ["SLV", "USO"]);
+  assert.deepEqual(symbols("etf"), ["SPY", "QQQ"]);
+  assert.equal(symbols("us-equities").length, 25);
+  assert.deepEqual(symbols("us-equities").slice(0, 3), ["NVDA", "AAPL", "TSLA"]);
+  // crypto arrives in Phase 11 and pons later still. Empty is a real answer for a group that exists; it
+  // is an unknown group that must throw (next test).
+  for (const group of ["crypto", "pons"] as const) assert.deepEqual(symbols(group), []);
+  // Every market is in exactly one group, and every group in the data is a known one.
+  const total = MARKET_GROUPS.reduce((sum, group) => sum + symbols(group).length, 0);
+  assert.equal(total, marketsForChain(ROBINHOOD_MAINNET_CHAIN_ID).length);
 });
 
 test("marketsForTier returns the tier's set, and the tiers partition the list", () => {
@@ -141,4 +141,13 @@ test("testnet records an empty market list, which is an answer and not a missing
   // robinhood_testnet.markets.json. An unknown chain still throws (see the unknown-chain test).
   assert.deepEqual(marketsForChain(ROBINHOOD_TESTNET_CHAIN_ID), []);
   assert.deepEqual(marketsForGroup(ROBINHOOD_TESTNET_CHAIN_ID, "us-equities"), []);
+});
+
+test("groupForSymbol reads the chain's listing, falls back to mainnet's for the same ticker, and invents nothing", () => {
+  assert.equal(groupForSymbol(ROBINHOOD_MAINNET_CHAIN_ID, "SPY"), "etf");
+  assert.equal(groupForSymbol(ROBINHOOD_MAINNET_CHAIN_ID, "BABA"), "china");
+  // Testnet records no listing, so its mock SPY borrows mainnet's group.
+  assert.equal(groupForSymbol(ROBINHOOD_TESTNET_CHAIN_ID, "SPY"), "etf");
+  assert.equal(groupForSymbol(ROBINHOOD_TESTNET_CHAIN_ID, "NVDA"), "us-equities");
+  assert.equal(groupForSymbol(ROBINHOOD_TESTNET_CHAIN_ID, "E2E"), undefined);
 });

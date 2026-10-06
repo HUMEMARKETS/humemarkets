@@ -1,8 +1,7 @@
 'use client';
 
-import { marketForSymbol } from '@hume/config';
+import { groupForSymbol } from '@hume/config';
 import { analyzeStrategy, payoffCurve, type Leg } from '@hume/sdk';
-import { MARKET_GROUPS, type MarketGroup } from '@hume/types';
 import { Num, SampleBadge, Skeleton, Tabs, cn } from '@hume/ui';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -18,7 +17,7 @@ import { explorerAddressUrl } from '@/lib/explorer';
 import { fmtSigned, shortHash, signTone } from '@/lib/format';
 import { MONO, SPACED_CAPS } from '@/lib/frame';
 import { fmtHealth, healthBand, healthFactorBps, healthWords, statusSentence } from '@/lib/lending';
-import { MARKET_GROUP_LABEL, REGISTRY_ERROR, symbolOf } from '@/lib/market';
+import { groupTabs, inGroup, REGISTRY_ERROR, symbolOf, type GroupTab } from '@/lib/market';
 import { TRADE_PRODUCTS } from './content';
 
 /// The body of each landing section, below its eyebrow, title and lede (which `LandingStage` draws from
@@ -133,22 +132,22 @@ const MARKET_CHIPS = 24;
 
 function Markets() {
     const markets = usePerpMarkets();
-    const [group, setGroup] = useState<'all' | MarketGroup>('all');
+    const [group, setGroup] = useState<GroupTab>('all');
     const rows = useMemo(
         () =>
             (markets.data ?? []).map((market) => {
                 const symbol = symbolOf(market.marketId);
-                return { market, symbol, group: marketForSymbol(env.chainId, symbol)?.group };
+                return { market, symbol, group: groupForSymbol(env.chainId, symbol) };
             }),
         [markets.data],
     );
-    const groups = MARKET_GROUPS.filter((name) => rows.some((row) => row.group === name));
-    const shown = group === 'all' ? rows : rows.filter((row) => row.group === group);
+    const tabs = groupTabs(rows);
+    const shown = inGroup(rows, group);
     return (
         <div className="mt-8">
-            {groups.length > 0 ? (
+            {tabs.length > 0 ? (
                 <Tabs
-                    tabs={[{ id: 'all' as const, label: 'All' }, ...groups.map((name) => ({ id: name, label: MARKET_GROUP_LABEL[name] }))]}
+                    tabs={tabs}
                     value={group}
                     onChange={setGroup}
                     label="Market groups"

@@ -1,6 +1,6 @@
 {
   "chainId": 4663,
-  "note": "Underlying tokens from api.robinhood.com/rhj/assets, feeds from Chainlink's Robinhood Chain directory; checked on chain 2026-09-25. Leverage: 10x for SPY and QQQ, 3x (10% maintenance) for the most volatile names, 5x (7.5%) for the rest. Every entry carries its group (one of us-equities, china, crypto, pons) and its listing tier (one of tradeable, quoted, listed): this file is the source of both, read through @hume/config, never written as a literal in app code. A tradeable entry must have a feed, and a quoted or listed entry must have none - that boundary is what stops a display price reaching settlement. Only tradeable entries are listed on chain by script/AddMarketsMainnet.s.sol.",
+  "note": "Underlying tokens from api.robinhood.com/rhj/assets, feeds from Chainlink's Robinhood Chain directory; checked on chain 2026-09-25. Leverage: 10x for SPY and QQQ, 3x (10% maintenance) for the most volatile names, 5x (7.5%) for the rest. Every entry carries its group (one of us-equities, china, commodities, etf, crypto, pons) and its listing tier (one of tradeable, quoted, listed): this file is the source of both, read through @hume/config, never written as a literal in app code. A tradeable entry must have a feed, and a quoted or listed entry must have none - that boundary is what stops a display price reaching settlement. Only tradeable entries are listed on chain by script/AddMarketsMainnet.s.sol.",
   "markets": [
     {
       "symbol": "NVDA",
@@ -99,7 +99,7 @@
       "feed": "0x319724394D3A0e3669269846abE664Cd621f9f6A",
       "maxLeverage": 10,
       "maintenanceBps": 500,
-      "group": "us-equities",
+      "group": "etf",
       "tier": "tradeable"
     },
     {
@@ -109,7 +109,7 @@
       "feed": "0x80901d846d5D7B030F26B480776EE3b29374C2ae",
       "maxLeverage": 10,
       "maintenanceBps": 500,
-      "group": "us-equities",
+      "group": "etf",
       "tier": "tradeable"
     },
     {
@@ -139,7 +139,7 @@
       "feed": "0x62Cc8F9b5f56a33c9C8A60c8B92779f523c4E984",
       "maxLeverage": 5,
       "maintenanceBps": 750,
-      "group": "us-equities",
+      "group": "china",
       "tier": "tradeable"
     },
     {
@@ -179,7 +179,7 @@
       "feed": "0xEFdf54610B62A7753Ec30bDc380847c12D32e1D1",
       "maxLeverage": 5,
       "maintenanceBps": 750,
-      "group": "us-equities",
+      "group": "china",
       "tier": "tradeable"
     },
     {
@@ -279,7 +279,7 @@
       "feed": "0x209b73908e92Ae021826eD79609845451Ecba2ce",
       "maxLeverage": 5,
       "maintenanceBps": 750,
-      "group": "us-equities",
+      "group": "commodities",
       "tier": "tradeable"
     },
     {
@@ -309,7 +309,7 @@
       "feed": "0x874cF94aa8eC88Fd9560094dD065f2fB3E41Fc2F",
       "maxLeverage": 5,
       "maintenanceBps": 750,
-      "group": "us-equities",
+      "group": "china",
       "tier": "tradeable"
     },
     {
@@ -319,7 +319,7 @@
       "feed": "0x75a9c76Ef439e2C7c2E5a34Ab105EcFe3766431c",
       "maxLeverage": 5,
       "maintenanceBps": 750,
-      "group": "us-equities",
+      "group": "commodities",
       "tier": "tradeable"
     }
   ]

@@ -6,6 +6,7 @@ export {
   marketsForGroup,
   marketsForTier,
   marketForSymbol,
+  groupForSymbol,
   feedForSymbol,
   validateMarkets,
   assertTierInvariant,

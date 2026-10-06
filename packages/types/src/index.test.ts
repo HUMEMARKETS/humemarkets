@@ -12,7 +12,7 @@ import {
 } from "./index.js";
 
 test("the four market groups are exactly the ones the data may use", () => {
-  assert.deepEqual([...MARKET_GROUPS], ["us-equities", "china", "crypto", "pons"]);
+  assert.deepEqual([...MARKET_GROUPS], ["us-equities", "china", "commodities", "etf", "crypto", "pons"]);
 });
 
 test("the three listing tiers are exactly the REFERENCE.md Section 2 model", () => {
