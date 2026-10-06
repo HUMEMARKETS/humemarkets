@@ -4,11 +4,11 @@ import { Num, Panel, Segmented, Stat, TextField, cn, fieldBorder } from "@hume/u
 import { analyzeStrategy, payoffCurve, strategyLegs, STRATEGY_KINDS, type Leg, type OptionQuote, type StrategyKind } from "@hume/sdk";
 import { useEffect, useMemo, useState } from "react";
 import { formatUnits } from "viem";
-import { useIndexPrice, useListedExpiries, useOptionChain, useOptionUnderlyings } from "@/hooks/queries";
+import { useIndexPrice, useListedExpiries, useOptionChain, useOptionUnderlyings, usePerpMarketConfig } from "@/hooks/queries";
 import { useAccountMode } from "@/hooks/useAccountMode";
 import { useNow } from "@/hooks/useNow";
 import { env } from "@/lib/env";
-import { symbolOf } from "@/lib/market";
+import { symbolOf, tradeBlocker } from "@/lib/market";
 import { expiryCode, expiryDates, nearestStrikeIndex, strikeLadder } from "@/lib/options";
 import {
   chartRange,
@@ -87,6 +87,8 @@ export function StrategyBuilder() {
   const sample = useAccountMode() === "sample";
   const { data: index } = useIndexPrice(symbol);
   const { data: listed } = useListedExpiries(symbol);
+  // A paused underlying still prices here; the builder says it cannot be traded, as the ticket would.
+  const paused = tradeBlocker(usePerpMarketConfig(symbol)?.active);
 
   const [kind, setKind] = useState<StrategyKind>("STRADDLE");
   const [quantityText, setQuantityText] = useState("1");
@@ -214,6 +216,7 @@ export function StrategyBuilder() {
               </label>
             ))}
           </div>
+          {paused ? <p role="status" className="leading-snug text-down">{paused}</p> : null}
           <p className="text-sm text-muted">{STRATEGY_SUMMARY[kind]}</p>
 
           {!env.apiUrl && !sample ? (
@@ -271,7 +274,9 @@ export function StrategyBuilder() {
               <p className="text-sm text-muted">
                 At {spot.toFixed(2)} now:{" "}
                 <Num tone={result.payoffAt(spot) < 0 ? "down" : "up"}>{fmtSignedUsd(result.payoffAt(spot))}</Num> if it expired here.{" "}
-                {result.executable
+                {paused
+                  ? "Its market is paused, so no leg can be opened until it reopens."
+                  : result.executable
                   ? "Every leg can be opened today: open each option from the Options ticket (an underlying leg is a 1x long perp)."
                   : "This strategy has a short option leg. The contracts only let a user buy options, so it cannot be opened yet; the figures show what it would do."}
               </p>

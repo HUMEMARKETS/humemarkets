@@ -6,13 +6,13 @@ import { margin, OptionPositionStatus, OptionType, premiumForOrder, type CloseQu
 import type { OptionPosition } from "@hume/types";
 import { useState } from "react";
 import { useAccount } from "wagmi";
-import { useSettlementDecimals } from "@/hooks/queries";
+import { usePerpMarketConfig, useSettlementDecimals } from "@/hooks/queries";
 import { useNow } from "@/hooks/useNow";
 import { useWalletHume } from "@/hooks/useHume";
 import { useTx } from "@/hooks/useTx";
 import { env } from "@/lib/env";
 import { fmtSigned, fmtUsd, signTone } from "@/lib/format";
-import { symbolOf } from "@/lib/market";
+import { symbolOf, tradeBlocker } from "@/lib/market";
 import { optionCodeOf } from "@/lib/options";
 import { humeRead } from "@/lib/hume";
 
@@ -34,6 +34,8 @@ function OptionRow({ position, decimals }: { position: OptionPosition; decimals:
   const type = position.optionType === OptionType.CALL ? "CALL" : "PUT";
   const isOpen = position.status === OptionPositionStatus.OPEN;
   const expired = now > 0 && BigInt(Math.floor(now / 1000)) >= position.expiry;
+  const config = usePerpMarketConfig(symbol);
+  const paused = isOpen ? tradeBlocker(config?.active) : undefined;
 
   // Mark premium is an offchain quote (PROJECT_BRIEF.md Section 10), so it needs the API and is
   // display-only — closing uses a separately signed price.
@@ -93,6 +95,7 @@ function OptionRow({ position, decimals }: { position: OptionPosition; decimals:
     <tr className="border-t border-line align-top">
       <td className={cell}>
         <span className="font-medium">{optionCodeOf(position)}</span>
+        {paused ? <p className="mt-0.5 max-w-64 whitespace-normal text-xs leading-snug text-down">{paused}</p> : null}
       </td>
       <td className={cell}>{position.contracts.toString()}</td>
       <td className={cell}>{fmtUsd(position.entryPremium, decimals)}</td>

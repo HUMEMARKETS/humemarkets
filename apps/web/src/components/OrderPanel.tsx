@@ -1,9 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Button, Panel, Row, Segmented, Skeleton, TextField } from "@hume/ui";
+import { Button, Panel, ReviewStep, Row, Segmented, Skeleton, TextField } from "@hume/ui";
 import { toBaseUnits, type OrderType } from "@hume/sdk";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAccount, useSwitchChain } from "wagmi";
 import { usePerpMarket, usePerpMarketConfig, useSettlementDecimals, useVaultBalances } from "@/hooks/queries";
 import { useDebounced } from "@/hooks/useDebounced";
@@ -15,8 +15,10 @@ import { fmtBps, fmtPrice, fmtUsd } from "@/lib/format";
 import { tradeBlocker } from "@/lib/market";
 import { LIMIT_EXPIRIES, limitDirectionNote, limitExpirySeconds, parseLimitPrice, type LimitExpiry } from "@/lib/limit";
 import { humeRead } from "@/lib/hume";
+import { perpOpenReview } from "@/lib/review";
 import { samplePreviewOpen } from "@/lib/sampleMarket";
 import { chain } from "@/lib/wagmi";
+import { useModeStore } from "@/stores/mode";
 import { useSampleStore } from "@/stores/sample";
 import { errorMessage } from "@/stores/tx";
 import { useTerminal } from "@/stores/terminal";
@@ -24,10 +26,14 @@ import { ConnectButton } from "./ConnectButton";
 import { Disclosure } from "./Disclosure";
 import { RiskLadder } from "./RiskLadder";
 import { Term } from "./Term";
+import { TicketModeToggle } from "./TicketModeToggle";
 import { VaultControls } from "./VaultControls";
 
 /// PROJECT_BRIEF.md Section 27. Every figure below the form comes from `perps.previewOpen`, so
 /// the terminal never recomputes fees or liquidation price itself.
+///
+/// Guided (the default) ends on a review step with Back and Confirm; Pro keeps the one-shot button with
+/// the same review figures above it. An order whose liquidation price cannot be stated is refused in both.
 export function OrderPanel() {
   const symbol = useTerminal((state) => state.symbol);
   const { address, isConnected, chainId } = useAccount();
@@ -52,6 +58,10 @@ export function OrderPanel() {
   const [collateral, setCollateral] = useState("");
   const [chosenLeverage, setChosenLeverage] = useState<bigint>();
   const [submitting, setSubmitting] = useState(false);
+  const guided = useModeStore((state) => state.ticket) === "guided";
+  const [reviewing, setReviewing] = useState(false);
+  // A side or market picked elsewhere (the phone bar, the market list) is a different order: back to the form.
+  useEffect(() => setReviewing(false), [side, symbol]);
 
   const tiers = market?.risk.allowedLeverageTiers ?? [];
   const leverage = chosenLeverage && tiers.includes(chosenLeverage) ? chosenLeverage : tiers[0];
@@ -91,6 +101,8 @@ export function OrderPanel() {
     placeholderData: (previous) => previous,
   });
   const p = validAmount && validLimit ? preview.data : undefined;
+  const cap = sample ? BigInt(env.sample.maxPositionUsd) * 10n ** BigInt(decimals) : market?.risk.maxPositionNotional;
+  const review = p ? perpOpenReview(p, { symbol, decimals, isLimit, cap }) : undefined;
 
   // A paused market refuses every new position, whoever is asking, so it is read before the wallet
   // is: the ticket must say why it is shut without first demanding a connection and an amount.
@@ -108,7 +120,7 @@ export function OrderPanel() {
           ? sample
             ? "Not enough sample USDG for this size. Add more from the Sample menu, or lower the size."
             : "Not enough available collateral. Deposit first."
-          : undefined;
+          : review?.refusal;
   const waiting =
     paused || !ready
       ? undefined
@@ -124,7 +136,8 @@ export function OrderPanel() {
   const show = (value: string | undefined | "") => (value ? value : validAmount && validLimit && preview.isFetching ? <Skeleton className="w-16" /> : "–");
 
   async function submit() {
-    if (!wallet || !leverage || !p) return;
+    // Sign only what was reviewed: a preview still showing an earlier side is not this order.
+    if (!wallet || !leverage || !p || p.side !== side || review?.refusal) return;
     setSubmitting(true);
     const direction = side === "LONG" ? "long" : "short";
     const summary = `${symbol}-PERP · ${side === "LONG" ? "Long" : "Short"} · ${fmtUsd(p.notional, decimals, 0)} · ${leverage}x`;
@@ -153,10 +166,12 @@ export function OrderPanel() {
     if (result.ok) {
       setCollateral("");
       setLimitPrice("");
+      setReviewing(false);
     }
     setSubmitting(false);
   }
 
+  const actionLabel = `${isLimit ? "Place limit" : "Open"} ${side === "LONG" ? "long" : "short"}`;
   const action = paused ? (
     // A paused market refuses the trade before the wallet matters, so the connect prompt would be
     // a dead end: the button states the refusal instead.
@@ -172,6 +187,10 @@ export function OrderPanel() {
     <Button variant="primary" className="w-full" onClick={() => switchChain({ chainId: chain.id })}>
       Switch to {chain.name}
     </Button>
+  ) : guided ? (
+    <Button variant={side === "LONG" ? "up" : "down"} className="w-full" disabled={Boolean(blocker) || !wallet} onClick={() => setReviewing(true)}>
+      Review order
+    </Button>
   ) : (
     <Button
       variant={side === "LONG" ? "up" : "down"}
@@ -183,12 +202,36 @@ export function OrderPanel() {
         ? isLimit
           ? "Placing…"
           : "Opening…"
-        : `${isLimit ? "Place limit" : "Open"} ${side === "LONG" ? "long" : "short"}`}
+        : actionLabel}
     </Button>
   );
 
+  // The review replaces the form, so nothing can change under it. If the order stops being reviewable
+  // (refused, repriced to a refusal, paused, wallet gone or on the wrong network) the form comes back
+  // with the reason.
+  if (guided && reviewing && review?.rows && !paused && ready && wallet) {
+    return (
+      <Panel title="Review order" sample={sample} actions={<TicketModeToggle />} className="h-full overflow-y-auto">
+        <div className="flex flex-col gap-3 p-3">
+          <ReviewStep
+            title={`${actionLabel} ${symbol}-PERP`}
+            rows={review.rows}
+            worstCase={review.worstCase}
+            note={sample ? "Sample order: it fills at the real index price against your sample balance. Nothing is sent to a wallet." : undefined}
+            blocked={problem ?? (preview.isPlaceholderData ? "Updating the figures…" : undefined)}
+            busy={submitting}
+            confirmLabel={`Confirm: ${actionLabel.toLowerCase()}`}
+            confirmVariant={side === "LONG" ? "up" : "down"}
+            onBack={() => setReviewing(false)}
+            onConfirm={submit}
+          />
+        </div>
+      </Panel>
+    );
+  }
+
   return (
-    <Panel title="Order" sample={sample} className="h-full overflow-y-auto">
+    <Panel title="Order" sample={sample} actions={<TicketModeToggle />} className="h-full overflow-y-auto">
       <VaultControls />
 
       <div className="flex flex-col gap-3 p-3">
@@ -337,6 +380,7 @@ export function OrderPanel() {
             {sample ? "Could not price this order. The price service did not answer. Try again in a moment." : "Could not price this order. Check the connection and try again."}
           </p>
         ) : null}
+        {!guided && review?.rows ? <ReviewStep title="Review: every figure" rows={review.rows} worstCase={review.worstCase} className="border-t border-line pt-1" /> : null}
         {problem ? <p className="leading-snug text-down">{problem}</p> : waiting ? <p className="text-muted">{waiting}</p> : null}
         {action}
       </div>

@@ -11,11 +11,11 @@ import { useOnline } from "@/hooks/useOnline";
 import { env } from "@/lib/env";
 import { fmt, fmtUsd } from "@/lib/format";
 import { humeRead } from "@/lib/hume";
-import { fallToLiquidationBps, fmtHealth, HF_NO_DEBT, healthBand, healthFactorBps, healthWords, liquidationPrice, ltvBps, statusSentence, type HealthBand } from "@/lib/lending";
+import { fallToLiquidationBps, fmtHealth, HF_NO_DEBT, healthBand, healthFactorBps, healthWords, liquidationPrice, ltvBps, pct, statusSentence, type HealthBand } from "@/lib/lending";
 import { ConnectButton } from "./ConnectButton";
+import { CreditTicket } from "./CreditTicket";
 import { Term } from "./Term";
-
-const pct = (bps: bigint) => `${(Number(bps) / 100).toFixed(bps % 100n === 0n ? 0 : 1)}%`;
+import { TicketModeToggle } from "./TicketModeToggle";
 
 /// The band as words and a rule, never colour alone: the label says it and the bar below carries it too.
 const bandTone: Record<HealthBand, "neutral" | "up" | "down" | "muted"> = { none: "muted", safe: "up", watch: "neutral", danger: "down", liquidatable: "down" };
@@ -181,7 +181,7 @@ export function LendingView() {
         )}
       </Panel>
 
-      <Panel title="Your position" sample={mode === "sample"} className="flex-1">
+      <Panel title="Your position" sample={mode === "sample"} actions={<TicketModeToggle />} className="flex-1">
         {mode === "sample" ? (
           <Notice>Sample mode has no lending account, so there is no sample position to show. Use the calculator below to see how a loan behaves, then connect a wallet for a real one.</Notice>
         ) : mode === "disconnected" ? (
@@ -208,15 +208,14 @@ export function LendingView() {
             <LtvBar ltv={ltvBps(p.collateralValueUsd, (p.debtAmount * 10n ** 18n) / 10n ** BigInt(debtDecimals))} maxLtv={maxLtv} liquidationLtv={liquidationLtv} />
           </div>
         )}
-        <div className="flex flex-wrap items-center gap-3 border-t border-line p-4">
-          <Button variant="primary" disabled>
-            Supply
-          </Button>
-          <Button disabled>Borrow</Button>
-          <p className="max-w-prose text-xs leading-snug text-muted">
-            {refusal ?? "Supplying and borrowing are not open from this page yet: every action that moves money needs a review screen first, and that screen ships next. This page only reads."}
-          </p>
-        </div>
+        <CreditTicket
+          pair={m}
+          position={p}
+          price={price.price}
+          symbol={symbol}
+          collateralDecimals={cDecimals}
+          debtDecimals={debtDecimals}
+        />
       </Panel>
 
       <HealthCalculator

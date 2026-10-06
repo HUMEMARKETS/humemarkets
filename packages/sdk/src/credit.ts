@@ -1,13 +1,14 @@
 import type { Address, Hex } from "@hume/types";
 import type { HumeClient } from "./client.js";
+import { executeTx, type TxOptions } from "./transactions.js";
 
 /// Read-only views of the lending pair (Phase 9). The signatures are the ones the contracts lane published in
 /// `docs/evidence/phase-9.md`, checked against `HumeCreditPair.sol` and `HumeCreditRegistry.sol`. They are
 /// written out here as `as const` ABI fragments because the generated ABIs predate the credit stack, and the
 /// return types are inferred from them rather than declared a second time.
 ///
-/// Reads only. Supply, borrow, repay and withdraw are signed actions, and a signed action needs the review step
-/// of Phase 8 first, so none is offered here.
+/// Supply and borrow are signed actions. The terminal reaches them only through its review step (Phase 8);
+/// repay and withdraw are not offered yet.
 
 const pairAbi = [
   { type: "function", name: "marketId", stateMutability: "view", inputs: [], outputs: [{ type: "bytes32" }] },
@@ -31,6 +32,8 @@ const pairAbi = [
     ],
   },
   { type: "function", name: "isLiquidatable", stateMutability: "view", inputs: [{ name: "user", type: "address" }], outputs: [{ type: "bool" }] },
+  { type: "function", name: "depositCollateral", stateMutability: "nonpayable", inputs: [{ name: "amount", type: "uint256" }], outputs: [] },
+  { type: "function", name: "borrow", stateMutability: "nonpayable", inputs: [{ name: "amount", type: "uint256" }], outputs: [] },
 ] as const;
 
 const registryAbi = [
@@ -113,9 +116,15 @@ export interface CreditNamespace {
   position(pair: Address, user: Address): Promise<{ collateralAmount: bigint; debtAmount: bigint; collateralValueUsd: bigint; healthFactorBps: bigint; liquidatable: boolean }>;
   /// The oracle's USD price of `asset`, 18 decimals. Reverts (rejects) when the feed is stale.
   price(oracle: Address, asset: Address): Promise<bigint>;
+  /// Supplies `amount` collateral-token base units. Needs a prior `erc20.approve(collateralToken, pair, amount)`.
+  depositCollateral(pair: Address, amount: bigint, tx?: TxOptions): Promise<Hex>;
+  /// Borrows `amount` debt-token base units against the supplied collateral, up to the borrow limit.
+  borrow(pair: Address, amount: bigint, tx?: TxOptions): Promise<Hex>;
 }
 
 export function createCredit(client: HumeClient): CreditNamespace {
+  const write = async (pair: Address, functionName: "depositCollateral" | "borrow", amount: bigint, tx?: TxOptions) =>
+    (await executeTx(client, () => client.simulateContract({ address: pair, abi: pairAbi, functionName, args: [amount] }), tx)).hash;
   return {
     market: (pair) => readPair(client, pair),
     async position(pair, user) {
@@ -127,5 +136,7 @@ export function createCredit(client: HumeClient): CreditNamespace {
       return { collateralAmount, debtAmount, collateralValueUsd, healthFactorBps, liquidatable };
     },
     price: (oracle, asset) => client.readContract({ address: oracle, abi: oracleAbi, functionName: "getPrice", args: [asset] }),
+    depositCollateral: (pair, amount, tx) => write(pair, "depositCollateral", amount, tx),
+    borrow: (pair, amount, tx) => write(pair, "borrow", amount, tx),
   };
 }

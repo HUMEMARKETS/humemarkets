@@ -7,6 +7,9 @@ export const HF_ONE = 10_000n;
 export const HF_NO_DEBT = 9_990_000n;
 const BPS = 10_000n;
 
+/// Basis points as a short percentage: 6000 -> "60%", 6050 -> "60.5%".
+export const pct = (bps: bigint) => `${(Number(bps) / 100).toFixed(bps % 100n === 0n ? 0 : 1)}%`;
+
 /// `healthFactor = collateralValue * liquidationLtv / debtValue`, in basis points, with the contract's
 /// edge cases: no debt is "safe, 999.00x", collateral gone with debt left is 0.
 export function healthFactorBps(collateralValueUsd: bigint, debtValueUsd: bigint, liquidationLtvBps: bigint): bigint {

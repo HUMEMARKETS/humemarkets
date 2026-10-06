@@ -1,10 +1,10 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Button, Panel, Row, TextField } from "@hume/ui";
-import { useState } from "react";
+import { Button, Panel, ReviewStep, Row, TextField } from "@hume/ui";
+import { useEffect, useState } from "react";
 import { useAccount, useSwitchChain } from "wagmi";
-import { useSettlementDecimals, useVaultBalances } from "@/hooks/queries";
+import { usePerpMarketConfig, useSettlementDecimals, useVaultBalances } from "@/hooks/queries";
 import { useDebounced } from "@/hooks/useDebounced";
 import { useAccountMode } from "@/hooks/useAccountMode";
 import { useWalletHume } from "@/hooks/useHume";
@@ -24,12 +24,17 @@ import {
   strikeText,
 } from "@/lib/options";
 import { humeRead } from "@/lib/hume";
+import { tradeBlocker } from "@/lib/market";
+import { optionBuyReview } from "@/lib/review";
 import { chain } from "@/lib/wagmi";
+import { useModeStore } from "@/stores/mode";
 import { useOptionOrder, type OptionSelection } from "@/stores/optionOrder";
+import { useTerminal } from "@/stores/terminal";
 import { errorMessage } from "@/stores/tx";
 import { ConnectButton } from "./ConnectButton";
 import { Disclosure } from "./Disclosure";
 import { Term } from "./Term";
+import { TicketModeToggle } from "./TicketModeToggle";
 import { VaultControls } from "./VaultControls";
 
 /// A signed price is only good for a short window; refresh it well inside that.
@@ -37,6 +42,9 @@ const REFRESH_MS = 10_000;
 /// Ask for a fresh signed price when the one on screen has less than this many seconds left.
 const MIN_QUOTE_SECONDS = 5n;
 const MAX_CONTRACTS = 1_000_000n;
+// Option prices on this screen are real, from the pricing service. Opening one is not simulated: it needs a
+// signed quote tied to a chain position, so a sample purchase would be a pretend one. Say so.
+const SAMPLE_REFUSAL = "Buying an option needs a connected wallet. The prices here are real, and perpetuals work in sample mode.";
 
 const codeOf = (selection: OptionSelection) =>
   `${selection.symbol}-${expiryCode(selection.expiry)}-${strikeText(selection.strike)}-${selection.type === "CALL" ? "C" : "P"}`;
@@ -48,6 +56,10 @@ function previewArgs(selection: OptionSelection, contracts: bigint, user?: `0x${
 /// PROJECT_BRIEF.md Sections 26 and 45. Every figure comes from `options.previewOpen`, which also
 /// returns the signed premium the chain will charge, so the ticket never computes a price itself.
 /// Options are buy-only in this deployment: the Vault pool is the counterparty.
+///
+/// A paused underlying is refused before anything else, with no review step. Guided ends on a review with
+/// Back and Confirm; Pro keeps the one-shot button with the review figures collapsed above it. The sample
+/// reaches the review too, so a visitor sees the maximum loss before connecting anything.
 export function OptionTicket() {
   const selection = useOptionOrder((state) => state.selection);
   const { address, isConnected, chainId } = useAccount();
@@ -75,9 +87,21 @@ export function OptionTicket() {
     retry: false,
   });
   const p = selection && valid ? preview.data : undefined;
+  const review = p && selection ? optionBuyReview(p, { symbol: selection.symbol, type: selection.type, decimals }) : undefined;
+  const guided = useModeStore((state) => state.ticket) === "guided";
+  const [reviewing, setReviewing] = useState(false);
+  const code = selection ? codeOf(selection) : "";
+  useEffect(() => setReviewing(false), [code]);
+
+  // Read before the wallet and before a series is picked, as `OrderPanel` does: a paused market is shut
+  // whoever is asking, so the ticket says so for the underlying on screen.
+  const underlying = useTerminal((state) => state.symbol);
+  const paused = tradeBlocker(usePerpMarketConfig(selection?.symbol ?? underlying)?.active);
 
   const onRightChain = isConnected && chainId === chain.id;
-  const problem = !onRightChain || !p
+  const problem = paused
+    ? paused
+    : sample || !onRightChain || !p
     ? undefined
     : !p.authorization
       ? "Options cannot be opened right now: the pricing service is not signing prices. Nothing is wrong with your funds. Try again later."
@@ -86,13 +110,15 @@ export function OptionTicket() {
         : p.sufficientCollateral === false
           ? "Not enough available collateral. Deposit first."
           : undefined;
-  const waiting = !selection
+  const waiting = paused
+    ? undefined
+    : !selection
     ? "Pick a call or put from the chain."
     : !env.apiUrl
       ? "Option prices are not available right now. Try again in a moment."
       : !valid
         ? "Enter a whole number of contracts."
-        : !onRightChain
+        : !onRightChain && !sample
           ? undefined
           : !settled || !p
             ? "Calculating…"
@@ -100,7 +126,7 @@ export function OptionTicket() {
   const blocker = problem ?? waiting;
 
   async function submit() {
-    if (!wallet || !selection || !p?.authorization || !address) return;
+    if (sample || paused || !wallet || !selection || !p?.authorization || !address) return;
     setSubmitting(true);
     setNotice(undefined);
 
@@ -137,25 +163,44 @@ export function OptionTicket() {
         tx,
       }),
     );
-    if (result.ok) setContracts("1");
+    if (result.ok) {
+      setContracts("1");
+      setReviewing(false);
+    }
     setSubmitting(false);
   }
 
-  // Option prices on this screen are real, from the pricing service. Opening one is not simulated yet:
-  // it needs a signed quote tied to a chain position, so a sample purchase would be a pretend one. Say so.
-  const action = sample ? (
+  const reviewButton = (
+    <Button variant={selection?.type === "PUT" ? "down" : "up"} className="w-full" disabled={Boolean(blocker) || !review?.rows} onClick={() => setReviewing(true)}>
+      Review order
+    </Button>
+  );
+  const action = paused ? (
     <>
       <Button variant="secondary" className="w-full" disabled>
-        Options are not in sample mode
+        Market paused
       </Button>
-      <p className="text-xs leading-snug text-muted">Prices here are real, but buying an option needs a connected wallet. Perpetuals work in sample mode.</p>
+      <p className="text-xs leading-snug text-muted">This market still shows prices, but it is not taking new orders right now.</p>
     </>
+  ) : sample ? (
+    guided ? (
+      reviewButton
+    ) : (
+      <>
+        <Button variant="secondary" className="w-full" disabled>
+          Options are not in sample mode
+        </Button>
+        <p className="text-xs leading-snug text-muted">{SAMPLE_REFUSAL}</p>
+      </>
+    )
   ) : !isConnected ? (
     <ConnectButton className="w-full" />
   ) : chainId !== chain.id ? (
     <Button variant="primary" className="w-full" onClick={() => switchChain({ chainId: chain.id })}>
       Switch to {chain.name}
     </Button>
+  ) : guided ? (
+    reviewButton
   ) : (
     <Button
       variant={selection?.type === "PUT" ? "down" : "up"}
@@ -167,8 +212,30 @@ export function OptionTicket() {
     </Button>
   );
 
+  if (guided && reviewing && review?.rows && selection && !paused && (sample || (onRightChain && wallet))) {
+    const label = `Buy ${selection.type === "CALL" ? "call" : "put"}`;
+    return (
+      <Panel title="Review order" sample={sample} actions={<TicketModeToggle />} className="h-full overflow-y-auto">
+        <div className="flex flex-col gap-3 p-3">
+          <ReviewStep
+            title={`${label}: ${codeOf(selection)}`}
+            rows={review.rows}
+            worstCase={review.worstCase}
+            note={notice}
+            blocked={sample ? SAMPLE_REFUSAL : (problem ?? (preview.isPlaceholderData ? "Updating the figures…" : undefined))}
+            busy={submitting}
+            confirmLabel={`Confirm: ${label.toLowerCase()}`}
+            confirmVariant={selection.type === "PUT" ? "down" : "up"}
+            onBack={() => setReviewing(false)}
+            onConfirm={submit}
+          />
+        </div>
+      </Panel>
+    );
+  }
+
   return (
-    <Panel title="Option order" sample={sample} className="h-full overflow-y-auto">
+    <Panel title="Option order" sample={sample} actions={<TicketModeToggle />} className="h-full overflow-y-auto">
       <VaultControls />
 
       <div className="flex flex-col gap-3 p-3">
@@ -217,6 +284,7 @@ export function OptionTicket() {
           </Disclosure>
         ) : null}
 
+        {!guided && review?.rows ? <ReviewStep title="Review: every figure" rows={review.rows} worstCase={review.worstCase} className="border-t border-line pt-1" /> : null}
         {preview.error ? <p className="text-down">Could not price this order. Check the connection and try again.</p> : null}
         {notice ? <p className="leading-snug text-down">{notice}</p> : null}
         {problem ? <p className="leading-snug text-down">{problem}</p> : waiting ? <p className="text-muted">{waiting}</p> : null}
