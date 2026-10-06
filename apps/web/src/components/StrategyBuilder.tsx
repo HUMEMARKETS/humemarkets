@@ -5,6 +5,7 @@ import { analyzeStrategy, payoffCurve, strategyLegs, STRATEGY_KINDS, type Leg, t
 import { useEffect, useMemo, useState } from "react";
 import { formatUnits } from "viem";
 import { useIndexPrice, useListedExpiries, useOptionChain, useOptionUnderlyings } from "@/hooks/queries";
+import { useAccountMode } from "@/hooks/useAccountMode";
 import { useNow } from "@/hooks/useNow";
 import { env } from "@/lib/env";
 import { symbolOf } from "@/lib/market";
@@ -83,6 +84,7 @@ export function StrategyBuilder() {
   const now = useNow();
   const { data: underlyings } = useOptionUnderlyings();
   const symbols = useMemo(() => underlyings?.map((market) => symbolOf(market.marketId)) ?? [], [underlyings]);
+  const sample = useAccountMode() === "sample";
   const { data: index } = useIndexPrice(symbol);
   const { data: listed } = useListedExpiries(symbol);
 
@@ -129,6 +131,9 @@ export function StrategyBuilder() {
     }
     return map;
   }, [chain]);
+
+  // A quote that failed never arrives, so without this the screen would read "Loading quotes…" for good.
+  const quotesFailed = chain.some((row) => row.call.isError || row.put.isError);
 
   const quantity = Number(quantityText);
   const validQuantity = /^\d+(\.\d+)?$/.test(quantityText) && quantity > 0;
@@ -211,12 +216,17 @@ export function StrategyBuilder() {
           </div>
           <p className="text-sm text-muted">{STRATEGY_SUMMARY[kind]}</p>
 
-          {!env.apiUrl ? (
+          {!env.apiUrl && !sample ? (
             <p className="text-down">NEXT_PUBLIC_API_URL is not set, so no option quotes can load.</p>
           ) : analysis.error ? (
             <p className="text-down">{analysis.error}.</p>
+
           ) : !result || !range || spot === undefined ? (
-            <p className="text-muted">Loading quotes…</p>
+            quotesFailed ? (
+              <p className="text-down">Option quotes could not be loaded right now. Try again in a moment.</p>
+            ) : (
+              <p className="text-muted">Loading quotes…</p>
+            )
           ) : (
             <div className="grid gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
               <div className="flex flex-col gap-4">

@@ -16,3 +16,6 @@ export const perpLabel = (marketId: Hex) => `${symbolOf(marketId)}-PERP`;
 export function tradeBlocker(active: boolean | undefined): string | undefined {
   return active === false ? "This market is paused. Prices keep updating; new positions are refused." : undefined;
 }
+
+/// What every screen says when the registry cannot be read, so two panels never word one failure two ways.
+export const REGISTRY_ERROR = "The registry could not be read right now. Try again in a moment.";

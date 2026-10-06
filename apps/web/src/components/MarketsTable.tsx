@@ -8,7 +8,7 @@ import type { MarketStats } from "@hume/sdk";
 import type { MarketConfig } from "@hume/types";
 import { useAllMarkets, useMarketOverviews, useMarketStats, useSettlementDecimals } from "@/hooks/queries";
 import { env } from "@/lib/env";
-import { fmt, fmtBps, fmtPrice } from "@/lib/format";
+import { fmtBps, fmtPrice, fmtUsdOrDash } from "@/lib/format";
 import { symbolOf } from "@/lib/market";
 import { useTerminal } from "@/stores/terminal";
 import { Change } from "./Change";
@@ -119,11 +119,11 @@ function MarketRow({ line, decimals }: { line: Line; decimals: number }) {
       <td className={cell}>
         <Change stats={stats} />
       </td>
-      <td className={cn(cell, "max-md:hidden")}>{stats && market.optionsEnabled ? `$${fmt(stats.optionsVolume24h, decimals, 0)}` : "–"}</td>
-      <td className={cn(cell, "max-md:hidden")}>{stats && market.perpsEnabled ? `$${fmt(stats.perpVolume24h, decimals, 0)}` : "–"}</td>
+      <td className={cn(cell, "max-md:hidden")}>{market.optionsEnabled ? fmtUsdOrDash(stats?.optionsVolume24h, decimals) : "–"}</td>
+      <td className={cn(cell, "max-md:hidden")}>{market.perpsEnabled ? fmtUsdOrDash(stats?.perpVolume24h, decimals) : "–"}</td>
       <td className={cn(cell, "max-md:hidden")}>
         <Figure loading={loading && market.perpsEnabled}>
-          {market.perpsEnabled && overview?.openInterest ? `$${fmt(overview.openInterest.total, decimals, 0)}` : "–"}
+          {market.perpsEnabled ? fmtUsdOrDash(overview?.openInterest?.total, decimals) : "–"}
         </Figure>
       </td>
       <td className={cn(cell, "max-sm:hidden")}>

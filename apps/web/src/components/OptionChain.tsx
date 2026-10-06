@@ -1,10 +1,11 @@
 "use client";
 
-import { Num, Panel, Segmented, cn } from "@hume/ui";
+import { Num, Panel, Segmented, Skeleton, cn } from "@hume/ui";
 import type { OptionSeriesStats, OptionSide, OptionsQuoteResult } from "@hume/sdk";
 import type { UseQueryResult } from "@tanstack/react-query";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useIndexPrice, useListedExpiries, useOptionChain, useOptionStats, useOptionUnderlyings } from "@/hooks/queries";
+import { useAccountMode } from "@/hooks/useAccountMode";
 import { useNow } from "@/hooks/useNow";
 import { env } from "@/lib/env";
 import { fmtPrice } from "@/lib/format";
@@ -58,16 +59,16 @@ interface Column {
   muted?: boolean;
 }
 
-/// "…" while the first answer loads, "–" when the service could not give one.
-function quoted(quote: Quote, format: (data: OptionsQuoteResult) => string): string {
-  return quote.data ? format(quote.data) : quote.isError ? "–" : "…";
+/// A pulse while the first answer loads, "–" when the service could not give one.
+function quoted(quote: Quote, format: (data: OptionsQuoteResult) => string): ReactNode {
+  return quote.data ? format(quote.data) : quote.isError ? "–" : <Skeleton className="w-10" />;
 }
 
 /// Open interest and volume come from the indexer. A series nobody has traded is not in its answer,
 /// which means zero, not "unknown".
-function counted(stats: Stats, context: CellContext, pick: (row: OptionSeriesStats) => bigint): string {
+function counted(stats: Stats, context: CellContext, pick: (row: OptionSeriesStats) => bigint): ReactNode {
   if (!env.apiUrl || stats.isError) return "–";
-  if (!stats.data) return "…";
+  if (!stats.data) return <Skeleton className="w-8" />;
   const row = stats.data.get(seriesKey(context.strike, context.side));
   return fmtContracts(row ? pick(row) : 0n);
 }
@@ -151,6 +152,7 @@ export function OptionChain() {
     if (selection && selection.symbol !== symbol) select(undefined);
   }, [symbol, selection, select]);
 
+  const sample = useAccountMode() === "sample";
   const { data: spot } = useIndexPrice(symbol);
   const { data: listed } = useListedExpiries(symbol);
 
@@ -227,7 +229,7 @@ export function OptionChain() {
       <div className="min-h-0 flex-1 overflow-auto">
         {marketsError ? (
           <p className="p-3 text-down">Could not read markets from the chain. Check NEXT_PUBLIC_RPC_URL.</p>
-        ) : !env.apiUrl ? (
+        ) : !env.apiUrl && !sample ? (
           <p className="p-3 text-muted">Option prices come from the pricing service. Set NEXT_PUBLIC_API_URL and start services/api and services/pricing to load the chain.</p>
         ) : symbols.length === 0 && !loadingMarkets ? (
           <p className="p-3 text-muted">No market on the registry has options enabled yet.</p>

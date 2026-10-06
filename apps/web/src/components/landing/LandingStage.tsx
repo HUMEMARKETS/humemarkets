@@ -346,7 +346,7 @@ export function LandingStage() {
                                             </div>
                                             <p className="mt-4 text-sm text-muted">No wallet needed. Start in sample mode. The contracts are unaudited: trade only what you can lose.</p>
                                             <ContractAddressBadge className="mt-6 md:hidden" />
-                                            <TrustStrip className="mt-12 max-w-[46rem] max-md:hidden" />
+                                            <TrustStrip className="mt-12 max-w-[46rem]" />
                                         </>
                                     ) : null}
                                     {index === SECTIONS.length - 1 ? (
@@ -364,9 +364,6 @@ export function LandingStage() {
                                                 <Plus />
                                             </Link>
                                         </div>
-                                    ) : null}
-                                    {index === SECTIONS.length - 1 ? (
-                                        <TrustStrip className="mt-8 max-w-[40rem] md:hidden" />
                                     ) : null}
                                 </div>
                             </div>

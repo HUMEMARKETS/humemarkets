@@ -5,7 +5,7 @@ import { humeRead } from "@/lib/hume";
 import { usePerpMarkets, useSettlementDecimals } from "@/hooks/queries";
 import { fmtBps, fmtUsd } from "@/lib/format";
 import { MONO } from "@/lib/frame";
-import { symbolOf } from "@/lib/market";
+import { REGISTRY_ERROR, symbolOf } from "@/lib/market";
 import { cn } from "@hume/ui";
 import type { Hex } from "@hume/types";
 
@@ -24,17 +24,26 @@ export function DocsLiveParameters() {
             queryKey: ["docs-market-parameters", market.marketId],
             queryFn: async () => {
                 const symbol = symbolOf(market.marketId as Hex);
-                const [info, fees] = await Promise.all([
-                    humeRead.perps.get(symbol),
+                // Risk settings come from RiskManager, not `perps.get`: that also reads the oracle, which
+                // reverts while an equity session is shut and would drop every row.
+                const [risk, fees] = await Promise.all([
+                    humeRead.risk.get(symbol),
                     humeRead.fees.get(symbol),
                 ]);
-                return { symbol, info, fees };
+                return { symbol, risk, fees };
             },
             staleTime: 30_000,
         })),
     });
 
-    if (markets.isError || decimals.isError) {
+    if (markets.isError) {
+        return (
+            <p role="alert" className="text-down">
+                {REGISTRY_ERROR}
+            </p>
+        );
+    }
+    if (decimals.isError || (rows.length > 0 && rows.every((row) => row.isError))) {
         return (
             <p role="alert" className="text-down">
                 Could not read the chain, so live parameters are not shown. Check the RPC connection and reload the page.
@@ -67,14 +76,14 @@ export function DocsLiveParameters() {
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
-                    {loaded.map(({ symbol, info, fees }) => (
+                    {loaded.map(({ symbol, risk, fees }) => (
                         <tr key={symbol}>
                             <th scope="row" className={cn(CELL, "text-left font-medium")}>{symbol}</th>
-                            <td className={CELL}>{info.risk.allowedLeverageTiers.map((tier) => `${tier}x`).join(", ")}</td>
-                            <td className={CELL}>{fmtBps(info.risk.initialMarginRateBps)}</td>
-                            <td className={CELL}>{fmtBps(info.risk.maintenanceMarginRateBps)}</td>
-                            <td className={CELL}>{fmtUsd(info.risk.maxPositionNotional, dec, 0)}</td>
-                            <td className={CELL}>{fmtUsd(info.risk.openInterestCap, dec, 0)}</td>
+                            <td className={CELL}>{risk.allowedLeverageTiers.map((tier) => `${tier}x`).join(", ")}</td>
+                            <td className={CELL}>{fmtBps(risk.initialMarginRateBps)}</td>
+                            <td className={CELL}>{fmtBps(risk.maintenanceMarginRateBps)}</td>
+                            <td className={CELL}>{fmtUsd(risk.maxPositionNotional, dec, 0)}</td>
+                            <td className={CELL}>{fmtUsd(risk.openInterestCap, dec, 0)}</td>
                             <td className={CELL}>{fmtBps(fees.takerFee)}</td>
                             <td className={CELL}>{fmtBps(fees.optionOpenFee)} / {fmtBps(fees.optionCloseFee)}</td>
                             <td className={CELL}>{fmtBps(fees.settlementFee)}</td>
