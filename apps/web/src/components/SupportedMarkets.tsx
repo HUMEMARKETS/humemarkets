@@ -1,7 +1,7 @@
 "use client";
 
 import { usePerpMarkets } from "@/hooks/queries";
-import { symbolOf } from "@/lib/market";
+import { REGISTRY_ERROR, symbolOf } from "@/lib/market";
 import { SYMBOL_LOGO } from "./BrandLogos";
 import { PanelState } from "./PanelState";
 
@@ -10,7 +10,7 @@ import { PanelState } from "./PanelState";
 export function SupportedMarkets() {
   const markets = usePerpMarkets();
   if (markets.isPending) return <PanelState>Reading the registry…</PanelState>;
-  if (markets.isError) return <PanelState>The registry could not be read right now. Try again in a moment.</PanelState>;
+  if (markets.isError) return <PanelState>{REGISTRY_ERROR}</PanelState>;
   if (markets.data.length === 0) return <PanelState>No market is listed yet. They appear here as the registry lists them.</PanelState>;
   return (
     <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">

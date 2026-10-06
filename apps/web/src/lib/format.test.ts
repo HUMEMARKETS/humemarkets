@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { stringToHex } from "viem";
-import { fmt, fmtBps, fmtCompact, fmtCompactUsd, fmtCountdown, fmtPrice, fmtSigned, fmtUsd, shortHash, signTone } from "./format.js";
+import { fmt, fmtBps, fmtCompact, fmtCompactUsd, fmtCountdown, fmtPrice, fmtSigned, fmtUsd, fmtUsdOrDash, shortHash, signTone } from "./format.js";
 import { perpLabel, symbolOf } from "./market.js";
 
 test("prices and money format from base units", () => {
@@ -47,4 +47,10 @@ test("a figure that rounds to zero shows no sign and no colour", () => {
   assert.equal(signTone(-40_000n, 6), "down");
   assert.equal(signTone(40_000n, 6), "up");
   assert.equal(signTone(undefined, 6), "muted");
+});
+
+test("a volume of zero or none is a dash, never $0", () => {
+  assert.equal(fmtUsdOrDash(0n, 6), "–");
+  assert.equal(fmtUsdOrDash(undefined, 6), "–");
+  assert.equal(fmtUsdOrDash(5_000_000_000n, 6), "$5,000");
 });

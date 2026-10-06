@@ -30,9 +30,9 @@ export const SECTIONS: LandingSection[] = [
         id: 'perpetuals',
         nav: 'Trade perpetuals',
         eyebrow: '01 / Perpetuals, plainly',
-        title: ['Long or short.', 'Any hour.'],
+        title: ['Long or short.', '24 hours, 5 days.'],
         summary:
-            'Take either side of a tokenized stock with leverage. No broker, no market hours, no waiting.',
+            'Take either side of a tokenized stock with leverage. No broker and no waiting. Prices update 24 hours a day, 5 days a week. When a feed is stale, the market shows its last close and refuses new orders.',
         caption: ['The perpetuals architecture', 'Three steps between you and a position'],
         tabs: [
             {

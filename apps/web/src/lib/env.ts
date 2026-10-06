@@ -35,6 +35,7 @@ const raw = {
   optionStrikeRows: process.env.NEXT_PUBLIC_OPTION_STRIKE_ROWS,
   optionExpiryDays: process.env.NEXT_PUBLIC_OPTION_EXPIRY_DAYS,
   optionExpiryHourUtc: process.env.NEXT_PUBLIC_OPTION_EXPIRY_HOUR_UTC,
+  sampleOptionIvBps: process.env.NEXT_PUBLIC_SAMPLE_OPTION_IV_BPS,
   creditPair: process.env.NEXT_PUBLIC_CREDIT_PAIR,
   creditSymbol: process.env.NEXT_PUBLIC_CREDIT_SYMBOL,
   creditExampleMaxLtvBps: process.env.NEXT_PUBLIC_CREDIT_EXAMPLE_MAX_LTV_BPS,
@@ -158,5 +159,8 @@ export const env = {
     strikeRows: wholeNumber(raw.optionStrikeRows, 5, 1, 20),
     expiryDays: wholeNumberList(raw.optionExpiryDays, [7, 14, 30], 1, 365),
     expiryHourUtc: wholeNumber(raw.optionExpiryHourUtc, 20, 0, 23),
+    /// The flat volatility sample mode prices options at. It mirrors the pricing service's `DEFAULT_IV_BPS`,
+    /// which is what that service quotes while it has too little price history to measure one.
+    sampleIvBps: wholeNumber(raw.sampleOptionIvBps, 5_000, 100, 50_000),
   },
 } as const;

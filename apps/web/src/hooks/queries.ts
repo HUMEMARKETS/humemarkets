@@ -1,6 +1,7 @@
 "use client";
 
 import { keepPreviousData, useQueries, useQuery } from "@tanstack/react-query";
+import { formatUnits } from "viem";
 import { useAccount } from "wagmi";
 import type { CandleInterval, Leaderboard, LeaderboardMetric, OpenInterestRange, PerpMarketInfo, PriceSet } from "@hume/sdk";
 import type { Address } from "@hume/types";
@@ -15,6 +16,7 @@ import { symbolOf } from "@/lib/market";
 import { env } from "@/lib/env";
 import { readHistoryAfter } from "@/lib/history";
 import { seriesKey } from "@/lib/options";
+import { sampleOptionQuote } from "@/lib/sampleOptions";
 
 // Fans out per market (overviewQuery, listedExpiriesQuery) across every mounted component — a
 // rate-limited/free-tier RPC provider hits 429s well before this many requests a second, so this
@@ -273,17 +275,42 @@ export function useListedExpiries(symbol: string) {
 /// One display-only quote (premium, IV, Greeks) per strike and side for one expiry. These are
 /// unsigned analytics from the pricing service, never the price an order is charged. The order
 /// ticket asks for a signed quote separately.
+///
+/// Sample mode prices each quote here from the index price instead. The pricing service needs
+/// `services/api`, its own process and a live oracle, and a shut equity session makes the oracle
+/// revert, so asking it would leave the chain and the strategy builder empty. The index price is the
+/// same sample-aware read the perps screens use, so a shut session prices at its last close.
 export function useOptionChain(symbol: string, expiry: bigint | undefined, strikes: bigint[]) {
+  const sample = useAccountMode() === "sample";
+  const { data: spot } = useIndexPrice(symbol);
   const sides = ["CALL", "PUT"] as const;
   const results = useQueries({
     queries: strikes.flatMap((strike) =>
-      sides.map((type) => ({
-        queryKey: ["option-chain-quote", symbol, String(expiry), strike.toString(), type],
-        queryFn: () => humeRead.options.quote({ underlying: symbol, type, strike, expiry: expiry!, contracts: 1 }),
-        enabled: Boolean(env.apiUrl && symbol && expiry),
-        refetchInterval: 15_000,
-        retry: false,
-      })),
+      sides.map((type) =>
+        sample
+          ? {
+              queryKey: ["option-chain-quote", symbol, String(expiry), strike.toString(), type, "sample", String(spot)],
+              queryFn: async () =>
+                sampleOptionQuote({
+                  spot: Number(formatUnits(spot!, 18)),
+                  strike: Number(formatUnits(strike, 18)),
+                  type,
+                  expiry: expiry!,
+                  now: Date.now(),
+                  volatility: env.options.sampleIvBps / 10_000,
+                }),
+              enabled: Boolean(symbol && expiry && spot),
+              placeholderData: keepPreviousData,
+              retry: false,
+            }
+          : {
+              queryKey: ["option-chain-quote", symbol, String(expiry), strike.toString(), type],
+              queryFn: () => humeRead.options.quote({ underlying: symbol, type, strike, expiry: expiry!, contracts: 1 }),
+              enabled: Boolean(env.apiUrl && symbol && expiry),
+              refetchInterval: 15_000,
+              retry: false,
+            },
+      ),
     ),
   });
   return strikes.map((strike, index) => ({ strike, call: results[index * 2]!, put: results[index * 2 + 1]! }));
