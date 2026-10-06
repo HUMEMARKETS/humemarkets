@@ -295,7 +295,7 @@ the plan was mainnet-first, with testnet arriving at Phase 15. What was already 
 | Already on mainnet                                   | Cost while idle | What happens to it                                     |
 | ---------------------------------------------------- | --------------- | ------------------------------------------------------ |
 | Contracts, 32 markets, deployed and paused           | $0              | Kept. Opening is an unpause in Phase 17                |
-| Railway `mainnet` environment: api, pricing, indexer | ~$0.21/day      | **Stopped in Phase T** (operator confirms), back in Phase L |
+| Railway `mainnet` environment: api, pricing, indexer | ~$0.21/day      | **Stopped in Phase T** (operator confirms), back in Phase L **in free-plan mode** |
 | Railway `mainnet` Postgres                           | a few cents/day | Kept, so the indexed history survives                  |
 
 **The ambers this closes on testnet, for $0:** Phase 8 (perp and option review figures in a browser,
@@ -310,11 +310,28 @@ environment at **$0.21–0.26/day** (0.60–0.74 GB RAM across four services). T
 burn, and the trial limits RAM to 1 GB, which two environments would pass. So Phase T stops the mainnet
 compute before it creates `testnet`, and Phase L does the reverse.
 
-**What the launch actually costs.** $1 a month cannot run the four always-on services (~$6.30/month
-measured), so unless the open lands while trial credit is left, the open needs **Railway Hobby, $5/month
-including $5 of usage** (about $1.30/month over at the measured rate), plus **$4–5 of USDG**. That is
-about **$10–11 for the first month**, not $5–6. The operator decides between paying that, opening while
-trial credit remains, or opening with USDG unfunded under Section 0.3.
+**What the launch costs: $0 of Railway, decided 2026-10-07.** The operator's whole mainnet budget is
+$5–6 and none of it goes to Railway: it stays on the **Free plan** ($1/month of usage) and upgrades only
+if the token does well. About $4.50–5 becomes USDG; the rest is gas for the keeper, liquidator and pauser
+floats and the crypto listing. Four always-on services cost ~$6.30/month, so **free-plan mode** replaces
+them. Railway bills measured usage, not allocation, so a service that runs for seconds costs cents:
+
+- **Postgres stays on**, ~$0.66/month (0.058 GB RAM, 0.5 GB volume, measured in Phase 5). It is the one
+  fixed cost. That leaves ~$0.34/month for everything else.
+- **Indexer, pricing sampler and keeper run as Railway cron jobs** (`*/5 * * * *`, the 5-minute minimum),
+  each doing one pass and exiting. The services already loop on `tick()` with a sleep, so the change is a
+  run-once flag, not a rewrite.
+- **API runs with Serverless on**: it sleeps after 5–10 minutes without outbound traffic and wakes on the
+  next request, so it is billed only while visitors are on the site. The first request after a sleep is
+  slow and may return 502 once.
+- **What 5 minutes costs the product:** charts get 5-minute price ticks, the leaderboard and any API
+  figure lag the chain by up to 5 minutes, and liquidations and option settlements wait up to 5 minutes
+  for the keeper. The launch caps bound what a late liquidation can lose. Settlement and liquidation read
+  the oracle on chain, so only timing changes, not correctness.
+- **The estimate is ~$1.2–1.6/month, over the $1 credit.** It is an estimate until Phase T measures it.
+  If the credit runs out, Railway stops the services until the credit renews, so a bad month ends with the
+  site dark for its last days. Phase T and Phase L record the measured figure and the operator decides;
+  nothing is upgraded without being asked.
 
 ---
 
@@ -325,15 +342,15 @@ trial credit remains, or opening with USDG unfunded under Section 0.3.
 | Contract deployments (credit, listings, caps, config)    | ~$0 of new spend      | Owner wallet's 0.000375 ETH already buys ~37M gas (Section 0.2)                                                                                                                                                                                                             |
 | Gas floats for keeper, liquidator, pauser                | ~0.00015 ETH          | Phase 16                                                                                                                                                                                                                                                                    |
 | **USDG for pool reserve, credit seed, real test trades** | **$4–5 — NOT FUNDED** | **Section 0.3. The one real blocker**                                                                                                                                                                                                                                       |
-| Railway — compute (indexer, API, pricing, keeper)        | ~$0.21–0.26/day       | **One environment at a time** (Section 0.9): `testnet` from Phase T to Phase L, `mainnet` from Phase L on. Trial: one-time $5 to ~2026-11-03. Free after that: $1/month, too little for four always-on services. Hobby: $5/month with $5 included, needed at the open unless trial credit remains |
+| Railway — compute (indexer, API, pricing, keeper)        | **$0 (Free plan)**    | **One environment at a time** (Section 0.9). `testnet` runs on trial credit (one-time $5, 30 days from 2026-10-04) in normal mode. `mainnet` runs in **free-plan mode** (cron plus Serverless) inside the $1/month credit. Upgrade only if the token does well |
 | **Railway Postgres — one per environment**               | **usage-based**       | Supabase's project limit was reached 2026-10-04. **Free and Trial cap the volume at 0.5 GB**, so `PRICE_TICK_RETENTION_DAYS` is sized against that in Phase 5. The `testnet` Postgres is created in Phase T and deleted in Phase L; the `mainnet` one is kept throughout |
 | Vercel (web)                                             | $0                    | Hobby plan. **DNS not pointed yet** — Section 0.1                                                                                                                                                                                                                           |
 | Domain                                                   | $0                    | Already held                                                                                                                                                                                                                                                                |
 | Testnet walkthrough, recording and sample mode           | $0                    | Faucet gas; the collateral token has a public `mint`                                                                                                                                                                                                                        |
 
-**Testnet stage: $0 beyond trial credit. Open: ~$10–11 for the first month** (Hobby $5 + ~$1.30 usage over
-+ $4–5 USDG), then ~$6.30/month, unless the open lands while trial credit remains (Section 0.9). Section
-0.3 still degrades rather than stalls if USDG is not funded.
+**Testnet stage: $0 beyond trial credit. Open: the $5–6 budget only**, about $4.50–5 as USDG and the rest
+as gas, with Railway on the Free plan (Section 0.9). Section 0.3 still degrades rather than stalls if USDG
+is short.
 
 ---
 
@@ -1306,12 +1323,20 @@ environment runs at a time, because the account is on the Trial ($5 one-time cre
 5. Print the testnet API URL and the NEXT_PUBLIC_* names a local web build needs to use it. Rerun
    docs/evidence/phase-8/walk-in-session.mjs against that build: simulator prices move at any hour, so
    the perp and option review figures can now be screenshotted.
+6. BUILD FREE-PLAN MODE (Section 0.9), because mainnet will run on Railway's Free plan, $1/month. Add a
+   run-once switch (an env flag) to the indexer and the keeper, so one pass does tick() and exits, and
+   fold the price sampler into the indexer pass. Set each as a Railway cron service, */5 * * * *. Turn
+   Serverless on for the API and redeploy it, since the setting applies only to a new container. Switch
+   the testnet environment to this mode, let it run 24 hours, and read the real burn per service from
+   Railway metrics. Project it to a month and compare it with $1. Keep the loop mode as the default so
+   nothing else changes.
 
 Acceptance: GET /v1/markets on the testnet API lists the testnet markets, with E2E as paused; the indexer
-is within 100 blocks of the testnet head; a simulator price change reaches GET /v1/prices; the mainnet
-compute is stopped (or kept, by my decision, recorded); the testnet daily burn is measured and the trial
-runway re-computed; the Phase 8 walk shows a perp and an option review with a liquidation line, at 375 and
-1440 px. Evidence in docs/evidence/phase-T.md.
+is within 100 blocks of the testnet head after a cron pass; a simulator price change reaches GET
+/v1/prices within 5 minutes; the mainnet compute is stopped (or kept, by my decision, recorded); the
+testnet burn is measured in normal mode and in free-plan mode, with the monthly projection against $1 and
+the trial runway re-computed; the Phase 8 walk shows a perp and an option review with a liquidation line,
+at 375 and 1440 px. Evidence in docs/evidence/phase-T.md.
 
 Do NOT commit, push, stage or open a PR — I do that myself. Leave the working tree dirty.
 Report pass, amber or fail, list the paths you changed, then print the Phase T Ship block for me to
@@ -1939,21 +1964,23 @@ that feature.**
 Run Phase L of docs/DEVELOPMENT_PHASES.md: bring mainnet back and fund it. Section 0.9 says why this is
 the first phase that spends money. Phase 15 must have passed.
 
-Before anything, ask me three things and wait: the open date, the Railway plan for the open (Hobby
-$5/month, or trial credit if any is left), and whether USDG is funded. Re-read the owner's USDG and ETH
+Before anything, ask me two things and wait: the open date, and whether USDG is funded. Railway stays on
+the Free plan: do not upgrade it and do not add a payment method. Re-read the owner's USDG and ETH
 balances on chain 4663; never trust an older figure.
 
 1. ASK ME, then delete the Railway testnet environment and its Postgres. Phase 15's recording must be
    captured first.
-2. Redeploy the mainnet api, pricing and indexer. The indexer resumes from its last block; wait until it
-   is within 100 blocks of the head.
+2. Redeploy the mainnet api, pricing and indexer in FREE-PLAN MODE (Section 0.9, built in Phase T): cron
+   */5 for the indexer, Serverless on for the API. The indexer resumes from its last block; wait until it
+   is within 100 blocks of the head after a pass.
 3. Re-size the launch caps against the real USDG balance (SetLaunchCaps.s.sol, Phase 4's rules). If USDG
    is unfunded, follow Section 0.3 exactly.
 4. Broadcast the Phase 11 mainnet listing (AddMainnetMarket.s.sol, BTC, ETH, LINK, GLD), paused like the
    rest. Record the hashes and a feed age per market.
 5. With USDG: seed the credit pair (Phase 9's mainnet half) and run one real perp and one real option
    round trip (Phase 6's). Deploy the Phase 10 leaderboard against the mainnet indexer.
-6. Re-measure the mainnet daily burn and confirm the plan covers it to the open plus 30 days.
+6. Re-measure the mainnet burn in free-plan mode, project it to a month, and compare it with the $1 credit.
+   Report the number. If it is over, say so and stop; do not upgrade anything.
 
 Acceptance: docs/evidence/phase-L.md holds every hash, the cap values and the balance they were sized
 against, the feed ages, the indexer lag, and a pass, amber or fail for the mainnet halves of Phases 6, 9,
@@ -2006,7 +2033,8 @@ liquidator address.
 Rehearse the fast pause on mainnet with the pauser key: pause, confirm trading is refused, unpause.
 Add alerts on oracle staleness, indexer lag, keeper wallet balance, BadDebt and any admin event — a
 chat webhook is enough, silence is not. Start the liquidation keeper and the option-settlement keeper
-against mainnet with KEEPER_REFRESH_FEEDS=false, because feed refresh is a testnet behaviour. Fill in
+against mainnet with KEEPER_REFRESH_FEEDS=false, because feed refresh is a testnet behaviour. Run them as
+a */5 cron in free-plan mode (Section 0.9) and state in the runbook that a liquidation can wait 5 minutes. Fill in
 the runbook: who pauses, how they are reached, what they pause first.
 
 Acceptance: a mainnet pause and unpause recorded with hashes;
