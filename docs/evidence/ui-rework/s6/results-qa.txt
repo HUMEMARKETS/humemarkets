@@ -1,0 +1,172 @@
+pass  CTA hrefs collected  (/ /activity /docs /features /leaderboard /lending /markets /options /perpetuals /portfolio)
+pass  CTA / resolves  (200)
+pass  CTA /activity resolves  (200)
+pass  CTA /docs resolves  (200)
+pass  CTA /features resolves  (200)
+pass  CTA /leaderboard resolves  (200)
+pass  CTA /lending resolves  (200)
+pass  CTA /markets resolves  (200)
+pass  CTA /options resolves  (200)
+pass  CTA /perpetuals resolves  (200)
+pass  CTA /portfolio resolves  (200)
+pass  click "Launch App" on the landing page goes to an app route  (→ /perpetuals)
+pass  click "Explore Markets" on the landing page goes to an app route  (→ /markets)
+pass  /features draws 20 explorer links
+pass  landing says "Verified source"
+pass  landing says "unaudited"
+pass  /perpetuals: renders in sample mode with no wallet
+pass  /perpetuals: no connect wall
+pass  /options: renders in sample mode with no wallet
+pass  /options: no connect wall
+pass  /strategies: renders in sample mode with no wallet
+pass  /strategies: no connect wall
+pass  /perpetuals: collateral field appears
+pass  /perpetuals: ticket shows estimated entry, liquidation price, fee and total before signing
+pass  /perpetuals: Open long is enabled
+pass  /perpetuals: the sample trade confirms, marked Simulated  (Open long)
+pass  /portfolio: the sample position is listed and marked sample
+pass  /strategies: builder shows a payoff or analysis, not a connect wall
+pass  landing 1440 light: theme applies (ground rgb(243, 241, 234))
+pass  landing 1440 light: no horizontal scroll
+pass  landing 1440 light: no error page
+pass  landing 1440 dark: theme applies (ground rgb(11, 11, 11))
+pass  landing 1440 dark: no horizontal scroll
+pass  landing 1440 dark: no error page
+pass  markets 1440 light: theme applies (ground rgb(243, 241, 234))
+pass  markets 1440 light: no horizontal scroll
+pass  markets 1440 light: no error page
+pass  markets 1440 dark: theme applies (ground rgb(11, 11, 11))
+pass  markets 1440 dark: no horizontal scroll
+pass  markets 1440 dark: no error page
+pass  perpetuals 1440 light: theme applies (ground rgb(243, 241, 234))
+pass  perpetuals 1440 light: no horizontal scroll
+pass  perpetuals 1440 light: no error page
+pass  perpetuals 1440 dark: theme applies (ground rgb(11, 11, 11))
+pass  perpetuals 1440 dark: no horizontal scroll
+pass  perpetuals 1440 dark: no error page
+pass  options 1440 light: theme applies (ground rgb(243, 241, 234))
+pass  options 1440 light: no horizontal scroll
+pass  options 1440 light: no error page
+pass  options 1440 dark: theme applies (ground rgb(11, 11, 11))
+pass  options 1440 dark: no horizontal scroll
+pass  options 1440 dark: no error page
+pass  strategies 1440 light: theme applies (ground rgb(243, 241, 234))
+pass  strategies 1440 light: no horizontal scroll
+pass  strategies 1440 light: no error page
+pass  strategies 1440 dark: theme applies (ground rgb(11, 11, 11))
+pass  strategies 1440 dark: no horizontal scroll
+pass  strategies 1440 dark: no error page
+pass  lending 1440 light: theme applies (ground rgb(243, 241, 234))
+pass  lending 1440 light: no horizontal scroll
+pass  lending 1440 light: no error page
+pass  lending 1440 dark: theme applies (ground rgb(11, 11, 11))
+pass  lending 1440 dark: no horizontal scroll
+pass  lending 1440 dark: no error page
+pass  portfolio 1440 light: theme applies (ground rgb(243, 241, 234))
+pass  portfolio 1440 light: no horizontal scroll
+pass  portfolio 1440 light: no error page
+pass  portfolio 1440 dark: theme applies (ground rgb(11, 11, 11))
+pass  portfolio 1440 dark: no horizontal scroll
+pass  portfolio 1440 dark: no error page
+pass  activity 1440 light: theme applies (ground rgb(243, 241, 234))
+pass  activity 1440 light: no horizontal scroll
+pass  activity 1440 light: no error page
+pass  activity 1440 dark: theme applies (ground rgb(11, 11, 11))
+pass  activity 1440 dark: no horizontal scroll
+pass  activity 1440 dark: no error page
+pass  leaderboard 1440 light: theme applies (ground rgb(243, 241, 234))
+pass  leaderboard 1440 light: no horizontal scroll
+pass  leaderboard 1440 light: no error page
+pass  leaderboard 1440 dark: theme applies (ground rgb(11, 11, 11))
+pass  leaderboard 1440 dark: no horizontal scroll
+pass  leaderboard 1440 dark: no error page
+pass  docs 1440 light: theme applies (ground rgb(243, 241, 234))
+pass  docs 1440 light: no horizontal scroll
+pass  docs 1440 light: no error page
+pass  docs 1440 dark: theme applies (ground rgb(11, 11, 11))
+pass  docs 1440 dark: no horizontal scroll
+pass  docs 1440 dark: no error page
+pass  features 1440 light: theme applies (ground rgb(243, 241, 234))
+pass  features 1440 light: no horizontal scroll
+pass  features 1440 light: no error page
+pass  features 1440 dark: theme applies (ground rgb(11, 11, 11))
+pass  features 1440 dark: no horizontal scroll
+pass  features 1440 dark: no error page
+pass  pnl-sample 1440 light: theme applies (ground rgb(243, 241, 234))
+pass  pnl-sample 1440 light: no horizontal scroll
+pass  pnl-sample 1440 light: no error page
+pass  pnl-sample 1440 dark: theme applies (ground rgb(11, 11, 11))
+pass  pnl-sample 1440 dark: no horizontal scroll
+pass  pnl-sample 1440 dark: no error page
+pass  landing 375 light: theme applies (ground rgb(243, 241, 234))
+pass  landing 375 light: no horizontal scroll
+pass  landing 375 light: no error page
+pass  landing 375 dark: theme applies (ground rgb(11, 11, 11))
+pass  landing 375 dark: no horizontal scroll
+pass  landing 375 dark: no error page
+pass  markets 375 light: theme applies (ground rgb(243, 241, 234))
+pass  markets 375 light: no horizontal scroll
+pass  markets 375 light: no error page
+pass  markets 375 dark: theme applies (ground rgb(11, 11, 11))
+pass  markets 375 dark: no horizontal scroll
+pass  markets 375 dark: no error page
+pass  perpetuals 375 light: theme applies (ground rgb(243, 241, 234))
+pass  perpetuals 375 light: no horizontal scroll
+pass  perpetuals 375 light: no error page
+pass  perpetuals 375 dark: theme applies (ground rgb(11, 11, 11))
+pass  perpetuals 375 dark: no horizontal scroll
+pass  perpetuals 375 dark: no error page
+pass  options 375 light: theme applies (ground rgb(243, 241, 234))
+pass  options 375 light: no horizontal scroll
+pass  options 375 light: no error page
+pass  options 375 dark: theme applies (ground rgb(11, 11, 11))
+pass  options 375 dark: no horizontal scroll
+pass  options 375 dark: no error page
+pass  strategies 375 light: theme applies (ground rgb(243, 241, 234))
+pass  strategies 375 light: no horizontal scroll
+pass  strategies 375 light: no error page
+pass  strategies 375 dark: theme applies (ground rgb(11, 11, 11))
+pass  strategies 375 dark: no horizontal scroll
+pass  strategies 375 dark: no error page
+pass  lending 375 light: theme applies (ground rgb(243, 241, 234))
+pass  lending 375 light: no horizontal scroll
+pass  lending 375 light: no error page
+pass  lending 375 dark: theme applies (ground rgb(11, 11, 11))
+pass  lending 375 dark: no horizontal scroll
+pass  lending 375 dark: no error page
+pass  portfolio 375 light: theme applies (ground rgb(243, 241, 234))
+pass  portfolio 375 light: no horizontal scroll
+pass  portfolio 375 light: no error page
+pass  portfolio 375 dark: theme applies (ground rgb(11, 11, 11))
+pass  portfolio 375 dark: no horizontal scroll
+pass  portfolio 375 dark: no error page
+pass  activity 375 light: theme applies (ground rgb(243, 241, 234))
+pass  activity 375 light: no horizontal scroll
+pass  activity 375 light: no error page
+pass  activity 375 dark: theme applies (ground rgb(11, 11, 11))
+pass  activity 375 dark: no horizontal scroll
+pass  activity 375 dark: no error page
+pass  leaderboard 375 light: theme applies (ground rgb(243, 241, 234))
+pass  leaderboard 375 light: no horizontal scroll
+pass  leaderboard 375 light: no error page
+pass  leaderboard 375 dark: theme applies (ground rgb(11, 11, 11))
+pass  leaderboard 375 dark: no horizontal scroll
+pass  leaderboard 375 dark: no error page
+pass  docs 375 light: theme applies (ground rgb(243, 241, 234))
+pass  docs 375 light: no horizontal scroll
+pass  docs 375 light: no error page
+pass  docs 375 dark: theme applies (ground rgb(11, 11, 11))
+pass  docs 375 dark: no horizontal scroll
+pass  docs 375 dark: no error page
+pass  features 375 light: theme applies (ground rgb(243, 241, 234))
+pass  features 375 light: no horizontal scroll
+pass  features 375 light: no error page
+pass  features 375 dark: theme applies (ground rgb(11, 11, 11))
+pass  features 375 dark: no horizontal scroll
+pass  features 375 dark: no error page
+pass  pnl-sample 375 light: theme applies (ground rgb(243, 241, 234))
+pass  pnl-sample 375 light: no horizontal scroll
+pass  pnl-sample 375 light: no error page
+pass  pnl-sample 375 dark: theme applies (ground rgb(11, 11, 11))
+pass  pnl-sample 375 dark: no horizontal scroll
+pass  pnl-sample 375 dark: no error page

@@ -1,4 +1,4 @@
-import { addressesForChain, protocolTokens, resolveChainId, type ChainId, type ContractAddresses } from "@hume/config";
+import { addressesForChain, chains, protocolTokens, resolveChainId, type ChainId, type ContractAddresses } from "@hume/config";
 import type { Address } from "@hume/types";
 import { pickProtocolToken } from "./protocolToken";
 
@@ -124,7 +124,9 @@ export const env = {
   /// straight from `rpcUrl`. The wallet still gets `rpcUrl` (see `chain` in wagmi.ts), because it
   /// broadcasts transactions itself and the proxy refuses writes.
   readRpcUrl: raw.rpcProxyUrl || raw.rpcUrl || "http://rpc-not-configured.invalid",
-  explorerUrl: raw.explorerUrl,
+  /// The environment wins; otherwise the explorer recorded for the chain in `@hume/config` (mainnet has one,
+  /// testnet has none recorded), so contract links work without extra setup.
+  explorerUrl: raw.explorerUrl || chains[chainId].blockExplorers?.default.url,
   apiUrl: raw.apiUrl ? raw.apiUrl.replace(/\/+$/, "") : undefined,
   addresses: resolveAddresses(),
   /// Absent until a token exists for this chain.
