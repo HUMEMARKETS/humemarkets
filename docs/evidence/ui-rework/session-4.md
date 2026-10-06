@@ -122,6 +122,23 @@ Results on the solid build (production, `next start`):
 - `s4/hero-assembly-1440.mp4`: the hero voxels sweeping in on page load, captured headed on the GPU.
 - `s4/rail-click-1440.mp4`: re-recorded on the solid world.
 
+### Camera restored (operator follow-up)
+
+The operator preferred the first camera, so the solid rework's camera is reverted. Back:
+
+- the Catmull-Rom path through stations that weave along −z, 13 apart;
+- the eye 10.5 back and 2 up, swinging ±0.34 rad between stations;
+- a continuous glide with no dwell, no arc, no pointer parallax and no idle bob;
+- fog 12–30;
+- neighbouring stations blended by `smooth(1 − |d|·0.8)` with the 0.86–1 scale pulse.
+
+Solids cannot fade the way lines did, so each kit item got a `fade()` (material opacity), and stations
+expose `setFade`. The camera is closer than in the keyframe version, so each station is scaled down to keep
+the on-screen size from the solid rework (`fit` in `buildStations`). Nothing else changed. Results:
+`check.mjs` **73 pass, 0 fail**. GPU trace: **59.8 fps**, p99 16.8 ms, longest main-thread task 17.1 ms,
+no long task, **CLS 0**, full scroll to Vision. Both recordings were re-taken. The pointer parallax line in
+the contract's §8 motion row is removed again.
+
 ## End-of-session commands
 
 | Command | Result |

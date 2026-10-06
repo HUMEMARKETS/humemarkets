@@ -3,8 +3,8 @@ import * as THREE from 'three';
 import { symbolOf } from '@/lib/market';
 import { label, orbitRing, particles, seeded, segments, solid, voxelField, type Palette, type VoxelSpec } from './kit';
 
-/// The landing world, after robinid.vercel.app: one lit, solid station per section, laid along the x axis,
-/// with a camera that rests on each and arcs between them. Every colour is a page token (`Palette`).
+/// The landing world: one lit, solid station per section (after robinid.vercel.app), laid along a path the
+/// camera travels as the page scrolls. Every colour is a page token (`Palette`).
 
 export type { Palette } from './kit';
 
@@ -12,57 +12,51 @@ export interface Station {
     group: THREE.Group;
     /// Starts the voxel assembly; called the first time the station comes into view.
     begin(now: number): void;
+    /// 1 when the camera is at the station, falling to 0 as it travels away.
+    setFade(amount: number): void;
     update(time: number, now: number): void;
     recolor(): void;
     dispose(): void;
 }
 
-/// Distance between two stations along x.
-const SPACING = 17;
+/// Distance between two stations along the path, in world units.
+const SPACING = 13;
+/// How far the camera stands back from the station it is looking at.
+const STAND_OFF = 10.5;
+const EYE_HEIGHT = 2;
 
-/// Where the camera stands and looks for each station, relative to it. A negative x pushes the station right,
-/// clear of the copy column. Between two stations the camera
-/// holds for the first and last fifth of the scroll, glides in between, and rises in an arc.
-const KEYFRAMES: { pos: THREE.Vector3; look: THREE.Vector3 }[] = [
-    { pos: new THREE.Vector3(-0.4, 1.3, 13.5), look: new THREE.Vector3(-0.4, 0.2, 0) },
-    { pos: new THREE.Vector3(-0.2, 1.8, 12), look: new THREE.Vector3(-0.8, 0.3, 0) },
-    { pos: new THREE.Vector3(0, 3.4, 12.5), look: new THREE.Vector3(0, -0.4, 0) },
-    { pos: new THREE.Vector3(-0.8, 2.4, 12.5), look: new THREE.Vector3(0, 0, 0) },
-    { pos: new THREE.Vector3(0, 2.2, 12.5), look: new THREE.Vector3(0, 0.4, 0) },
-    { pos: new THREE.Vector3(0.4, 2.4, 12.5), look: new THREE.Vector3(0, 0.3, 0) },
-    { pos: new THREE.Vector3(-0.2, 1.6, 15), look: new THREE.Vector3(-0.4, 0, 0) },
-];
+const stationPosition = (index: number) => new THREE.Vector3(Math.sin(index * 1.3) * 3.2, 0, -index * SPACING);
 
-const smoothstep = (from: number, to: number, value: number) => {
-    const t = Math.min(1, Math.max(0, (value - from) / (to - from)));
-    return t * t * (3 - 2 * t);
-};
-
-const scratch = new THREE.Vector3();
-
-/// The camera for a fractional section index.
-export function cameraAt(progress: number, pos: THREE.Vector3, look: THREE.Vector3) {
-    const last = KEYFRAMES.length - 1;
-    const from = Math.min(last, Math.max(0, Math.floor(progress)));
-    const to = Math.min(from + 1, last);
-    const blend = smoothstep(0.2, 0.8, progress - from);
-    const a = KEYFRAMES[from]!;
-    const b = KEYFRAMES[to]!;
-    pos.set(SPACING * from, 0, 0).add(a.pos).lerp(scratch.set(SPACING * to, 0, 0).add(b.pos), blend);
-    look.set(SPACING * from, 0, 0).add(a.look).lerp(scratch.set(SPACING * to, 0, 0).add(b.look), blend);
-    if (from !== to) pos.y += 1.4 * Math.sin(Math.PI * blend);
+/// The camera's path and the path of the point it looks at, through every station. The camera swings
+/// from one side to the other between stations, so the travel reads as moving through a place.
+export function buildPath(count: number) {
+    const look: THREE.Vector3[] = [];
+    const eye: THREE.Vector3[] = [];
+    for (let index = 0; index < count; index += 1) {
+        const station = stationPosition(index);
+        const angle = index % 2 === 0 ? -0.34 : 0.34;
+        look.push(station.clone().add(new THREE.Vector3(0, 0.1, 0)));
+        eye.push(station.clone().add(new THREE.Vector3(Math.sin(angle) * STAND_OFF, EYE_HEIGHT, Math.cos(angle) * STAND_OFF)));
+    }
+    return {
+        eye: new THREE.CatmullRomCurve3(eye, false, 'centripetal'),
+        look: new THREE.CatmullRomCurve3(look, false, 'centripetal'),
+    };
 }
 
 /// Everything a station owns, so recolouring and disposing are one loop.
 function bag() {
-    const items: { recolor(): void; dispose(): void }[] = [];
+    const items: { recolor(): void; dispose(): void; fade(amount: number): void }[] = [];
     return {
-        add<T extends { recolor(): void; dispose(): void }>(item: T): T {
+        add<T extends { recolor(): void; dispose(): void; fade(amount: number): void }>(item: T): T {
             items.push(item);
             return item;
         },
         recolor() {
             for (const item of items) item.recolor();
+        },
+        setFade(amount: number) {
+            for (const item of items) item.fade(amount);
         },
         dispose() {
             for (const item of items) item.dispose();
@@ -149,6 +143,10 @@ function hero(palette: Palette, detail: number) {
     const station: Station = {
         group,
         begin: band.begin,
+        setFade(amount) {
+            own.setFade(amount);
+            for (const tag of tags) tag.fade(amount);
+        },
         update(time, now) {
             band.tick(now);
             spin.rotation.y = time * 0.12;
@@ -246,6 +244,10 @@ function globe(palette: Palette, detail: number) {
     };
     const station: Station = {
         group,
+        setFade(amount) {
+            own.setFade(amount);
+            pillars?.fade(amount);
+        },
         begin(now) {
             if (startedAt < 0) startedAt = now;
             tiles.begin(now);
@@ -306,6 +308,7 @@ function payoffField(palette: Palette, detail: number): Station {
     bars.mesh.position.x = frame.lines.position.x = 0.6;
     return {
         group,
+        setFade: own.setFade,
         begin: bars.begin,
         update(time, now) {
             specs.forEach((spec, index) => {
@@ -378,6 +381,7 @@ function vaultGauge(palette: Palette, detail: number): Station {
     gauge.add(hub.mesh);
     return {
         group,
+        setFade: own.setFade,
         begin(now) {
             vault.begin(now);
             dial.begin(now);
@@ -433,6 +437,7 @@ function network(palette: Palette, detail: number): Station {
     group.add(peers.lines, follows.lines, pulses.points);
     return {
         group,
+        setFade: own.setFade,
         begin: traders.begin,
         update(time, now) {
             specs.forEach((spec, index) => {
@@ -495,6 +500,7 @@ function contractBlocks(palette: Palette, deployed: readonly boolean[]): Station
     let lit = -1;
     return {
         group,
+        setFade: own.setFade,
         begin: blocks.begin,
         update(time, now) {
             blocks.tick(now);
@@ -544,6 +550,7 @@ function resolved(palette: Palette, detail: number): Station {
     group.add(ring.mesh);
     return {
         group,
+        setFade: own.setFade,
         begin(now) {
             band.begin(now);
             ring.begin(now);
@@ -559,7 +566,7 @@ function resolved(palette: Palette, detail: number): Station {
     };
 }
 
-/// The seven stations in section order, each placed along x. `detail` scales instance counts down on a
+/// The seven stations in section order, each placed on the path. `detail` scales instance counts down on a
 /// phone. `setMarkets` feeds the registry list to the stations that draw it.
 export function buildStations(palette: Palette, detail: number, deployed: readonly boolean[]) {
     const start = hero(palette, detail);
@@ -573,7 +580,13 @@ export function buildStations(palette: Palette, detail: number, deployed: readon
         contractBlocks(palette, deployed),
         resolved(palette, detail),
     ];
-    stations.forEach((station, index) => station.group.position.set(SPACING * index, 0, 0));
+    // The stations were sized for a camera 12 to 15 units away; the path stands 10.5 away, so each is scaled
+    // to keep the size it had on screen.
+    const fit = [0.78, 0.875, 0.84, 0.84, 0.84, 0.84, 0.62];
+    stations.forEach((station, index) => {
+        station.group.position.copy(stationPosition(index));
+        station.group.scale.multiplyScalar(fit[index] ?? 1);
+    });
     return {
         stations,
         setMarkets(list: readonly MarketConfig[]) {
