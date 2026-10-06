@@ -7,8 +7,8 @@ export const alt = "HUME — Global markets, onchain.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-// Social preview. The same palette as globals.css, through `theme-colors.ts`: charcoal ground, ivory
-// text, stone for the line beneath it. The mark is a pale metal ring; no accent is spent here.
+// Social preview. The same palette as the light theme in globals.css, through `theme-colors.ts`: ivory
+// ground, charcoal text, stone for the line beneath it. The mark is a pale metal ring; no accent is spent here.
 export default async function OpengraphImage() {
   const mark = await readFile(join(process.cwd(), "src/assets/hume-mark.png"));
   const markSrc = `data:image/png;base64,${mark.toString("base64")}`;
