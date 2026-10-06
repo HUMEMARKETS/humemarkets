@@ -1,10 +1,11 @@
 'use client';
 
+import type { MarketConfig } from '@hume/types';
 import { useEffect, useRef, type MutableRefObject } from 'react';
 import * as THREE from 'three';
 import type { Theme } from '@/lib/theme';
 import { THEME_GROUND, THEME_MUTED, THEME_TEXT } from '@/lib/theme-colors';
-import { buildGround, buildPath, buildStations, type Palette } from './scenes';
+import { buildGround, buildStations, cameraAt, type Palette } from './scenes';
 
 /// What the landing stage drives each frame: the scroll position as a fractional section index, already
 /// damped, so the camera, the rail and the copy share one value.
@@ -15,8 +16,8 @@ export interface World {
 interface Props {
     world: MutableRefObject<World | null>;
     theme: Theme;
-    /// Ticks on the markets globe: one per market on the registry.
-    markets: number;
+    /// The registry's markets: labels around the hero and pillars on the globe.
+    markets: readonly MarketConfig[];
     /// One block per contract in the deployment; `false` is a contract with no address here.
     deployed: readonly boolean[];
     onFailed: () => void;
@@ -27,18 +28,17 @@ function readColor(name: string, fallback: string, into: THREE.Color) {
     into.set(value || fallback);
 }
 
-const smooth = (value: number) => {
-    const clamped = Math.min(1, Math.max(0, value));
-    return clamped * clamped * (3 - 2 * clamped);
-};
+/// Where the light stands relative to the point the camera looks at, so every station is lit alike.
+const SUN = new THREE.Vector3(6, 10, 8);
 
-/// The one WebGL canvas behind the landing page. Every section's station lives in one world and the
-/// camera travels a path through them, so moving between sections is a journey, never a cut. The
-/// canvas never remounts while the page scrolls; a theme change recolours it in place.
+/// The one WebGL canvas behind the landing page, after robinid.vercel.app: lit solid stations in one world,
+/// a camera that rests on each and arcs between them, and a light parallax on the pointer. Each station's
+/// voxels assemble the first time it comes into view. The canvas never remounts while the page scrolls; a
+/// theme change recolours it in place.
 export function LandingCanvas({ world, theme, markets, deployed, onFailed }: Props) {
     const host = useRef<HTMLDivElement>(null);
     const canvas = useRef<HTMLCanvasElement>(null);
-    const api = useRef<{ recolor(): void; setMarkets(count: number): void } | null>(null);
+    const api = useRef<{ recolor(): void; setMarkets(list: readonly MarketConfig[]): void } | null>(null);
     const failed = useRef(onFailed);
     failed.current = onFailed;
     const blocks = useRef(deployed);
@@ -72,17 +72,19 @@ export function LandingCanvas({ world, theme, markets, deployed, onFailed }: Pro
         readPalette();
 
         const scene = new THREE.Scene();
-        const fog = new THREE.Fog(ground, 12, 30);
+        const fog = new THREE.Fog(ground, 16, 46);
         scene.fog = fog;
-        const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 80);
+        const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 120);
+        scene.add(new THREE.AmbientLight(undefined, 1.5));
+        const sun = new THREE.DirectionalLight(undefined, 2.2);
+        scene.add(sun, sun.target);
 
-        // A phone draws about half the segments.
-        const detail = hostEl.clientWidth < 768 ? 0.5 : 1;
-        const { stations, setMarketCount } = buildStations(palette, detail, blocks.current);
+        // A phone draws about half the instances.
+        const detail = hostEl.clientWidth < 768 ? 0.6 : 1;
+        const { stations, setMarkets } = buildStations(palette, detail, blocks.current);
         for (const station of stations) scene.add(station.group);
         const floor = buildGround(palette);
         scene.add(floor.object);
-        const path = buildPath(stations.length);
         const eye = new THREE.Vector3();
         const look = new THREE.Vector3();
 
@@ -93,14 +95,14 @@ export function LandingCanvas({ world, theme, markets, deployed, onFailed }: Pro
                 for (const station of stations) station.recolor();
                 floor.recolor();
             },
-            setMarkets: setMarketCount,
+            setMarkets,
         };
 
         function resize() {
             const width = hostEl!.clientWidth;
             const height = hostEl!.clientHeight;
             if (width === 0 || height === 0) return;
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, width < 768 ? 1.5 : 2));
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, width < 768 ? 1.4 : 1.75));
             renderer.setSize(width, height, false);
             const buffer = renderer.getDrawingBufferSize(new THREE.Vector2());
             floor.setSize(buffer.x, buffer.y);
@@ -114,24 +116,41 @@ export function LandingCanvas({ world, theme, markets, deployed, onFailed }: Pro
         const observer = new ResizeObserver(resize);
         observer.observe(hostEl);
 
+        // A light parallax on the mouse, eased. Touch does not move the camera.
+        const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
+        const onPointer = (event: PointerEvent) => {
+            if (event.pointerType !== 'mouse') return;
+            pointer.tx = (event.clientX / window.innerWidth - 0.5) * 2;
+            pointer.ty = -(event.clientY / window.innerHeight - 0.5) * 2;
+        };
+        window.addEventListener('pointermove', onPointer, { passive: true });
+
         let time = 0;
+        const begun = stations.map(() => false);
         world.current = {
             frame(progress, dt) {
-                const t = THREE.MathUtils.clamp(progress / (stations.length - 1), 0, 1);
-                path.eye.getPoint(t, eye);
-                path.look.getPoint(t, look);
-                camera.position.copy(eye);
-                camera.lookAt(look);
-                floor.follow(eye);
                 time += dt;
+                const now = performance.now() / 1000;
+                const ease = 1 - Math.pow(1 - 0.06, dt * 60);
+                pointer.x += (pointer.tx - pointer.x) * ease;
+                pointer.y += (pointer.ty - pointer.y) * ease;
+                cameraAt(progress, eye, look);
+                camera.position.copy(eye);
+                camera.position.x += 0.9 * pointer.x;
+                camera.position.y += 0.55 * pointer.y + 0.08 * Math.sin(0.4 * time);
+                camera.lookAt(look);
+                sun.position.copy(look).add(SUN);
+                sun.target.position.copy(look);
+                floor.follow(eye);
                 stations.forEach((station, index) => {
-                    // Neighbouring stations blend across the whole distance between them, never at a threshold.
-                    const fade = smooth(1 - Math.abs(index - progress) * 0.8);
-                    station.group.visible = fade > 0.01;
+                    // Only the stations beside the camera are drawn; the fog hides the rest.
+                    station.group.visible = Math.abs(progress - index) < 1.05;
                     if (!station.group.visible) return;
-                    station.setFade(fade);
-                    station.group.rotation.y += station.spin * dt;
-                    station.idle(time);
+                    if (!begun[index]) {
+                        begun[index] = true;
+                        station.begin(now);
+                    }
+                    station.update(time, now);
                 });
                 renderer.render(scene, camera);
             },
@@ -141,6 +160,7 @@ export function LandingCanvas({ world, theme, markets, deployed, onFailed }: Pro
             world.current = null;
             api.current = null;
             observer.disconnect();
+            window.removeEventListener('pointermove', onPointer);
             for (const station of stations) station.dispose();
             floor.dispose();
             renderer.dispose();
@@ -157,7 +177,7 @@ export function LandingCanvas({ world, theme, markets, deployed, onFailed }: Pro
 
     return (
         <div ref={host} aria-hidden="true" className="absolute inset-0 overflow-hidden">
-            <canvas ref={canvas} className="absolute inset-0 size-full opacity-70 md:opacity-100" />
+            <canvas ref={canvas} className="absolute inset-0 size-full opacity-80 md:opacity-100" />
         </div>
     );
 }

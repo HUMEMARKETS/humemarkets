@@ -1,436 +1,593 @@
+import type { MarketConfig } from '@hume/types';
 import * as THREE from 'three';
+import { symbolOf } from '@/lib/market';
+import { label, orbitRing, particles, seeded, segments, solid, voxelField, type Palette, type VoxelSpec } from './kit';
 
-/// The landing world: one wireframe station per section, laid along a path the camera travels as the
-/// page scrolls. Every colour is a token read from the page (`Palette`), so the world follows the theme.
+/// The landing world, after robinid.vercel.app: one lit, solid station per section, laid along the x axis,
+/// with a camera that rests on each and arcs between them. Every colour is a page token (`Palette`).
 
-export interface Palette {
-    text: THREE.Color;
-    muted: THREE.Color;
-}
-
-type Tone = keyof Palette;
+export type { Palette } from './kit';
 
 export interface Station {
     group: THREE.Group;
-    /// Radians per second of the slow turn the station makes while motion is on.
-    spin: number;
-    setFade(fade: number): void;
-    idle(time: number): void;
+    /// Starts the voxel assembly; called the first time the station comes into view.
+    begin(now: number): void;
+    update(time: number, now: number): void;
     recolor(): void;
     dispose(): void;
 }
 
-/// Distance between two stations along the path, in world units.
-const SPACING = 13;
-/// How far the camera stands back from the station it is looking at.
-const STAND_OFF = 10.5;
-const EYE_HEIGHT = 2;
+/// Distance between two stations along x.
+const SPACING = 17;
 
-export const stationPosition = (index: number) =>
-    new THREE.Vector3(Math.sin(index * 1.3) * 3.2, 0, -index * SPACING);
+/// Where the camera stands and looks for each station, relative to it. A negative x pushes the station right,
+/// clear of the copy column. Between two stations the camera
+/// holds for the first and last fifth of the scroll, glides in between, and rises in an arc.
+const KEYFRAMES: { pos: THREE.Vector3; look: THREE.Vector3 }[] = [
+    { pos: new THREE.Vector3(-0.4, 1.3, 13.5), look: new THREE.Vector3(-0.4, 0.2, 0) },
+    { pos: new THREE.Vector3(-0.2, 1.8, 12), look: new THREE.Vector3(-0.8, 0.3, 0) },
+    { pos: new THREE.Vector3(0, 3.4, 12.5), look: new THREE.Vector3(0, -0.4, 0) },
+    { pos: new THREE.Vector3(-0.8, 2.4, 12.5), look: new THREE.Vector3(0, 0, 0) },
+    { pos: new THREE.Vector3(0, 2.2, 12.5), look: new THREE.Vector3(0, 0.4, 0) },
+    { pos: new THREE.Vector3(0.4, 2.4, 12.5), look: new THREE.Vector3(0, 0.3, 0) },
+    { pos: new THREE.Vector3(-0.2, 1.6, 15), look: new THREE.Vector3(-0.4, 0, 0) },
+];
 
-/// The camera's path and the path of the point it looks at, through every station. The camera swings
-/// from one side to the other between stations, so the travel reads as moving through a place.
-export function buildPath(count: number) {
-    const look: THREE.Vector3[] = [];
-    const eye: THREE.Vector3[] = [];
-    for (let index = 0; index < count; index += 1) {
-        const station = stationPosition(index);
-        const angle = index % 2 === 0 ? -0.34 : 0.34;
-        look.push(station.clone().add(new THREE.Vector3(0, 0.1, 0)));
-        eye.push(
-            station
-                .clone()
-                .add(
-                    new THREE.Vector3(
-                        Math.sin(angle) * STAND_OFF,
-                        EYE_HEIGHT,
-                        Math.cos(angle) * STAND_OFF,
-                    ),
-                ),
-        );
-    }
+const smoothstep = (from: number, to: number, value: number) => {
+    const t = Math.min(1, Math.max(0, (value - from) / (to - from)));
+    return t * t * (3 - 2 * t);
+};
+
+const scratch = new THREE.Vector3();
+
+/// The camera for a fractional section index.
+export function cameraAt(progress: number, pos: THREE.Vector3, look: THREE.Vector3) {
+    const last = KEYFRAMES.length - 1;
+    const from = Math.min(last, Math.max(0, Math.floor(progress)));
+    const to = Math.min(from + 1, last);
+    const blend = smoothstep(0.2, 0.8, progress - from);
+    const a = KEYFRAMES[from]!;
+    const b = KEYFRAMES[to]!;
+    pos.set(SPACING * from, 0, 0).add(a.pos).lerp(scratch.set(SPACING * to, 0, 0).add(b.pos), blend);
+    look.set(SPACING * from, 0, 0).add(a.look).lerp(scratch.set(SPACING * to, 0, 0).add(b.look), blend);
+    if (from !== to) pos.y += 1.4 * Math.sin(Math.PI * blend);
+}
+
+/// Everything a station owns, so recolouring and disposing are one loop.
+function bag() {
+    const items: { recolor(): void; dispose(): void }[] = [];
     return {
-        eye: new THREE.CatmullRomCurve3(eye, false, 'centripetal'),
-        look: new THREE.CatmullRomCurve3(look, false, 'centripetal'),
-    };
-}
-
-/// Line segments and their materials for one station, so fading, recolouring and disposing are one loop.
-function kit(palette: Palette) {
-    const group = new THREE.Group();
-    const parts: { material: THREE.LineBasicMaterial; base: number; tone: Tone }[] = [];
-    const geometries: THREE.BufferGeometry[] = [];
-
-    function lines(
-        positions: number[],
-        base: number,
-        tone: Tone = 'text',
-        parent: THREE.Object3D = group,
-    ): THREE.LineSegments {
-        const geometry = new THREE.BufferGeometry();
-        geometry.setAttribute(
-            'position',
-            new THREE.BufferAttribute(new Float32Array(positions), 3),
-        );
-        const material = new THREE.LineBasicMaterial({
-            color: palette[tone],
-            transparent: true,
-            opacity: base,
-            depthWrite: false,
-        });
-        const segments = new THREE.LineSegments(geometry, material);
-        segments.frustumCulled = false;
-        parent.add(segments);
-        geometries.push(geometry);
-        parts.push({ material, base, tone });
-        return segments;
-    }
-
-    function station(spin: number, idle: (time: number) => void = () => undefined): Station {
-        return {
-            group,
-            spin,
-            idle,
-            setFade(fade) {
-                for (const part of parts) part.material.opacity = part.base * fade;
-            },
-            recolor() {
-                for (const part of parts) part.material.color.copy(palette[part.tone]);
-            },
-            dispose() {
-                for (const geometry of geometries) geometry.dispose();
-                for (const part of parts) part.material.dispose();
-            },
-        };
-    }
-
-    return { group, lines, station };
-}
-
-function circle(radius: number, segments: number, y = 0): number[] {
-    const out: number[] = [];
-    for (let index = 0; index < segments; index += 1) {
-        const a = (index / segments) * Math.PI * 2;
-        const b = ((index + 1) / segments) * Math.PI * 2;
-        out.push(Math.cos(a) * radius, y, Math.sin(a) * radius, Math.cos(b) * radius, y, Math.sin(b) * radius);
-    }
-    return out;
-}
-
-/// A deterministic random sequence, so the trader network is the same on every visit.
-function seeded(seed: number) {
-    let state = seed >>> 0;
-    return () => {
-        state = (state + 0x6d2b79f5) >>> 0;
-        let t = state;
-        t = Math.imul(t ^ (t >>> 15), t | 1);
-        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-}
-
-/// The HUME mark, a Möbius ring, as a wire band. `turn` is how much of the loop is drawn: the hero
-/// opens on an unfinished loop and the closing section resolves it.
-function mobius(palette: Palette, detail: number, turn: number, rows: number): Station {
-    const { group, lines, station } = kit(palette);
-    const radius = 1.5;
-    const width = 0.55;
-    const end = Math.PI * 2 * turn;
-    const at = (u: number, v: number) => [
-        (radius + v * Math.cos(u / 2)) * Math.cos(u),
-        v * Math.sin(u / 2),
-        (radius + v * Math.cos(u / 2)) * Math.sin(u),
-    ];
-    const along: number[] = [];
-    const steps = Math.round(150 * detail * turn);
-    for (let row = 0; row <= rows; row += 1) {
-        const v = -width + (2 * width * row) / rows;
-        for (let step = 0; step < steps; step += 1) {
-            along.push(...at((end * step) / steps, v), ...at((end * (step + 1)) / steps, v));
-        }
-    }
-    const across: number[] = [];
-    const ribs = Math.round(56 * detail * turn);
-    for (let rib = 0; rib <= ribs; rib += 1) {
-        const u = (end * rib) / ribs;
-        across.push(...at(u, -width), ...at(u, width));
-    }
-    // The tilt sits on an inner group, so the station's spin turns the ring about its own upright axis.
-    const tilt = new THREE.Group();
-    tilt.rotation.set(0.95, 0, 0.18);
-    group.add(tilt);
-    lines(along, 0.75, 'text', tilt);
-    lines(across, 0.35, 'muted', tilt);
-    return station(0.14);
-}
-
-/// Markets: a wire globe with one tick for each listed market, so the globe is as full as the registry.
-function globe(palette: Palette, detail: number) {
-    const { group, lines, station } = kit(palette);
-    const radius = 1.9;
-    const segments = Math.round(72 * detail);
-    const shell: number[] = [];
-    for (let lat = 1; lat < 8; lat += 1) {
-        const phi = (Math.PI * lat) / 8;
-        const ring = circle(Math.sin(phi) * radius, segments, Math.cos(phi) * radius);
-        shell.push(...ring);
-    }
-    for (let lon = 0; lon < 12; lon += 1) {
-        const theta = (Math.PI * 2 * lon) / 12;
-        for (let step = 0; step < segments / 2; step += 1) {
-            const a = (Math.PI * step) / (segments / 2);
-            const b = (Math.PI * (step + 1)) / (segments / 2);
-            shell.push(
-                Math.sin(a) * Math.cos(theta) * radius, Math.cos(a) * radius, Math.sin(a) * Math.sin(theta) * radius,
-                Math.sin(b) * Math.cos(theta) * radius, Math.cos(b) * radius, Math.sin(b) * Math.sin(theta) * radius,
-            );
-        }
-    }
-    lines(shell, 0.32, 'muted');
-    let ticks: THREE.LineSegments | null = null;
-    const base = station(0.12);
-    return {
-        ...base,
-        /// One tick per market, spread evenly over the sphere (a Fibonacci lattice).
-        setCount(count: number) {
-            const positions: number[] = [];
-            const golden = Math.PI * (3 - Math.sqrt(5));
-            for (let index = 0; index < count; index += 1) {
-                const y = 1 - (2 * (index + 0.5)) / count;
-                const ring = Math.sqrt(1 - y * y);
-                const theta = index * golden;
-                const x = Math.cos(theta) * ring;
-                const z = Math.sin(theta) * ring;
-                positions.push(x * radius, y * radius, z * radius, x * radius * 1.16, y * radius * 1.16, z * radius * 1.16);
-            }
-            if (!ticks) {
-                ticks = lines(positions, 0.9);
-                return;
-            }
-            ticks.geometry.dispose();
-            ticks.geometry.setAttribute(
-                'position',
-                new THREE.BufferAttribute(new Float32Array(positions), 3),
-            );
+        add<T extends { recolor(): void; dispose(): void }>(item: T): T {
+            items.push(item);
+            return item;
         },
-        group,
+        recolor() {
+            for (const item of items) item.recolor();
+        },
+        dispose() {
+            for (const item of items) item.dispose();
+        },
     };
 }
 
-/// Trade: an option's value over price (across) and time to expiry (into the screen). At expiry, the
-/// front edge, it is the familiar hockey stick; further out it is smooth.
-function payoffSurface(palette: Palette, detail: number): Station {
-    const { group, lines, station } = kit(palette);
-    const columns = Math.round(40 * detail);
-    const rows = Math.round(16 * detail);
+const Z_AXIS = new THREE.Vector3(0, 0, 1);
+const facing = (direction: THREE.Vector3) => new THREE.Quaternion().setFromUnitVectors(Z_AXIS, direction.clone().normalize());
+
+/// The HUME mark, a Möbius band, as a lattice of voxels. The band sweeps in around the loop as it
+/// assembles. `accent` picks which voxels take the text tone.
+function mobiusVoxels(detail: number, accent: (row: number, rows: number) => boolean) {
+    const radius = 2.3;
+    const width = 0.85;
+    const around = Math.round(170 * detail);
+    const step = (2 * Math.PI * radius) / around;
+    const rows = Math.max(6, Math.round((2 * width) / step));
+    const random = seeded(17);
+    const specs: VoxelSpec[] = [];
+    for (let a = 0; a < around; a += 1) {
+        const u = (2 * Math.PI * a) / around;
+        for (let b = 0; b <= rows; b += 1) {
+            const v = -width + (2 * width * b) / rows;
+            specs.push({
+                x: (radius + v * Math.cos(u / 2)) * Math.cos(u),
+                y: v * Math.sin(u / 2),
+                z: (radius + v * Math.cos(u / 2)) * Math.sin(u),
+                tone: accent(b, rows) ? 'text' : 'muted',
+                delay: (a / around) * 1.1 + random() * 0.15,
+            });
+        }
+    }
+    return { specs, size: step * 0.82 };
+}
+
+/// Up to `limit` registry markets as "NVDA · 5x" pills.
+function marketLabels(markets: readonly MarketConfig[], limit: number) {
+    return markets
+        .filter((market) => market.active)
+        .slice(0, limit)
+        .map((market) => label(`${symbolOf(market.marketId)} · ${market.maxLeverage}x`));
+}
+
+/// Start: the voxel mark, turning inside three tilted rings, with particles in orbit and live market labels
+/// riding around it.
+function hero(palette: Palette, detail: number) {
+    const own = bag();
+    const group = new THREE.Group();
+    const tilt = new THREE.Group();
+    tilt.rotation.set(0.6, 0, 0.35);
+    const spin = new THREE.Group();
+    tilt.add(spin);
+    group.add(tilt);
+    const mark = mobiusVoxels(detail, (row, rows) => row === 0 || row === rows);
+    const band = own.add(voxelField(mark.specs, palette, { size: mark.size }));
+    spin.add(band.mesh);
+    const rings = [3.1, 3.45, 3.8].map((radius, index) => {
+        const ring = own.add(orbitRing(radius, palette, index === 1 ? 'text' : 'muted', index === 1 ? 0.35 : 0.3));
+        ring.mesh.rotation.set(Math.PI / 2 + (index - 1) * 0.2, 0.7 * index, 0);
+        group.add(ring.mesh);
+        return ring.mesh;
+    });
+    const count = Math.round(90 * detail);
+    const dots = own.add(particles(count, palette));
+    group.add(dots.points);
+    group.scale.setScalar(0.74);
+    const labels = new THREE.Group();
+    labels.rotation.x = 0.18;
+    group.add(labels);
+    let tags: ReturnType<typeof label>[] = [];
+    const setMarkets = (markets: readonly MarketConfig[]) => {
+        for (const tag of tags) {
+            labels.remove(tag.sprite);
+            tag.dispose();
+        }
+        tags = marketLabels(markets, detail < 1 ? 4 : 8);
+        tags.forEach((tag, index) => {
+            const angle = (2 * Math.PI * index) / tags.length;
+            tag.sprite.position.set(Math.cos(angle) * 3.5, Math.sin(angle * 2) * 0.5, Math.sin(angle) * 3.5 * 0.6);
+            labels.add(tag.sprite);
+        });
+    };
+    const station: Station = {
+        group,
+        begin: band.begin,
+        update(time, now) {
+            band.tick(now);
+            spin.rotation.y = time * 0.12;
+            rings.forEach((ring, index) => {
+                ring.rotation.z = time * (0.08 + 0.03 * index) * (index % 2 ? -1 : 1);
+            });
+            for (let index = 0; index < count; index += 1) {
+                const t = time * (0.18 + (index % 7) * 0.02) + 2.399 * index;
+                const radius = 3.9 + (index % 5) * 0.25;
+                dots.positions[3 * index] = Math.cos(t) * radius;
+                dots.positions[3 * index + 1] = 1.3 * Math.sin(0.7 * t + index);
+                dots.positions[3 * index + 2] = Math.sin(t) * radius * 0.5;
+            }
+            dots.commit();
+            labels.rotation.y = time * 0.06;
+        },
+        recolor() {
+            own.recolor();
+            for (const tag of tags) tag.recolor();
+        },
+        dispose() {
+            own.dispose();
+            for (const tag of tags) tag.dispose();
+        },
+    };
+    return { station, setMarkets };
+}
+
+/// Markets: a globe of tiles, with one pillar per registry market standing out of it, as tall as its
+/// leverage cap. A paused market is a short pillar in the muted tone.
+function globe(palette: Palette, detail: number) {
+    const own = bag();
+    const group = new THREE.Group();
+    const radius = 1.95;
+    const golden = Math.PI * (3 - Math.sqrt(5));
+    const lattice = (count: number, index: number) => {
+        const y = 1 - (2 * (index + 0.5)) / count;
+        const ring = Math.sqrt(1 - y * y);
+        return new THREE.Vector3(Math.cos(index * golden) * ring, y, Math.sin(index * golden) * ring);
+    };
+    const tileCount = Math.round(520 * detail);
+    const random = seeded(23);
+    const tiles = own.add(
+        voxelField(
+            Array.from({ length: tileCount }, (_, index) => {
+                const direction = lattice(tileCount, index);
+                return {
+                    x: direction.x * radius,
+                    y: direction.y * radius,
+                    z: direction.z * radius,
+                    tone: 'muted' as const,
+                    sz: 0.35,
+                    q: facing(direction),
+                    delay: ((1 - direction.y) / 2) * 0.9 + random() * 0.1,
+                };
+            }),
+            palette,
+            { size: 0.16 },
+        ),
+    );
+    const spin = new THREE.Group();
+    spin.rotation.z = 0.25;
+    spin.add(tiles.mesh);
+    group.add(spin);
+    const equator = own.add(orbitRing(2.8, palette, 'muted', 0.35));
+    equator.mesh.rotation.x = Math.PI / 2 + 0.25;
+    group.add(equator.mesh);
+    let pillars: ReturnType<typeof voxelField> | null = null;
+    let startedAt = -1;
+    const setMarkets = (markets: readonly MarketConfig[]) => {
+        if (pillars) {
+            spin.remove(pillars.mesh);
+            pillars.dispose();
+        }
+        pillars = voxelField(
+            markets.map((market, index) => {
+                const direction = lattice(markets.length, index);
+                const length = market.active ? 0.2 + 0.06 * Number(market.maxLeverage) : 0.12;
+                const centre = direction.clone().multiplyScalar(radius + length / 2);
+                return {
+                    x: centre.x,
+                    y: centre.y,
+                    z: centre.z,
+                    tone: market.active ? ('text' as const) : ('muted' as const),
+                    sz: length / 0.1,
+                    q: facing(direction),
+                    delay: 0.6 + index * 0.025,
+                };
+            }),
+            palette,
+            { size: 0.1 },
+        );
+        spin.add(pillars.mesh);
+        if (startedAt >= 0) pillars.begin(startedAt);
+    };
+    const station: Station = {
+        group,
+        begin(now) {
+            if (startedAt < 0) startedAt = now;
+            tiles.begin(now);
+            pillars?.begin(now);
+        },
+        update(time, now) {
+            tiles.tick(now);
+            pillars?.tick(now);
+            spin.rotation.y = time * 0.1;
+        },
+        recolor() {
+            own.recolor();
+            pillars?.recolor();
+        },
+        dispose() {
+            own.dispose();
+            pillars?.dispose();
+        },
+    };
+    return { station, setMarkets };
+}
+
+/// Trade: an option's value over price (across) and time to expiry (into the screen), as a field of bars.
+/// The front row, at expiry, is the familiar hockey stick, in the text tone. The field breathes.
+function payoffField(palette: Palette, detail: number): Station {
+    const own = bag();
+    const group = new THREE.Group();
+    const columns = Math.round(26 * detail);
+    const rows = Math.round(11 * detail);
+    const gap = 4.6 / columns;
+    const size = gap * 0.8;
     const height = (x: number, t: number) => {
         const softness = 0.06 + t * 0.85;
-        return softness * Math.log1p(Math.exp(x / softness)) * 0.8;
+        return 0.08 + softness * Math.log1p(Math.exp(x / softness)) * 1.15;
     };
-    const point = (col: number, row: number) => {
-        const x = -2 + (4 * col) / columns;
-        const t = row / rows;
-        return [x, height(x, t) - 0.9, 1.2 - t * 2.4];
+    const base: number[] = [];
+    const specs: VoxelSpec[] = [];
+    for (let row = 0; row < rows; row += 1) {
+        for (let col = 0; col < columns; col += 1) {
+            const h = height(-2 + (4 * col) / (columns - 1), row / Math.max(1, rows - 1));
+            base.push(h);
+            specs.push({
+                x: (col - (columns - 1) / 2) * gap,
+                y: -1.6 + h / 2,
+                z: 1.4 - row * gap,
+                tone: row === 0 ? 'text' : 'muted',
+                sy: h / size,
+                delay: col * 0.03 + row * 0.04,
+            });
+        }
+    }
+    const bars = own.add(voxelField(specs, palette, { size, live: true }));
+    group.add(bars.mesh);
+    const frame = own.add(segments([-2.5, -1.6, 1.4 + gap, 2.5, -1.6, 1.4 + gap, -2.5, -1.6, 1.4 + gap, -2.5, 2.2, 1.4 + gap], palette, 'muted', 0.5));
+    group.add(frame.lines);
+    group.rotation.y = -0.35;
+    // Station groups are placed along x by `buildStations`; the field's own offset keeps it clear of the copy.
+    bars.mesh.position.x = frame.lines.position.x = 0.6;
+    return {
+        group,
+        begin: bars.begin,
+        update(time, now) {
+            specs.forEach((spec, index) => {
+                const col = index % columns;
+                const row = Math.floor(index / columns);
+                const h = base[index]! * (1 + 0.07 * Math.sin(1.1 * time + col * 0.35 + row * 0.25));
+                spec.sy = h / size;
+                spec.y = -1.6 + h / 2;
+            });
+            bars.tick(now);
+        },
+        recolor: own.recolor,
+        dispose: own.dispose,
     };
-    const mesh: number[] = [];
-    for (let row = 1; row <= rows; row += 1) {
-        for (let col = 0; col < columns; col += 1) mesh.push(...point(col, row), ...point(col + 1, row));
-    }
-    for (let col = 0; col <= columns; col += 1) {
-        for (let row = 0; row < rows; row += 1) mesh.push(...point(col, row), ...point(col, row + 1));
-    }
-    const expiry: number[] = [];
-    for (let col = 0; col < columns; col += 1) expiry.push(...point(col, 0), ...point(col + 1, 0));
-    lines(mesh, 0.32, 'muted');
-    lines(expiry, 0.95);
-    lines([-2.2, -0.9, 1.2, 2.2, -0.9, 1.2, -2.2, -0.9, 1.2, -2.2, -0.9, -1.2], 0.5, 'muted');
-    group.rotation.y = -0.25;
-    return station(0);
 }
 
-/// Capital: a health gauge standing on a vault. The needle breathes inside the safe band.
+/// Capital: a vault of stacked rings of blocks, and a health gauge over it whose needle sweeps the safe band.
 function vaultGauge(palette: Palette, detail: number): Station {
-    const { group, lines, station } = kit(palette);
-    const segments = Math.round(48 * detail);
-    const vault: number[] = [...circle(1.5, segments, -2), ...circle(1.5, segments, -1.1)];
-    for (let index = 0; index < 12; index += 1) {
-        const a = (index / 12) * Math.PI * 2;
-        vault.push(Math.cos(a) * 1.5, -2, Math.sin(a) * 1.5, Math.cos(a) * 1.5, -1.1, Math.sin(a) * 1.5);
+    const own = bag();
+    const group = new THREE.Group();
+    const perRing = Math.round(40 * detail);
+    const layers = 5;
+    const vaultSpecs: VoxelSpec[] = [];
+    for (let layer = 0; layer < layers; layer += 1) {
+        for (let index = 0; index < perRing; index += 1) {
+            const angle = (2 * Math.PI * index) / perRing;
+            vaultSpecs.push({
+                x: Math.cos(angle) * 2,
+                y: -2.4 + layer * 0.3,
+                z: Math.sin(angle) * 2,
+                tone: layer === layers - 1 ? 'text' : 'muted',
+                sx: 1.6,
+                sz: 0.7,
+                q: new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -angle),
+                delay: layer * 0.12 + (index / perRing) * 0.3,
+            });
+        }
     }
-    lines(vault, 0.4, 'muted');
+    const vault = own.add(voxelField(vaultSpecs, palette, { size: 0.2 }));
+    group.add(vault.mesh);
     const gauge = new THREE.Group();
-    gauge.position.y = -0.7;
+    gauge.position.y = 0.2;
     group.add(gauge);
-    const arc: number[] = [];
-    const ticks: number[] = [];
+    const ticks = 41;
     const from = Math.PI * 1.1;
     const to = -Math.PI * 0.1;
-    const radius = 2;
-    for (let step = 0; step < segments; step += 1) {
-        const a = from + ((to - from) * step) / segments;
-        const b = from + ((to - from) * (step + 1)) / segments;
-        arc.push(Math.cos(a) * radius, Math.sin(a) * radius, 0, Math.cos(b) * radius, Math.sin(b) * radius, 0);
-    }
-    for (let index = 0; index <= 40; index += 1) {
-        const a = from + ((to - from) * index) / 40;
-        const inner = index % 5 === 0 ? radius - 0.32 : radius - 0.16;
-        ticks.push(Math.cos(a) * inner, Math.sin(a) * inner, 0, Math.cos(a) * radius, Math.sin(a) * radius, 0);
-    }
-    lines(arc, 0.8, 'text', gauge);
-    lines(ticks, 0.55, 'muted', gauge);
-    const needle = new THREE.Group();
-    gauge.add(needle);
-    lines([0, 0, 0, 1.7, 0, 0, 0, -0.08, 0, 0, 0.08, 0], 0.95, 'text', needle);
-    return station(0.08, (time) => {
-        needle.rotation.z = Math.PI * 0.42 + Math.sin(time * 0.6) * 0.32;
+    const tickSpecs: VoxelSpec[] = Array.from({ length: ticks }, (_, index) => {
+        const angle = from + ((to - from) * index) / (ticks - 1);
+        const long = index % 5 === 0;
+        const r = long ? 2.35 : 2.45;
+        return {
+            x: Math.cos(angle) * r,
+            y: Math.sin(angle) * r,
+            z: 0,
+            tone: long ? 'text' : 'muted',
+            sx: 0.35,
+            sy: long ? 2.4 : 1.2,
+            q: new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), angle - Math.PI / 2),
+            delay: 0.4 + index * 0.02,
+        };
     });
+    const dial = own.add(voxelField(tickSpecs, palette, { size: 0.12 }));
+    gauge.add(dial.mesh);
+    const needle = own.add(solid(new THREE.BoxGeometry(0.07, 2, 0.07), palette, 'text'));
+    needle.mesh.position.y = 1;
+    const pivot = new THREE.Group();
+    pivot.add(needle.mesh);
+    gauge.add(pivot);
+    const hub = own.add(solid(new THREE.SphereGeometry(0.14, 20, 12), palette, 'text'));
+    gauge.add(hub.mesh);
+    return {
+        group,
+        begin(now) {
+            vault.begin(now);
+            dial.begin(now);
+        },
+        update(time, now) {
+            vault.tick(now);
+            dial.tick(now);
+            pivot.rotation.z = -0.55 + Math.sin(time * 0.6) * 0.3;
+            group.rotation.y = Math.sin(time * 0.25) * 0.25;
+        },
+        recolor: own.recolor,
+        dispose: own.dispose,
+    };
 }
 
-/// Social: a network of traders around one leader, with followers linked to it.
+/// Social: a solid leader with traders around it. A third of them follow the leader, and pulses travel
+/// along those links.
 function network(palette: Palette, detail: number): Station {
-    const { group, lines, station } = kit(palette);
+    const own = bag();
+    const group = new THREE.Group();
     const random = seeded(4663);
     const count = Math.round(30 * detail) + 6;
+    const followers = Math.ceil(count / 3);
     const nodes: THREE.Vector3[] = [];
     for (let index = 0; index < count; index += 1) {
         const direction = new THREE.Vector3(random() * 2 - 1, (random() * 2 - 1) * 0.7, random() * 2 - 1).normalize();
-        nodes.push(direction.multiplyScalar(1.3 + random() * 1.1));
+        nodes.push(direction.multiplyScalar(1.5 + random() * 1.3));
     }
-    const glyphs: number[] = [];
-    const size = 0.07;
-    for (const node of nodes) {
-        glyphs.push(node.x - size, node.y, node.z, node.x + size, node.y, node.z);
-        glyphs.push(node.x, node.y - size, node.z, node.x, node.y + size, node.z);
-        glyphs.push(node.x, node.y, node.z - size, node.x, node.y, node.z + size);
-    }
-    const peers: number[] = [];
+    const phases = nodes.map(() => random() * Math.PI * 2);
+    const specs: VoxelSpec[] = nodes.map((node, index) => ({
+        x: node.x,
+        y: node.y,
+        z: node.z,
+        tone: index < followers ? 'text' : 'muted',
+        delay: 0.2 + index * 0.03,
+    }));
+    const traders = own.add(voxelField(specs, palette, { size: 0.17, live: true, geometry: new THREE.IcosahedronGeometry(1, 0) }));
+    group.add(traders.mesh);
+    const leader = own.add(solid(new THREE.OctahedronGeometry(0.42), palette, 'text'));
+    group.add(leader.mesh);
+    const pairs: [number, number][] = [];
     nodes.forEach((node, index) => {
-        const nearest = nodes
+        nodes
             .map((other, position) => ({ position, distance: node.distanceTo(other) }))
             .filter((entry) => entry.position !== index)
             .sort((a, b) => a.distance - b.distance)
-            .slice(0, 2);
-        for (const { position } of nearest) {
-            const other = nodes[position]!;
-            peers.push(node.x, node.y, node.z, other.x, other.y, other.z);
-        }
+            .slice(0, 2)
+            .forEach(({ position }) => pairs.push([index, position]));
     });
-    const follows: number[] = [];
-    nodes.slice(0, Math.ceil(count / 3)).forEach((node) => follows.push(0, 0, 0, node.x, node.y, node.z));
-    const leader = new THREE.EdgesGeometry(new THREE.OctahedronGeometry(0.3));
-    lines(Array.from(leader.getAttribute('position').array), 0.95);
-    leader.dispose();
-    lines(glyphs, 0.85);
-    lines(peers, 0.22, 'muted');
-    lines(follows, 0.5);
-    return station(0.1);
+    const peers = own.add(segments(new Array(pairs.length * 6).fill(0), palette, 'muted', 0.3));
+    const follows = own.add(segments(new Array(followers * 6).fill(0), palette, 'text', 0.35));
+    const pulses = own.add(particles(followers, palette, 'text', 0.13));
+    group.add(peers.lines, follows.lines, pulses.points);
+    return {
+        group,
+        begin: traders.begin,
+        update(time, now) {
+            specs.forEach((spec, index) => {
+                spec.y = nodes[index]!.y + 0.18 * Math.sin(0.9 * time + phases[index]!);
+            });
+            traders.tick(now);
+            pairs.forEach(([a, b], index) => {
+                const from = specs[a]!;
+                const to = specs[b]!;
+                peers.positions.set([from.x, from.y, from.z, to.x, to.y, to.z], index * 6);
+            });
+            peers.commit();
+            for (let index = 0; index < followers; index += 1) {
+                const node = specs[index]!;
+                follows.positions.set([0, 0, 0, node.x, node.y, node.z], index * 6);
+                const along = 1 - ((0.35 * time + 0.137 * index) % 1);
+                pulses.positions.set([node.x * along, node.y * along, node.z * along], index * 3);
+            }
+            follows.commit();
+            pulses.commit();
+            leader.mesh.rotation.y = time * 0.7;
+            leader.mesh.rotation.x = time * 0.3;
+            group.rotation.y = time * 0.08;
+        },
+        recolor: own.recolor,
+        dispose: own.dispose,
+    };
 }
 
-/// Verify: one block per contract in the deployment, chained in order. A contract with no address on
-/// this network is drawn faint.
+/// Verify: one block per contract in the deployment, chained in order. A contract with no address on this
+/// network is a smaller block. A scan walks the deployed ones, lighting one block at a time.
 function contractBlocks(palette: Palette, deployed: readonly boolean[]): Station {
-    const { group, lines, station } = kit(palette);
+    const own = bag();
+    const group = new THREE.Group();
     const columns = 5;
     const rows = Math.ceil(deployed.length / columns);
-    const gap = 0.72;
-    const half = 0.22;
+    const gap = 0.95;
     const centre = (index: number) =>
         new THREE.Vector3(
             ((index % columns) - (columns - 1) / 2) * gap,
-            ((rows - 1) / 2 - Math.floor(index / columns)) * gap,
-            Math.sin(index * 1.7) * 0.25,
+            ((rows - 1) / 2 - Math.floor(index / columns)) * gap + 0.2,
+            Math.sin(index * 1.7) * 0.3,
         );
-    const box = (c: THREE.Vector3, out: number[]) => {
-        const corners = [-1, 1].flatMap((x) => [-1, 1].flatMap((y) => [-1, 1].map((z) => [c.x + x * half, c.y + y * half, c.z + z * half])));
-        for (let a = 0; a < 8; a += 1) {
-            for (let b = a + 1; b < 8; b += 1) {
-                // Corners that differ in exactly one axis share an edge.
-                const differ = (a ^ b) === 1 || (a ^ b) === 2 || (a ^ b) === 4;
-                if (differ) out.push(...corners[a]!, ...corners[b]!);
-            }
-        }
-    };
-    const live: number[] = [];
-    const missing: number[] = [];
-    const chain: number[] = [];
-    deployed.forEach((isLive, index) => {
+    const specs: VoxelSpec[] = deployed.map((live, index) => {
         const c = centre(index);
-        box(c, isLive ? live : missing);
-        if (index > 0) {
-            const previous = centre(index - 1);
-            chain.push(previous.x, previous.y, previous.z, c.x, c.y, c.z);
-        }
+        const scale = live ? 1 : 0.55;
+        return { x: c.x, y: c.y, z: c.z, tone: 'muted', sx: scale, sy: scale, sz: scale, delay: index * 0.05 };
     });
-    lines(live, 0.8);
-    if (missing.length > 0) lines(missing, 0.28, 'muted');
-    lines(chain, 0.3, 'muted');
-    group.rotation.y = 0.2;
-    return station(0.06);
-}
-
-/// Vision: the mark again, closed, inside a ring of ticks that faces the camera.
-function resolved(palette: Palette, detail: number): Station {
-    const mark = mobius(palette, detail, 1, 6);
-    const { group, lines, station } = kit(palette);
-    const ring: number[] = [];
-    const segments = Math.round(160 * detail);
-    for (let index = 0; index < segments; index += 1) {
-        const a = (index / segments) * Math.PI * 2;
-        const b = ((index + 1) / segments) * Math.PI * 2;
-        ring.push(Math.cos(a) * 2.6, Math.sin(a) * 2.6, 0, Math.cos(b) * 2.6, Math.sin(b) * 2.6, 0);
+    const blocks = own.add(voxelField(specs, palette, { size: 0.56 }));
+    group.add(blocks.mesh);
+    const chain: number[] = [];
+    for (let index = 1; index < deployed.length; index += 1) {
+        const a = centre(index - 1);
+        const b = centre(index);
+        chain.push(a.x, a.y, a.z, b.x, b.y, b.z);
     }
-    const ticks: number[] = [];
-    for (let index = 0; index < 120; index += 1) {
-        const a = (index / 120) * Math.PI * 2;
-        const inner = index % 10 === 0 ? 2.32 : 2.46;
-        ticks.push(Math.cos(a) * inner, Math.sin(a) * inner, 0, Math.cos(a) * 2.6, Math.sin(a) * 2.6, 0);
-    }
-    lines(ring, 0.4, 'muted');
-    lines(ticks, 0.5, 'muted');
-    group.add(mark.group);
-    const halo = station(0, (time) => {
-        mark.group.rotation.y = time * mark.spin;
-    });
+    const links = own.add(segments(chain, palette, 'muted', 0.4));
+    group.add(links.lines);
+    const live = deployed.map((value, index) => (value ? index : -1)).filter((index) => index >= 0);
+    let lit = -1;
     return {
-        ...halo,
-        setFade(fade) {
-            halo.setFade(fade);
-            mark.setFade(fade);
+        group,
+        begin: blocks.begin,
+        update(time, now) {
+            blocks.tick(now);
+            const next = live.length > 0 ? live[Math.floor(time * 2.2) % live.length]! : -1;
+            if (next !== lit) {
+                if (lit >= 0) blocks.tint(lit, 'muted');
+                if (next >= 0) blocks.tint(next, 'text');
+                lit = next;
+            }
+            group.rotation.y = 0.25 + Math.sin(time * 0.2) * 0.15;
         },
         recolor() {
-            halo.recolor();
-            mark.recolor();
+            own.recolor();
+            if (lit >= 0) blocks.tint(lit, 'text');
         },
-        dispose() {
-            halo.dispose();
-            mark.dispose();
-        },
+        dispose: own.dispose,
     };
 }
 
-/// The seven stations in section order, each placed on the path. `detail` scales the segment counts
-/// down on a phone.
+/// Vision: the mark again, with every third row in the text tone, inside a ring of ticks that faces the camera.
+function resolved(palette: Palette, detail: number): Station {
+    const own = bag();
+    const group = new THREE.Group();
+    const tilt = new THREE.Group();
+    tilt.rotation.set(0.95, 0, 0.18);
+    const spin = new THREE.Group();
+    tilt.add(spin);
+    group.add(tilt);
+    const mark = mobiusVoxels(detail, (row) => row % 3 === 0);
+    const band = own.add(voxelField(mark.specs, palette, { size: mark.size }));
+    spin.add(band.mesh);
+    const tickSpecs: VoxelSpec[] = Array.from({ length: 120 }, (_, index) => {
+        const angle = (2 * Math.PI * index) / 120;
+        const long = index % 10 === 0;
+        return {
+            x: Math.cos(angle) * 3.4,
+            y: Math.sin(angle) * 3.4,
+            z: 0,
+            tone: long ? 'text' : 'muted',
+            sx: 0.4,
+            sy: long ? 2.6 : 1.3,
+            q: new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), angle - Math.PI / 2),
+            delay: 0.3 + index * 0.008,
+        };
+    });
+    const ring = own.add(voxelField(tickSpecs, palette, { size: 0.1 }));
+    group.add(ring.mesh);
+    return {
+        group,
+        begin(now) {
+            band.begin(now);
+            ring.begin(now);
+        },
+        update(time, now) {
+            band.tick(now);
+            ring.tick(now);
+            spin.rotation.y = time * 0.14;
+            ring.mesh.rotation.z = time * 0.03;
+        },
+        recolor: own.recolor,
+        dispose: own.dispose,
+    };
+}
+
+/// The seven stations in section order, each placed along x. `detail` scales instance counts down on a
+/// phone. `setMarkets` feeds the registry list to the stations that draw it.
 export function buildStations(palette: Palette, detail: number, deployed: readonly boolean[]) {
+    const start = hero(palette, detail);
     const markets = globe(palette, detail);
     const stations: Station[] = [
-        mobius(palette, detail, 0.8, 4),
-        markets,
-        payoffSurface(palette, detail),
+        start.station,
+        markets.station,
+        payoffField(palette, detail),
         vaultGauge(palette, detail),
         network(palette, detail),
         contractBlocks(palette, deployed),
         resolved(palette, detail),
     ];
-    stations.forEach((item, index) => item.group.position.copy(stationPosition(index)));
-    return { stations, setMarketCount: markets.setCount };
+    stations.forEach((station, index) => station.group.position.set(SPACING * index, 0, 0));
+    return {
+        stations,
+        setMarkets(list: readonly MarketConfig[]) {
+            start.setMarkets(list);
+            markets.setMarkets(list);
+        },
+    };
 }
 
-/// The ground under the whole path: a grid drawn as one `LineSegments` that follows the camera in whole
-/// cells, so it reads as endless and still. A small shader fades each line with distance, and fades it
-/// out under the header.
+/// The ground under the whole world: a grid drawn as one `LineSegments` that follows the camera in whole
+/// cells, so it reads as endless and still. A small shader fades each line with distance and fades it out
+/// under the header.
 export function buildGround(palette: Palette) {
-    const STEP = 1.5;
+    const STEP = 2;
     const REACH = 48;
     const positions: number[] = [];
     for (let x = -REACH; x <= REACH + 1e-6; x += STEP) positions.push(x, 0, -REACH, x, 0, REACH);
@@ -440,7 +597,7 @@ export function buildGround(palette: Palette) {
     const uniforms = {
         uColor: { value: palette.muted.clone() },
         uResolution: { value: new THREE.Vector2(1, 1) },
-        uOpacity: { value: 0.3 },
+        uOpacity: { value: 0.22 },
     };
     const material = new THREE.ShaderMaterial({
         uniforms,
@@ -461,8 +618,8 @@ export function buildGround(palette: Palette) {
             varying float vDistance;
             void main() {
                 float v = gl_FragCoord.y / uResolution.y;
-                float distanceFade = 1.0 - smoothstep(6.0, 32.0, vDistance);
-                float nearFade = smoothstep(1.0, 3.5, vDistance);
+                float distanceFade = 1.0 - smoothstep(10.0, 40.0, vDistance);
+                float nearFade = smoothstep(1.0, 4.0, vDistance);
                 float topFade = 1.0 - smoothstep(0.78, 0.88, v);
                 gl_FragColor = vec4(uColor, uOpacity * distanceFade * nearFade * topFade);
             }
@@ -470,7 +627,7 @@ export function buildGround(palette: Palette) {
     });
     const grid = new THREE.LineSegments(geometry, material);
     grid.frustumCulled = false;
-    grid.position.y = -2.2;
+    grid.position.y = -3.2;
     return {
         object: grid,
         follow(eye: THREE.Vector3) {
