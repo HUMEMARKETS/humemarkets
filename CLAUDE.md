@@ -11,8 +11,8 @@ Work is serial: one session, one phase at a time, in the order of the Phase inde
 - **Never touch git.** No `commit`, `push`, `add`, `stage`, `tag` or `gh pr create`. Leave the
   working tree dirty, list the paths you changed, and print the phase's **Ship** block for the
   operator to run. The operator owns every git mutation.
-- **Never read `docs/DEVELOPMENT_PHASES.md` whole.** It is 2388 lines. Read only your phase's line
-  range from the Phase index below: `sed -n '1285,1354p' docs/DEVELOPMENT_PHASES.md`.
+- **Never read `docs/DEVELOPMENT_PHASES.md` whole.** It is 2417 lines. Read only your phase's line
+  range from the Phase index below: `sed -n '1302,1379p' docs/DEVELOPMENT_PHASES.md`.
 - **A phase is done only when its acceptance check passes.** Nothing is ticked because it looks
   finished. Report `pass`, `amber` or `fail` in one line, and do not start the next phase.
 - **Secrets never reach a commit, an evidence file or the transcript.** Addresses are fine. Never
@@ -58,18 +58,18 @@ Order (testnet first, re-planned 2026-10-07, `docs/DEVELOPMENT_PHASES.md` Sectio
 
 | Phase | Lines     | Phase | Lines     |
 | ----- | --------- | ----- | --------- |
-| 0     | 347-415   | 11    | 1355-1455 |
-| 1     | 416-470   | 12    | 1456-1523 |
-| 2     | 471-538   | 13    | 1524-1585 |
-| 3     | 539-622   | 14    | 1586-1666 |
-| 4     | 623-694   | 14b   | 1667-1774 |
-| 5     | 695-895   | 15    | 1775-1933 |
-| 6     | 896-962   | **L** | 1934-1989 |
-| 7     | 963-1040  | 16    | 1990-2066 |
-| 8     | 1041-1128 | 17    | 2067-2171 |
-| 9     | 1129-1206 | 18    | 2172-2388 |
-| 10    | 1207-1284 |       |           |
-| **T** | 1285-1354 |       |           |
+| 0     | 364-432   | 11    | 1380-1480 |
+| 1     | 433-487   | 12    | 1481-1548 |
+| 2     | 488-555   | 13    | 1549-1610 |
+| 3     | 556-639   | 14    | 1611-1691 |
+| 4     | 640-711   | 14b   | 1692-1799 |
+| 5     | 712-912   | 15    | 1800-1958 |
+| 6     | 913-979   | **L** | 1959-2016 |
+| 7     | 980-1057  | 16    | 2017-2094 |
+| 8     | 1058-1145 | 17    | 2095-2199 |
+| 9     | 1146-1223 | 18    | 2200-2417 |
+| 10    | 1224-1301 |       |           |
+| **T** | 1302-1379 |       |           |
 
 ## Scope
 
