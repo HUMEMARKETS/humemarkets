@@ -2,7 +2,7 @@
 
 import { Panel, Skeleton, cn, chip } from "@hume/ui";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState, type ReactNode } from "react";
 import type { MarketStats } from "@hume/sdk";
 import type { MarketConfig } from "@hume/types";
@@ -155,7 +155,8 @@ export function MarketsTable() {
   const { data: markets, isPending, error } = useAllMarkets();
   const { data: stats, isError: statsUnavailable } = useMarketStats();
   const { data: decimals = 6 } = useSettlementDecimals();
-  const [filter, setFilter] = useState("");
+  // `?q=` arrives from the landing page's market search.
+  const [filter, setFilter] = useState(useSearchParams().get("q") ?? "");
   const [sort, setSort] = useState<{ key: SortKey; direction: "asc" | "desc" }>({ key: "asset", direction: "asc" });
 
   const symbols = useMemo(() => (markets ?? []).map((market) => symbolOf(market.marketId)), [markets]);
@@ -184,7 +185,7 @@ export function MarketsTable() {
       className="flex-1"
       title="All markets"
       actions={
-        symbols.length >= FILTER_FROM ? (
+        symbols.length >= FILTER_FROM || filter ? (
           <input
             type="search"
             aria-label="Filter markets"

@@ -1,177 +1,102 @@
 import * as THREE from 'three';
 
-/// The camera's distance from the scene centre; the ground is laid out relative to it.
-export const DISTANCE = 8.4;
+/// The landing world: one wireframe station per section, laid along a path the camera travels as the
+/// page scrolls. Every colour is a token read from the page (`Palette`), so the world follows the theme.
 
 export interface Palette {
     text: THREE.Color;
     muted: THREE.Color;
-    accent: THREE.Color;
 }
 
-interface Part {
-    material: THREE.LineBasicMaterial;
-    base: number;
-    tab: number | null;
-    rest: THREE.Color;
-}
+type Tone = keyof Palette;
 
-export interface SceneHandle {
+export interface Station {
     group: THREE.Group;
-    /// One world-space anchor per tab, where that tab's hotspot sits.
-    anchors: THREE.Object3D[];
-    /// The lines the pointer can hover; each carries its tab in `userData.tab`.
-    pickables: THREE.LineSegments[];
-    /// Radians per second of the slow turn the whole group makes while motion is on.
+    /// Radians per second of the slow turn the station makes while motion is on.
     spin: number;
-    /// Resting scale, so a wide scene can sit inside the same frame as a compact one.
-    size: number;
-    idle(time: number, motion: number): void;
-    look(fade: number, active: number, hover: number | null): void;
+    setFade(fade: number): void;
+    idle(time: number): void;
+    recolor(): void;
     dispose(): void;
 }
 
-/// Line segments along both parametric directions of a grid geometry whose vertices are laid out
-/// row by row (`row * (cols + 1) + col`), which holds for the torus, torus knot, sphere and plane
-/// geometries three ships. Drawing the two directions only, not the triangle diagonals, is what
-/// gives the engraved look of the reference.
-function gridSegments(
-    geometry: THREE.BufferGeometry,
-    rows: number,
-    cols: number,
-    rowStep: number,
-    colStep: number,
-): Float32Array {
-    const position = geometry.getAttribute('position');
-    const out: number[] = [];
-    const push = (a: number, b: number) =>
-        out.push(
-            position.getX(a),
-            position.getY(a),
-            position.getZ(a),
-            position.getX(b),
-            position.getY(b),
-            position.getZ(b),
+/// Distance between two stations along the path, in world units.
+const SPACING = 13;
+/// How far the camera stands back from the station it is looking at.
+const STAND_OFF = 10.5;
+const EYE_HEIGHT = 2;
+
+export const stationPosition = (index: number) =>
+    new THREE.Vector3(Math.sin(index * 1.3) * 3.2, 0, -index * SPACING);
+
+/// The camera's path and the path of the point it looks at, through every station. The camera swings
+/// from one side to the other between stations, so the travel reads as moving through a place.
+export function buildPath(count: number) {
+    const look: THREE.Vector3[] = [];
+    const eye: THREE.Vector3[] = [];
+    for (let index = 0; index < count; index += 1) {
+        const station = stationPosition(index);
+        const angle = index % 2 === 0 ? -0.34 : 0.34;
+        look.push(station.clone().add(new THREE.Vector3(0, 0.1, 0)));
+        eye.push(
+            station
+                .clone()
+                .add(
+                    new THREE.Vector3(
+                        Math.sin(angle) * STAND_OFF,
+                        EYE_HEIGHT,
+                        Math.cos(angle) * STAND_OFF,
+                    ),
+                ),
         );
-    const stride = cols + 1;
-    for (let row = 0; row <= rows; row += rowStep) {
-        for (let col = 0; col < cols; col += 1) {
-            push(row * stride + col, row * stride + col + 1);
-        }
     }
-    for (let col = 0; col <= cols; col += colStep) {
-        for (let row = 0; row < rows; row += 1) {
-            push(row * stride + col, (row + 1) * stride + col);
-        }
-    }
-    return new Float32Array(out);
+    return {
+        eye: new THREE.CatmullRomCurve3(eye, false, 'centripetal'),
+        look: new THREE.CatmullRomCurve3(look, false, 'centripetal'),
+    };
 }
 
-function rectSegments(
-    width: number,
-    height: number,
-    z: number,
-    out: number[],
-): void {
-    const x = width / 2;
-    const y = height / 2;
-    out.push(-x, -y, z, x, -y, z);
-    out.push(x, -y, z, x, y, z);
-    out.push(x, y, z, -x, y, z);
-    out.push(-x, y, z, -x, -y, z);
-}
-
-function boxSegments(size: number): Float32Array {
-    const geometry = new THREE.EdgesGeometry(
-        new THREE.BoxGeometry(size, size, size),
-    );
-    const copy = Float32Array.from(
-        geometry.getAttribute('position').array as Float32Array,
-    );
-    geometry.dispose();
-    return copy;
-}
-
-function edgeSegments(source: THREE.BufferGeometry): Float32Array {
-    const edges = new THREE.EdgesGeometry(source);
-    const copy = Float32Array.from(
-        edges.getAttribute('position').array as Float32Array,
-    );
-    edges.dispose();
-    source.dispose();
-    return copy;
-}
-
-function createBuilder(palette: Palette) {
+/// Line segments and their materials for one station, so fading, recolouring and disposing are one loop.
+function kit(palette: Palette) {
     const group = new THREE.Group();
-    const parts: Part[] = [];
+    const parts: { material: THREE.LineBasicMaterial; base: number; tone: Tone }[] = [];
     const geometries: THREE.BufferGeometry[] = [];
-    const pickables: THREE.LineSegments[] = [];
 
-    function add(
-        parent: THREE.Object3D,
-        positions: Float32Array,
-        options: { tab: number | null; base: number; color: THREE.Color },
+    function lines(
+        positions: number[],
+        base: number,
+        tone: Tone = 'text',
+        parent: THREE.Object3D = group,
     ): THREE.LineSegments {
         const geometry = new THREE.BufferGeometry();
         geometry.setAttribute(
             'position',
-            new THREE.BufferAttribute(positions, 3),
+            new THREE.BufferAttribute(new Float32Array(positions), 3),
         );
         const material = new THREE.LineBasicMaterial({
-            color: options.color,
+            color: palette[tone],
             transparent: true,
-            opacity: options.base,
+            opacity: base,
             depthWrite: false,
         });
-        const lines = new THREE.LineSegments(geometry, material);
-        lines.userData.tab = options.tab;
-        lines.frustumCulled = false;
-        parent.add(lines);
+        const segments = new THREE.LineSegments(geometry, material);
+        segments.frustumCulled = false;
+        parent.add(segments);
         geometries.push(geometry);
-        parts.push({
-            material,
-            base: options.base,
-            tab: options.tab,
-            rest: options.color,
-        });
-        if (options.tab !== null) pickables.push(lines);
-        return lines;
+        parts.push({ material, base, tone });
+        return segments;
     }
 
-    function finish(
-        anchors: THREE.Object3D[],
-        spin: number,
-        size: number,
-        idle: (time: number, motion: number) => void,
-    ): SceneHandle {
+    function station(spin: number, idle: (time: number) => void = () => undefined): Station {
         return {
             group,
-            anchors,
-            pickables,
             spin,
-            size,
             idle,
-            look(fade, active, hover) {
-                for (const part of parts) {
-                    const hot = part.tab !== null && part.tab === hover;
-                    const current = part.tab !== null && part.tab === active;
-                    const emphasis =
-                        part.tab === null ? 1 : hot ? 1 : current ? 0.85 : 0.4;
-                    part.material.opacity = Math.min(
-                        1,
-                        part.base * fade * emphasis * (hot ? 1.8 : 1),
-                    );
-                    // The scene in view is washed green, so the page has a colour and not only a line weight;
-                    // the part under the pointer goes to the full accent.
-                    const wash = 0.65 * fade;
-                    part.material.color
-                        .copy(part.rest)
-                        .lerp(
-                            palette.accent,
-                            hot ? 1 : current ? Math.min(1, wash + 0.25) : wash,
-                        );
-                }
+            setFade(fade) {
+                for (const part of parts) part.material.opacity = part.base * fade;
+            },
+            recolor() {
+                for (const part of parts) part.material.color.copy(palette[part.tone]);
             },
             dispose() {
                 for (const geometry of geometries) geometry.dispose();
@@ -180,336 +105,342 @@ function createBuilder(palette: Palette) {
         };
     }
 
-    return { group, add, finish };
+    return { group, lines, station };
 }
 
-function anchorAt(
-    parent: THREE.Object3D,
-    x: number,
-    y: number,
-    z: number,
-): THREE.Object3D {
-    const anchor = new THREE.Object3D();
-    anchor.position.set(x, y, z);
-    parent.add(anchor);
-    return anchor;
+function circle(radius: number, segments: number, y = 0): number[] {
+    const out: number[] = [];
+    for (let index = 0; index < segments; index += 1) {
+        const a = (index / segments) * Math.PI * 2;
+        const b = ((index + 1) / segments) * Math.PI * 2;
+        out.push(Math.cos(a) * radius, y, Math.sin(a) * radius, Math.cos(b) * radius, y, Math.sin(b) * radius);
+    }
+    return out;
 }
 
-/// 00, the beginning: a dense torus knot.
-function knotScene(palette: Palette): SceneHandle {
-    const { group, add, finish } = createBuilder(palette);
-    const knot = new THREE.TorusKnotGeometry(1.15, 0.36, 260, 40, 2, 3);
-    add(group, gridSegments(knot, 260, 40, 2, 1), {
-        tab: null,
-        base: 0.5,
-        color: palette.text,
-    });
-    knot.dispose();
-    group.rotation.x = 0.35;
-    return finish([], 0.16, 1, () => undefined);
+/// A deterministic random sequence, so the trader network is the same on every visit.
+function seeded(seed: number) {
+    let state = seed >>> 0;
+    return () => {
+        state = (state + 0x6d2b79f5) >>> 0;
+        let t = state;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
 }
 
-/// 01, perpetuals: three doors, each a tunnel of nested frames.
-function doorsScene(palette: Palette): SceneHandle {
-    const { group, add, finish } = createBuilder(palette);
-    const anchors: THREE.Object3D[] = [];
-    const doors: THREE.Group[] = [];
-    for (let index = 0; index < 3; index += 1) {
-        const door = new THREE.Group();
-        door.position.set((index - 1) * 2.35, -0.1, 0);
-        door.rotation.y = (1 - index) * 0.2;
-        const lines: number[] = [];
-        const depth = 7;
-        for (let step = 0; step < depth; step += 1) {
-            const inset = step * 0.13;
-            rectSegments(1.7 - inset * 1.5, 3.5 - inset * 1.5, -step * 0.2, lines);
+/// The HUME mark, a Möbius ring, as a wire band. `turn` is how much of the loop is drawn: the hero
+/// opens on an unfinished loop and the closing section resolves it.
+function mobius(palette: Palette, detail: number, turn: number, rows: number): Station {
+    const { group, lines, station } = kit(palette);
+    const radius = 1.5;
+    const width = 0.55;
+    const end = Math.PI * 2 * turn;
+    const at = (u: number, v: number) => [
+        (radius + v * Math.cos(u / 2)) * Math.cos(u),
+        v * Math.sin(u / 2),
+        (radius + v * Math.cos(u / 2)) * Math.sin(u),
+    ];
+    const along: number[] = [];
+    const steps = Math.round(150 * detail * turn);
+    for (let row = 0; row <= rows; row += 1) {
+        const v = -width + (2 * width * row) / rows;
+        for (let step = 0; step < steps; step += 1) {
+            along.push(...at((end * step) / steps, v), ...at((end * (step + 1)) / steps, v));
         }
-        const front = [
-            [-0.85, -1.75],
-            [0.85, -1.75],
-            [0.85, 1.75],
-            [-0.85, 1.75],
-        ] as const;
-        const back = (depth - 1) * 0.13;
-        for (const [x, y] of front) {
-            lines.push(
-                x,
-                y,
-                0,
-                x * (1 - (back * 1.5) / 1.7),
-                y * (1 - (back * 1.5) / 3.5),
-                -(depth - 1) * 0.2,
+    }
+    const across: number[] = [];
+    const ribs = Math.round(56 * detail * turn);
+    for (let rib = 0; rib <= ribs; rib += 1) {
+        const u = (end * rib) / ribs;
+        across.push(...at(u, -width), ...at(u, width));
+    }
+    // The tilt sits on an inner group, so the station's spin turns the ring about its own upright axis.
+    const tilt = new THREE.Group();
+    tilt.rotation.set(0.95, 0, 0.18);
+    group.add(tilt);
+    lines(along, 0.75, 'text', tilt);
+    lines(across, 0.35, 'muted', tilt);
+    return station(0.14);
+}
+
+/// Markets: a wire globe with one tick for each listed market, so the globe is as full as the registry.
+function globe(palette: Palette, detail: number) {
+    const { group, lines, station } = kit(palette);
+    const radius = 1.9;
+    const segments = Math.round(72 * detail);
+    const shell: number[] = [];
+    for (let lat = 1; lat < 8; lat += 1) {
+        const phi = (Math.PI * lat) / 8;
+        const ring = circle(Math.sin(phi) * radius, segments, Math.cos(phi) * radius);
+        shell.push(...ring);
+    }
+    for (let lon = 0; lon < 12; lon += 1) {
+        const theta = (Math.PI * 2 * lon) / 12;
+        for (let step = 0; step < segments / 2; step += 1) {
+            const a = (Math.PI * step) / (segments / 2);
+            const b = (Math.PI * (step + 1)) / (segments / 2);
+            shell.push(
+                Math.sin(a) * Math.cos(theta) * radius, Math.cos(a) * radius, Math.sin(a) * Math.sin(theta) * radius,
+                Math.sin(b) * Math.cos(theta) * radius, Math.cos(b) * radius, Math.sin(b) * Math.sin(theta) * radius,
             );
         }
-        lines.push(-1.1, -1.75, 0.02, 1.1, -1.75, 0.02);
-        add(door, new Float32Array(lines), {
-            tab: index,
-            base: 0.55,
-            color: palette.text,
-        });
-        group.add(door);
-        doors.push(door);
-        // The middle door's marker sits lower, so its label cannot run into the right-hand door's flipped label.
-        anchors.push(anchorAt(door, index === 0 ? 0.85 : index === 1 ? 0.5 : 0, index === 1 ? -0.45 : 0.4, 0.05));
     }
-    group.rotation.x = 0.08;
-    return finish(anchors, 0, 0.74, (time, motion) => {
-        doors.forEach((door, index) => {
-            door.rotation.y =
-                (1 - index) * 0.2 + Math.sin(time * 0.5 + index) * 0.06 * motion;
-        });
-    });
-}
-
-/// 02, options: three nested spheres around a cube.
-function sphereScene(palette: Palette): SceneHandle {
-    const { group, add, finish } = createBuilder(palette);
-    const radii = [1.9, 1.45, 1.0];
-    radii.forEach((radius, tab) => {
-        const sphere = new THREE.SphereGeometry(radius, 48, 24);
-        add(group, gridSegments(sphere, 24, 48, 2, 3), {
-            tab,
-            base: 0.5,
-            color: palette.text,
-        });
-        sphere.dispose();
-    });
-    add(group, boxSegments(0.75), { tab: 2, base: 0.9, color: palette.text });
-    const axis = new Float32Array([0, -2.05, 0, 0, 2.05, 0]);
-    add(group, axis, { tab: null, base: 0.6, color: palette.muted });
-    const anchors = [
-        anchorAt(group, ...unit(-0.95, 0.15, 0.27, 1.9)),
-        anchorAt(group, ...unit(0.55, 0.85, 0.2, 1.45)),
-        anchorAt(group, ...unit(0.6, -0.5, 0.6, 1.0)),
-    ];
-    group.rotation.x = 0.2;
-    return finish(anchors, 0.12, 1, () => undefined);
-}
-
-function unit(
-    x: number,
-    y: number,
-    z: number,
-    radius: number,
-): [number, number, number] {
-    const length = Math.hypot(x, y, z);
-    return [(x / length) * radius, (y / length) * radius, (z / length) * radius];
-}
-
-/// 03, one vault: three rings turning around a shared core.
-function vaultScene(palette: Palette): SceneHandle {
-    const { group, add, finish } = createBuilder(palette);
-    const radii = [1.95, 1.5, 1.05];
-    const tilts: [number, number][] = [
-        [0.5, 0],
-        [-0.4, 0.9],
-        [0.9, -0.7],
-    ];
-    const speeds: [number, number][] = [
-        [0.12, 0.05],
-        [-0.1, 0.09],
-        [0.08, -0.13],
-    ];
-    const pivots: THREE.Group[] = [];
-    const anchors: THREE.Object3D[] = [];
-    radii.forEach((radius, tab) => {
-        const pivot = new THREE.Group();
-        const ring = new THREE.TorusGeometry(radius, 0.06, 8, 110);
-        add(pivot, gridSegments(ring, 8, 110, 1, 3), {
-            tab,
-            base: 0.6,
-            color: palette.text,
-        });
-        ring.dispose();
-        anchors.push(anchorAt(pivot, radius, 0, 0));
-        group.add(pivot);
-        pivots.push(pivot);
-    });
-    add(group, edgeSegments(new THREE.OctahedronGeometry(0.62)), {
-        tab: null,
-        base: 0.9,
-        color: palette.text,
-    });
-    return finish(anchors, 0, 0.92, (time, motion) => {
-        pivots.forEach((pivot, index) => {
-            const [tiltX, tiltY] = tilts[index] ?? [0, 0];
-            const [speedX, speedY] = speeds[index] ?? [0, 0];
-            pivot.rotation.set(
-                tiltX + time * speedX * motion,
-                tiltY + time * speedY * motion,
-                0,
-            );
-        });
-    });
-}
-
-/// 04, make your move: a wire terrain with a small solid hovering over it.
-function terrainScene(palette: Palette): SceneHandle {
-    const { group, add, finish } = createBuilder(palette);
-    const plane = new THREE.PlaneGeometry(7, 7, 42, 42);
-    const position = plane.getAttribute('position');
-    for (let index = 0; index < position.count; index += 1) {
-        const x = position.getX(index);
-        const y = position.getY(index);
-        position.setZ(
-            index,
-            0.45 * Math.sin(x * 0.9) * Math.cos(y * 0.8) +
-                0.2 * Math.sin(x * 2.1 + y * 1.7),
-        );
-    }
-    const terrain = new THREE.Group();
-    add(terrain, gridSegments(plane, 42, 42, 1, 1), {
-        tab: null,
-        base: 0.45,
-        color: palette.text,
-    });
-    plane.dispose();
-    terrain.rotation.x = -Math.PI / 2.15;
-    terrain.position.y = -0.9;
-    group.add(terrain);
-    const marker = new THREE.Group();
-    marker.position.y = 1.25;
-    add(marker, edgeSegments(new THREE.OctahedronGeometry(0.55)), {
-        tab: null,
-        base: 0.95,
-        color: palette.text,
-    });
-    group.add(marker);
-    return finish([], 0.05, 0.62, (time, motion) => {
-        marker.rotation.y = time * 0.5 * motion;
-        marker.position.y = 1.25 + Math.sin(time * 0.9) * 0.08 * motion;
-    });
-}
-
-/// One scene per landing section, in section order.
-export function buildScenes(palette: Palette): SceneHandle[] {
-    return [
-        knotScene(palette),
-        doorsScene(palette),
-        sphereScene(palette),
-        vaultScene(palette),
-        terrainScene(palette),
-    ];
-}
-
-/// The disc, tick ring and distant grid every scene stands on.
-export function buildFloor(palette: Palette) {
-    const group = new THREE.Group();
-    group.position.y = -2.15;
-    const geometries: THREE.BufferGeometry[] = [];
-    const materials: THREE.Material[] = [];
-
-    function lines(
-        positions: number[],
-        opacity: number,
-        color: THREE.Color = palette.text,
-    ): THREE.LineSegments {
-        const geometry = new THREE.BufferGeometry();
-        geometry.setAttribute(
-            'position',
-            new THREE.BufferAttribute(new Float32Array(positions), 3),
-        );
-        const material = new THREE.LineBasicMaterial({
-            color,
-            transparent: true,
-            opacity,
-            depthWrite: false,
-        });
-        geometries.push(geometry);
-        materials.push(material);
-        return new THREE.LineSegments(geometry, material);
-    }
-
-    function circle(radius: number, segments: number): number[] {
-        const out: number[] = [];
-        for (let index = 0; index < segments; index += 1) {
-            const a = (index / segments) * Math.PI * 2;
-            const b = ((index + 1) / segments) * Math.PI * 2;
-            out.push(
-                Math.cos(a) * radius,
-                0,
-                Math.sin(a) * radius,
-                Math.cos(b) * radius,
-                0,
-                Math.sin(b) * radius,
-            );
-        }
-        return out;
-    }
-
-    group.add(lines(circle(3.3, 160), 0.55, palette.accent));
-    group.add(lines(circle(4.1, 160), 0.25, palette.accent));
-    // A ring that travels outward from the centre and fades, the slow scan across the floor.
-    const pulse = lines(circle(1, 160), 0.6, palette.accent);
-    const pulseMaterial = pulse.material as THREE.LineBasicMaterial;
-    group.add(pulse);
-    const tickPositions: number[] = [];
-    for (let index = 0; index < 120; index += 1) {
-        const angle = (index / 120) * Math.PI * 2;
-        const long = index % 5 === 0;
-        const inner = 4.2;
-        const outer = long ? 4.5 : 4.36;
-        tickPositions.push(
-            Math.cos(angle) * inner,
-            0,
-            Math.sin(angle) * inner,
-            Math.cos(angle) * outer,
-            0,
-            Math.sin(angle) * outer,
-        );
-    }
-    const ticks = lines(tickPositions, 0.4, palette.accent);
-    group.add(ticks);
-
+    lines(shell, 0.32, 'muted');
+    let ticks: THREE.LineSegments | null = null;
+    const base = station(0.12);
     return {
+        ...base,
+        /// One tick per market, spread evenly over the sphere (a Fibonacci lattice).
+        setCount(count: number) {
+            const positions: number[] = [];
+            const golden = Math.PI * (3 - Math.sqrt(5));
+            for (let index = 0; index < count; index += 1) {
+                const y = 1 - (2 * (index + 0.5)) / count;
+                const ring = Math.sqrt(1 - y * y);
+                const theta = index * golden;
+                const x = Math.cos(theta) * ring;
+                const z = Math.sin(theta) * ring;
+                positions.push(x * radius, y * radius, z * radius, x * radius * 1.16, y * radius * 1.16, z * radius * 1.16);
+            }
+            if (!ticks) {
+                ticks = lines(positions, 0.9);
+                return;
+            }
+            ticks.geometry.dispose();
+            ticks.geometry.setAttribute(
+                'position',
+                new THREE.BufferAttribute(new Float32Array(positions), 3),
+            );
+        },
         group,
-        update(time: number, motion: number) {
-            ticks.rotation.y = time * 0.02 * motion;
-            const phase = (time * 0.14) % 1;
-            pulse.scale.setScalar(0.5 + phase * 4);
-            pulseMaterial.opacity = 0.5 * (1 - phase) * (1 - phase) * motion;
+    };
+}
+
+/// Trade: an option's value over price (across) and time to expiry (into the screen). At expiry, the
+/// front edge, it is the familiar hockey stick; further out it is smooth.
+function payoffSurface(palette: Palette, detail: number): Station {
+    const { group, lines, station } = kit(palette);
+    const columns = Math.round(40 * detail);
+    const rows = Math.round(16 * detail);
+    const height = (x: number, t: number) => {
+        const softness = 0.06 + t * 0.85;
+        return softness * Math.log1p(Math.exp(x / softness)) * 0.8;
+    };
+    const point = (col: number, row: number) => {
+        const x = -2 + (4 * col) / columns;
+        const t = row / rows;
+        return [x, height(x, t) - 0.9, 1.2 - t * 2.4];
+    };
+    const mesh: number[] = [];
+    for (let row = 1; row <= rows; row += 1) {
+        for (let col = 0; col < columns; col += 1) mesh.push(...point(col, row), ...point(col + 1, row));
+    }
+    for (let col = 0; col <= columns; col += 1) {
+        for (let row = 0; row < rows; row += 1) mesh.push(...point(col, row), ...point(col, row + 1));
+    }
+    const expiry: number[] = [];
+    for (let col = 0; col < columns; col += 1) expiry.push(...point(col, 0), ...point(col + 1, 0));
+    lines(mesh, 0.32, 'muted');
+    lines(expiry, 0.95);
+    lines([-2.2, -0.9, 1.2, 2.2, -0.9, 1.2, -2.2, -0.9, 1.2, -2.2, -0.9, -1.2], 0.5, 'muted');
+    group.rotation.y = -0.25;
+    return station(0);
+}
+
+/// Capital: a health gauge standing on a vault. The needle breathes inside the safe band.
+function vaultGauge(palette: Palette, detail: number): Station {
+    const { group, lines, station } = kit(palette);
+    const segments = Math.round(48 * detail);
+    const vault: number[] = [...circle(1.5, segments, -2), ...circle(1.5, segments, -1.1)];
+    for (let index = 0; index < 12; index += 1) {
+        const a = (index / 12) * Math.PI * 2;
+        vault.push(Math.cos(a) * 1.5, -2, Math.sin(a) * 1.5, Math.cos(a) * 1.5, -1.1, Math.sin(a) * 1.5);
+    }
+    lines(vault, 0.4, 'muted');
+    const gauge = new THREE.Group();
+    gauge.position.y = -0.7;
+    group.add(gauge);
+    const arc: number[] = [];
+    const ticks: number[] = [];
+    const from = Math.PI * 1.1;
+    const to = -Math.PI * 0.1;
+    const radius = 2;
+    for (let step = 0; step < segments; step += 1) {
+        const a = from + ((to - from) * step) / segments;
+        const b = from + ((to - from) * (step + 1)) / segments;
+        arc.push(Math.cos(a) * radius, Math.sin(a) * radius, 0, Math.cos(b) * radius, Math.sin(b) * radius, 0);
+    }
+    for (let index = 0; index <= 40; index += 1) {
+        const a = from + ((to - from) * index) / 40;
+        const inner = index % 5 === 0 ? radius - 0.32 : radius - 0.16;
+        ticks.push(Math.cos(a) * inner, Math.sin(a) * inner, 0, Math.cos(a) * radius, Math.sin(a) * radius, 0);
+    }
+    lines(arc, 0.8, 'text', gauge);
+    lines(ticks, 0.55, 'muted', gauge);
+    const needle = new THREE.Group();
+    gauge.add(needle);
+    lines([0, 0, 0, 1.7, 0, 0, 0, -0.08, 0, 0, 0.08, 0], 0.95, 'text', needle);
+    return station(0.08, (time) => {
+        needle.rotation.z = Math.PI * 0.42 + Math.sin(time * 0.6) * 0.32;
+    });
+}
+
+/// Social: a network of traders around one leader, with followers linked to it.
+function network(palette: Palette, detail: number): Station {
+    const { group, lines, station } = kit(palette);
+    const random = seeded(4663);
+    const count = Math.round(30 * detail) + 6;
+    const nodes: THREE.Vector3[] = [];
+    for (let index = 0; index < count; index += 1) {
+        const direction = new THREE.Vector3(random() * 2 - 1, (random() * 2 - 1) * 0.7, random() * 2 - 1).normalize();
+        nodes.push(direction.multiplyScalar(1.3 + random() * 1.1));
+    }
+    const glyphs: number[] = [];
+    const size = 0.07;
+    for (const node of nodes) {
+        glyphs.push(node.x - size, node.y, node.z, node.x + size, node.y, node.z);
+        glyphs.push(node.x, node.y - size, node.z, node.x, node.y + size, node.z);
+        glyphs.push(node.x, node.y, node.z - size, node.x, node.y, node.z + size);
+    }
+    const peers: number[] = [];
+    nodes.forEach((node, index) => {
+        const nearest = nodes
+            .map((other, position) => ({ position, distance: node.distanceTo(other) }))
+            .filter((entry) => entry.position !== index)
+            .sort((a, b) => a.distance - b.distance)
+            .slice(0, 2);
+        for (const { position } of nearest) {
+            const other = nodes[position]!;
+            peers.push(node.x, node.y, node.z, other.x, other.y, other.z);
+        }
+    });
+    const follows: number[] = [];
+    nodes.slice(0, Math.ceil(count / 3)).forEach((node) => follows.push(0, 0, 0, node.x, node.y, node.z));
+    const leader = new THREE.EdgesGeometry(new THREE.OctahedronGeometry(0.3));
+    lines(Array.from(leader.getAttribute('position').array), 0.95);
+    leader.dispose();
+    lines(glyphs, 0.85);
+    lines(peers, 0.22, 'muted');
+    lines(follows, 0.5);
+    return station(0.1);
+}
+
+/// Verify: one block per contract in the deployment, chained in order. A contract with no address on
+/// this network is drawn faint.
+function contractBlocks(palette: Palette, deployed: readonly boolean[]): Station {
+    const { group, lines, station } = kit(palette);
+    const columns = 5;
+    const rows = Math.ceil(deployed.length / columns);
+    const gap = 0.72;
+    const half = 0.22;
+    const centre = (index: number) =>
+        new THREE.Vector3(
+            ((index % columns) - (columns - 1) / 2) * gap,
+            ((rows - 1) / 2 - Math.floor(index / columns)) * gap,
+            Math.sin(index * 1.7) * 0.25,
+        );
+    const box = (c: THREE.Vector3, out: number[]) => {
+        const corners = [-1, 1].flatMap((x) => [-1, 1].flatMap((y) => [-1, 1].map((z) => [c.x + x * half, c.y + y * half, c.z + z * half])));
+        for (let a = 0; a < 8; a += 1) {
+            for (let b = a + 1; b < 8; b += 1) {
+                // Corners that differ in exactly one axis share an edge.
+                const differ = (a ^ b) === 1 || (a ^ b) === 2 || (a ^ b) === 4;
+                if (differ) out.push(...corners[a]!, ...corners[b]!);
+            }
+        }
+    };
+    const live: number[] = [];
+    const missing: number[] = [];
+    const chain: number[] = [];
+    deployed.forEach((isLive, index) => {
+        const c = centre(index);
+        box(c, isLive ? live : missing);
+        if (index > 0) {
+            const previous = centre(index - 1);
+            chain.push(previous.x, previous.y, previous.z, c.x, c.y, c.z);
+        }
+    });
+    lines(live, 0.8);
+    if (missing.length > 0) lines(missing, 0.28, 'muted');
+    lines(chain, 0.3, 'muted');
+    group.rotation.y = 0.2;
+    return station(0.06);
+}
+
+/// Vision: the mark again, closed, inside a ring of ticks that faces the camera.
+function resolved(palette: Palette, detail: number): Station {
+    const mark = mobius(palette, detail, 1, 6);
+    const { group, lines, station } = kit(palette);
+    const ring: number[] = [];
+    const segments = Math.round(160 * detail);
+    for (let index = 0; index < segments; index += 1) {
+        const a = (index / segments) * Math.PI * 2;
+        const b = ((index + 1) / segments) * Math.PI * 2;
+        ring.push(Math.cos(a) * 2.6, Math.sin(a) * 2.6, 0, Math.cos(b) * 2.6, Math.sin(b) * 2.6, 0);
+    }
+    const ticks: number[] = [];
+    for (let index = 0; index < 120; index += 1) {
+        const a = (index / 120) * Math.PI * 2;
+        const inner = index % 10 === 0 ? 2.32 : 2.46;
+        ticks.push(Math.cos(a) * inner, Math.sin(a) * inner, 0, Math.cos(a) * 2.6, Math.sin(a) * 2.6, 0);
+    }
+    lines(ring, 0.4, 'muted');
+    lines(ticks, 0.5, 'muted');
+    group.add(mark.group);
+    const halo = station(0, (time) => {
+        mark.group.rotation.y = time * mark.spin;
+    });
+    return {
+        ...halo,
+        setFade(fade) {
+            halo.setFade(fade);
+            mark.setFade(fade);
+        },
+        recolor() {
+            halo.recolor();
+            mark.recolor();
         },
         dispose() {
-            for (const geometry of geometries) geometry.dispose();
-            for (const material of materials) material.dispose();
+            halo.dispose();
+            mark.dispose();
         },
     };
 }
 
-/// The ground the whole scene stands on: a perspective grid that runs the full width of the screen out to
-/// the horizon, drawn as one `LineSegments` with a small shader. The shader fades each line with its
-/// distance from the camera, and fades it out in screen space under the header (top) and above the
-/// bottom rail, so the grid never runs behind the navigation. It belongs to the scene, not the rig, so
-/// it stays centred on the viewport while the rig is shifted to the right.
+/// The seven stations in section order, each placed on the path. `detail` scales the segment counts
+/// down on a phone.
+export function buildStations(palette: Palette, detail: number, deployed: readonly boolean[]) {
+    const markets = globe(palette, detail);
+    const stations: Station[] = [
+        mobius(palette, detail, 0.8, 4),
+        markets,
+        payoffSurface(palette, detail),
+        vaultGauge(palette, detail),
+        network(palette, detail),
+        contractBlocks(palette, deployed),
+        resolved(palette, detail),
+    ];
+    stations.forEach((item, index) => item.group.position.copy(stationPosition(index)));
+    return { stations, setMarketCount: markets.setCount };
+}
+
+/// The ground under the whole path: a grid drawn as one `LineSegments` that follows the camera in whole
+/// cells, so it reads as endless and still. A small shader fades each line with distance, and fades it
+/// out under the header.
 export function buildGround(palette: Palette) {
     const STEP = 1.5;
-    // Every line stays inside the cone the camera can see, so no coordinate is far off screen: a line
-    // that starts at a huge x just in front of the camera is clipped badly by some rasterisers.
-    const CAMERA_Z = DISTANCE;
-    const REACH = 1.2; // sideways reach per unit of depth, enough for a 21:9 screen
-    const DEPTH_FAR = 66;
+    const REACH = 48;
     const positions: number[] = [];
-    // Lines that run away from the camera: one per x, from just in front of it out to the horizon.
-    for (let x = -72; x <= 72 + 1e-6; x += STEP) {
-        const startDepth = Math.max(2, Math.abs(x) / REACH);
-        positions.push(x, 0, CAMERA_Z - startDepth, x, 0, CAMERA_Z - DEPTH_FAR);
-    }
-    // Lines across: one per depth, as wide as the view is at that depth.
-    for (let depth = 2; depth <= DEPTH_FAR + 1e-6; depth += STEP) {
-        const half = depth * REACH;
-        positions.push(-half, 0, CAMERA_Z - depth, half, 0, CAMERA_Z - depth);
-    }
+    for (let x = -REACH; x <= REACH + 1e-6; x += STEP) positions.push(x, 0, -REACH, x, 0, REACH);
+    for (let z = -REACH; z <= REACH + 1e-6; z += STEP) positions.push(-REACH, 0, z, REACH, 0, z);
     const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute(
-        'position',
-        new THREE.BufferAttribute(new Float32Array(positions), 3),
-    );
+    geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
     const uniforms = {
-        uColor: { value: palette.accent.clone() },
+        uColor: { value: palette.muted.clone() },
         uResolution: { value: new THREE.Vector2(1, 1) },
-        uNear: { value: 4 },
-        uFar: { value: 46 },
-        uOpacity: { value: 0.28 },
+        uOpacity: { value: 0.3 },
     };
     const material = new THREE.ShaderMaterial({
         uniforms,
@@ -526,28 +457,31 @@ export function buildGround(palette: Palette) {
         fragmentShader: /* glsl */ `
             uniform vec3 uColor;
             uniform vec2 uResolution;
-            uniform float uNear;
-            uniform float uFar;
             uniform float uOpacity;
             varying float vDistance;
             void main() {
                 float v = gl_FragCoord.y / uResolution.y;
-                float distanceFade = 1.0 - smoothstep(uNear, uFar, vDistance);
-                float nearFade = smoothstep(1.0, 3.0, vDistance);
-                float bottomFade = smoothstep(0.125, 0.22, v);
-                float topFade = 1.0 - smoothstep(0.80, 0.89, v);
-                float alpha = uOpacity * distanceFade * nearFade * bottomFade * topFade;
-                gl_FragColor = vec4(uColor, alpha);
+                float distanceFade = 1.0 - smoothstep(6.0, 32.0, vDistance);
+                float nearFade = smoothstep(1.0, 3.5, vDistance);
+                float topFade = 1.0 - smoothstep(0.78, 0.88, v);
+                gl_FragColor = vec4(uColor, uOpacity * distanceFade * nearFade * topFade);
             }
         `,
     });
     const grid = new THREE.LineSegments(geometry, material);
     grid.frustumCulled = false;
-    grid.position.y = -2.1;
+    grid.position.y = -2.2;
     return {
-        group: grid,
+        object: grid,
+        follow(eye: THREE.Vector3) {
+            grid.position.x = Math.round(eye.x / STEP) * STEP;
+            grid.position.z = Math.round(eye.z / STEP) * STEP;
+        },
         setSize(width: number, height: number) {
             uniforms.uResolution.value.set(width, height);
+        },
+        recolor() {
+            uniforms.uColor.value.copy(palette.muted);
         },
         dispose() {
             geometry.dispose();

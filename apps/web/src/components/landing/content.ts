@@ -1,120 +1,97 @@
-export interface LandingTab {
-    label: string;
-    lead: string;
-    body: string;
-}
+/// The landing page's copy, one entry per section, in rail order. Numbers never live here: every figure
+/// on the page is read from the registry or `packages/config` by the section that shows it.
 
 export interface LandingSection {
     id: string;
+    /// The rail label.
     nav: string;
     eyebrow: string;
-    title: [string, string];
-    summary: string;
-    caption: [string, string];
-    tabs: LandingTab[];
-    link?: { href: string; label: string };
+    title: string;
+    lede: string;
 }
 
 export const SECTIONS: LandingSection[] = [
     {
-        id: 'beginning',
-        nav: 'The beginning',
-        eyebrow: 'Onchain derivatives for stock tokens',
-        title: ['Equities,', 'unchained.'],
-        summary:
-            'Perpetuals and options on tokenized stocks. Priced in real time, settled onchain, built for Robinhood Chain.',
-        caption: ['The HUME landscape', 'A perspective on the HUME architecture'],
-        tabs: [],
+        id: 'start',
+        nav: 'Start',
+        eyebrow: 'Derivatives for tokenized equities',
+        title: 'Global markets, onchain.',
+        lede: 'Perpetuals, options and lending on tokenized stocks. Priced by oracles, settled by contracts, and open for anyone to check.',
     },
     {
-        id: 'perpetuals',
-        nav: 'Trade perpetuals',
-        eyebrow: '01 / Perpetuals, plainly',
-        title: ['Long or short.', '24 hours, 5 days.'],
-        summary:
-            'Take either side of a tokenized stock with leverage. No broker and no waiting. Prices update 24 hours a day, 5 days a week. When a feed is stale, the market shows its last close and refuses new orders.',
-        caption: ['The perpetuals architecture', 'Three steps between you and a position'],
-        tabs: [
-            {
-                label: 'Choose',
-                lead: 'Start with a market and a side.',
-                body: 'Pick a tokenized stock, go long or short, and set the size. Margin and leverage stay inside the limits the market sets.',
-            },
-            {
-                label: 'Review',
-                lead: 'See it before you sign.',
-                body: 'Size, fees and the liquidation price are shown before the wallet is asked for anything. A paused market still prices and refuses the trade.',
-            },
-            {
-                label: 'Confirm',
-                lead: 'One signature.',
-                body: 'The position opens against the shared vault. Margin, funding and PnL settle onchain, and you can verify every step.',
-            },
-        ],
-        link: { href: '/perpetuals', label: 'Open the terminal' },
+        id: 'markets',
+        nav: 'Markets',
+        eyebrow: '01 / Markets',
+        title: 'Every market, one place.',
+        lede: 'Every tokenized stock with a live price feed, grouped by region. Each market sets its own leverage cap. While its session is shut, a market shows its last close and refuses new orders.',
     },
     {
-        id: 'options',
-        nav: 'Price options',
-        eyebrow: '02 / Options, defined',
-        title: ['Know the risk.', 'Before you trade.'],
-        summary:
-            'Calls and puts on tokenized stocks, with the worst case drawn before you buy.',
-        caption: ['The options architecture', 'A series, a payoff, a settlement'],
-        tabs: [
-            {
-                label: 'Chain',
-                lead: 'Every series in one view.',
-                body: 'Browse calls and puts by expiry and strike, with the premium and the greeks beside each one.',
-            },
-            {
-                label: 'Payoff',
-                lead: 'The shape of the trade.',
-                body: 'Maximum loss, break-even and payoff at expiry are shown up front, for a single option or a strategy built from several.',
-            },
-            {
-                label: 'Settle',
-                lead: 'Cash-settled at expiry.',
-                body: 'Settlement is computed onchain from the oracle price at expiry. Nothing is delivered and nothing is left to a counterparty.',
-            },
-        ],
-        link: { href: '/options', label: 'Open the option chain' },
+        id: 'trade',
+        nav: 'Trade',
+        eyebrow: '02 / Trade',
+        title: 'Take a view.',
+        lede: 'Go long or short with a perpetual, buy a call or a put, or combine options into a strategy. The worst case is drawn before you sign.',
     },
     {
-        id: 'vault',
-        nav: 'One vault',
-        eyebrow: '03 / One vault, explained',
-        title: ['One vault.', 'Every position.'],
-        summary:
-            'Collateral, positions and credit share one onchain vault, so what you hold is what backs what you owe.',
-        caption: ['The vault design', 'Collateral, credit and health, one ledger'],
-        tabs: [
-            {
-                label: 'Collateral',
-                lead: 'Deposit once.',
-                body: 'Collateral sits in the vault and backs your perpetual and option positions. Withdraw what is free at any time.',
-            },
-            {
-                label: 'Credit',
-                lead: 'Lend and borrow, capped.',
-                body: 'Lend, or borrow against a stock token. Caps are deliberately small at launch, and a paused pair stays visible and refuses new loans.',
-            },
-            {
-                label: 'Health',
-                lead: 'Risk in plain sight.',
-                body: 'Health factor and liquidation price are shown for every position, so danger is visible before it is urgent.',
-            },
-        ],
-        link: { href: '/lending', label: 'Open lending' },
+        id: 'capital',
+        nav: 'Capital',
+        eyebrow: '03 / Capital',
+        title: 'Put conviction to work.',
+        lede: 'Lock a stock token as collateral and borrow against it. One number, the health factor, says how close the loan is to liquidation.',
     },
     {
-        id: 'move',
-        nav: 'Make your move',
-        eyebrow: '04 / Make your move',
-        title: ['Verify it.', 'Then trade.'],
-        summary:
-            'Every contract HUME runs on is listed in full. Try sample mode first, no wallet needed. The contracts are unaudited: trade only what you can lose.',
-        caption: ['The landscape ahead', 'Sample mode and mainnet, side by side'],
-        tabs: [],
+        id: 'social',
+        nav: 'Social',
+        eyebrow: '04 / Social',
+        title: 'Follow skill, not noise.',
+        lede: 'A leaderboard ranked by results, not by followers. Copy trading follows a trader you choose, with limits you set.',
+    },
+    {
+        id: 'verify',
+        nav: 'Verify',
+        eyebrow: '05 / Verify',
+        title: 'Check everything.',
+        lede: 'Every contract is listed with its address and a link to the explorer, and every market limit is read from the registry.',
+    },
+    {
+        id: 'vision',
+        nav: 'Vision',
+        eyebrow: '06 / Vision',
+        title: 'Open to anyone. Checkable by everyone.',
+        lede: 'The world’s equities as markets anyone can trade, on contracts anyone can read. Start in sample mode, no wallet needed.',
+    },
+];
+
+export interface TradeProduct {
+    label: string;
+    lead: string;
+    body: string;
+    href: string;
+    /// What the payoff drawing beside it shows, for a screen reader and as its caption.
+    payoff: string;
+}
+
+/// The three ways to trade, in the Trade section's tabs. Each tab's payoff drawing is in `sections.tsx`.
+export const TRADE_PRODUCTS: TradeProduct[] = [
+    {
+        label: 'Perpetuals',
+        lead: 'Long or short, with leverage.',
+        body: 'Pick a market and a side. Margin, fees and the liquidation price are shown before the wallet is asked for anything.',
+        href: '/perpetuals',
+        payoff: 'Gains and losses move with the price, both ways.',
+    },
+    {
+        label: 'Options',
+        lead: 'Calls and puts, cash-settled.',
+        body: 'A bought option can lose its premium and no more. Settlement uses the oracle price at expiry.',
+        href: '/options',
+        payoff: 'A call: the premium is the most it can lose.',
+    },
+    {
+        label: 'Strategies',
+        lead: 'Several legs, one view.',
+        body: 'Combine options into a spread or a straddle, and see the maximum loss and the break-even first.',
+        href: '/strategies',
+        payoff: 'A call spread: loss and gain both capped.',
     },
 ];

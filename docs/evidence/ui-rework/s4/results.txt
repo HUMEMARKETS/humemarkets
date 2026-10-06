@@ -1,0 +1,75 @@
+PASS [1440 light] #start: no horizontal scroll
+PASS [1440 light] scrolled to #start: rail marks Start — Start
+PASS [1440 light] #markets: no horizontal scroll
+PASS [1440 light] scrolled to #markets: rail marks Markets — 01Markets
+PASS [1440 light] #trade: no horizontal scroll
+PASS [1440 light] scrolled to #trade: rail marks Trade — 02Trade
+PASS [1440 light] #capital: no horizontal scroll
+PASS [1440 light] scrolled to #capital: rail marks Capital — 03Capital
+PASS [1440 light] #social: no horizontal scroll
+PASS [1440 light] scrolled to #social: rail marks Social — 04Social
+PASS [1440 light] #verify: no horizontal scroll
+PASS [1440 light] scrolled to #verify: rail marks Verify — 05Verify
+PASS [1440 light] #vision: no horizontal scroll
+PASS [1440 light] scrolled to #vision: rail marks Vision — 06Vision
+PASS [1440 dark] #start: no horizontal scroll
+PASS [1440 dark] scrolled to #start: rail marks Start — Start
+PASS [1440 dark] #markets: no horizontal scroll
+PASS [1440 dark] scrolled to #markets: rail marks Markets — 01Markets
+PASS [1440 dark] #trade: no horizontal scroll
+PASS [1440 dark] scrolled to #trade: rail marks Trade — 02Trade
+PASS [1440 dark] #capital: no horizontal scroll
+PASS [1440 dark] scrolled to #capital: rail marks Capital — 03Capital
+PASS [1440 dark] #social: no horizontal scroll
+PASS [1440 dark] scrolled to #social: rail marks Social — 04Social
+PASS [1440 dark] #verify: no horizontal scroll
+PASS [1440 dark] scrolled to #verify: rail marks Verify — 05Verify
+PASS [1440 dark] #vision: no horizontal scroll
+PASS [1440 dark] scrolled to #vision: rail marks Vision — 06Vision
+PASS [375 light] #start: no horizontal scroll
+PASS [375 light] scrolled to #start: rail marks Start — Start
+PASS [375 light] #markets: no horizontal scroll
+PASS [375 light] scrolled to #markets: rail marks Markets — 01Markets
+PASS [375 light] #trade: no horizontal scroll
+PASS [375 light] scrolled to #trade: rail marks Trade — 02Trade
+PASS [375 light] #capital: no horizontal scroll
+PASS [375 light] scrolled to #capital: rail marks Capital — 03Capital
+PASS [375 light] #social: no horizontal scroll
+PASS [375 light] scrolled to #social: rail marks Social — 04Social
+PASS [375 light] #verify: no horizontal scroll
+PASS [375 light] scrolled to #verify: rail marks Verify — 05Verify
+PASS [375 light] #vision: no horizontal scroll
+PASS [375 light] scrolled to #vision: rail marks Vision — 06Vision
+PASS [375 dark] #start: no horizontal scroll
+PASS [375 dark] scrolled to #start: rail marks Start — Start
+PASS [375 dark] #markets: no horizontal scroll
+PASS [375 dark] scrolled to #markets: rail marks Markets — 01Markets
+PASS [375 dark] #trade: no horizontal scroll
+PASS [375 dark] scrolled to #trade: rail marks Trade — 02Trade
+PASS [375 dark] #capital: no horizontal scroll
+PASS [375 dark] scrolled to #capital: rail marks Capital — 03Capital
+PASS [375 dark] #social: no horizontal scroll
+PASS [375 dark] scrolled to #social: rail marks Social — 04Social
+PASS [375 dark] #verify: no horizontal scroll
+PASS [375 dark] scrolled to #verify: rail marks Verify — 05Verify
+PASS [375 dark] #vision: no horizontal scroll
+PASS [375 dark] scrolled to #vision: rail marks Vision — 06Vision
+PASS [1440] click Capital: rail marks it, page at its top, hash and focus follow — 03Capital top=2699/2700 hash=#capital focus=capital-title
+PASS [1440] click Markets: rail marks it, page at its top, hash and focus follow — 01Markets top=900/900 hash=#markets focus=markets-title
+PASS [1440] click Vision: rail marks it, page at its top, hash and focus follow — 06Vision top=5400/5400 hash=#vision focus=vision-title
+PASS [1440] click Start: rail marks it, page at its top, hash and focus follow — Start top=1/0 hash=(none) focus=start-title
+PASS [1440] click Verify: rail marks it, page at its top, hash and focus follow — 05Verify top=4500/4500 hash=#verify focus=verify-title
+PASS [1440] ArrowDown moves to Markets — 1
+PASS [1440] PageDown moves to Trade — 2
+PASS [1440] End moves to Vision — 6
+PASS [1440] Home moves to Start — 0
+PASS theme switch keeps the one canvas (no remount)
+PASS light theme: ivory ground, dark lines — {"min":22,"max":241,"mean":238}
+PASS dark theme: charcoal ground, light lines — {"min":11,"max":228,"mean":14}
+PASS hero search routes to /markets?q= and pre-fills the filter — {"path":"/markets?q=nvda","filter":"nvda"}
+PASS facts strip count matches the markets section — {"dd":["21","10x","20"],"explore":"Explore all 21 markets","chips":21}
+PASS wheel: twelve 100 px notches move the page down, none pulled back — 100,100,300,400,500,600,700,800,900,1000,1100,1200 rest=1200
+PASS reduced motion: StaticScene, no WebGL canvas — {"staticScene":true,"canvas":false}
+PASS reduced motion: a rail click jumps, no glide
+
+73 pass, 0 fail

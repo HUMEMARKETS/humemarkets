@@ -2,22 +2,17 @@
 
 import { cn } from '@hume/ui';
 import dynamic from 'next/dynamic';
-import Link from 'next/link';
-import {
-    useCallback,
-    useEffect,
-    useRef,
-    useState,
-    type KeyboardEvent,
-} from 'react';
-import { ArrowIcon } from '@/components/ArrowIcon';
-import { ContractAddressBadge } from '@/components/ContractAddressBadge';
-import { TrustStrip } from '@/components/TrustStrip';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { usePerpMarkets } from '@/hooks/queries';
+import { CONTRACTS } from '@/lib/contracts';
 import { LANDING_FRAME, SPACED_CAPS } from '@/lib/frame';
-import { X_HANDLE, X_URL } from '@/lib/social';
+import { dampFactor, keyTarget, progressOf, settleTarget } from '@/lib/landingScroll';
 import { useTheme } from '@/lib/theme';
 import { ContractsPanel } from './ContractsPanel';
 import { SECTIONS } from './content';
+import type { World } from './LandingCanvas';
+import { LandingRail } from './LandingRail';
+import { SECTION_BODIES } from './sections';
 import { StaticScene } from './StaticScene';
 
 const LandingCanvas = dynamic(
@@ -26,33 +21,35 @@ const LandingCanvas = dynamic(
 );
 
 const MOTION_KEY = 'hume.landing.motion';
-const pad = (index: number) => String(index).padStart(2, '0');
+const DEPLOYED = CONTRACTS.map((contract) => Boolean(contract.address));
 
-const primary =
-    'inline-flex h-14 items-center justify-between gap-10 rounded-sharp bg-accent px-6 text-base font-medium text-accent-ink transition-[background-color,box-shadow] duration-150 hover:bg-accent-hover hover:shadow-[0_0_0_3px_var(--color-accent-line),var(--shadow-accent-glow)] active:bg-accent-press active:shadow-none';
-const secondary =
-    'inline-flex h-14 items-center gap-3 px-2 text-base text-muted transition-colors duration-150 hover:text-text';
+/// Keys the page itself answers, so a control that uses them keeps them.
+const OWN_KEYS = 'input, textarea, select, [role="tablist"], [role="dialog"], [contenteditable="true"]';
 
-function Plus() {
-    return (
-        <span aria-hidden="true" className="text-xl leading-none">
-            +
-        </span>
-    );
-}
+const reveal = (distance: number) => {
+    // Copy arrives over the last stretch of the camera's travel and lands as the camera settles.
+    const t = Math.min(1, Math.max(0, (distance + 0.65) / 0.57));
+    return t * t * (3 - 2 * t);
+};
 
-/// The landing page: five full-height sections that snap as you scroll, one shared WebGL canvas
-/// behind them, and a numbered rail at the bottom. All five sections are in the page at once, so
-/// the text reads without WebGL, without motion and without a pointer; the canvas only adds the
-/// scene. Extended motion is allowed here and nowhere else (docs/UI_CONTRACT.md Section 8).
+/// The landing page: seven sections over one fixed WebGL world. Native scroll moves the page; one
+/// damped progress value moves the camera, the rail and the copy together. The text is all in the page,
+/// so it reads without WebGL, without motion and without a pointer. Extended motion is allowed here and
+/// nowhere else (docs/UI_CONTRACT.md Section 8).
 export function LandingStage() {
     const theme = useTheme();
-    const [scroller, setScroller] = useState<HTMLDivElement | null>(null);
+    const markets = usePerpMarkets();
+    const scroller = useRef<HTMLDivElement>(null);
     const sectionEls = useRef<(HTMLElement | null)[]>([]);
-    const progress = useRef(0);
+    const copyEls = useRef<(HTMLDivElement | null)[]>([]);
+    const headingEls = useRef<(HTMLHeadingElement | null)[]>([]);
+    const world = useRef<World | null>(null);
+    const railPaint = useRef<((progress: number) => void) | null>(null);
+    const tops = useRef<number[]>([]);
+    const target = useRef(0);
+    const shown = useRef(0);
+    const glide = useRef<{ from: number; to: number } | null>(null);
     const [active, setActive] = useState(0);
-    const [tabs, setTabs] = useState<number[]>(() => SECTIONS.map(() => 0));
-    const [hover, setHover] = useState<number | null>(null);
     const [motion, setMotion] = useState(true);
     const [failed, setFailed] = useState(false);
     const [panel, setPanel] = useState(false);
@@ -64,54 +61,8 @@ export function LandingStage() {
         } catch {
             stored = null;
         }
-        const reduced = window.matchMedia(
-            '(prefers-reduced-motion: reduce)',
-        ).matches;
+        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         setMotion(stored === null ? !reduced : stored === 'on');
-    }, []);
-
-    useEffect(() => {
-        const sync = () => setPanel(window.location.hash === '#contracts');
-        sync();
-        window.addEventListener('hashchange', sync);
-        return () => window.removeEventListener('hashchange', sync);
-    }, []);
-
-    // A section id in the address (`/#vault`) opens at that section, and a rail move writes it back, so a
-    // section can be linked to and survives a reload. `#contracts` belongs to the drawer, not a section.
-    useEffect(() => {
-        const toHash = () => {
-            const index = SECTIONS.findIndex(
-                (section) => section.id === window.location.hash.slice(1),
-            );
-            if (index >= 0) {
-                sectionEls.current[index]?.scrollIntoView({ block: 'start' });
-            }
-        };
-        toHash();
-        window.addEventListener('hashchange', toHash);
-        return () => window.removeEventListener('hashchange', toHash);
-    }, []);
-
-    useEffect(() => {
-        if (window.location.hash === '#contracts') return;
-        const id = SECTIONS[active]?.id;
-        const hash = active === 0 || !id ? '' : `#${id}`;
-        if (window.location.hash === hash) return;
-        window.history.replaceState(
-            null,
-            '',
-            window.location.pathname + window.location.search + hash,
-        );
-    }, [active]);
-
-    const closePanel = useCallback(() => {
-        setPanel(false);
-        window.history.replaceState(
-            null,
-            '',
-            window.location.pathname + window.location.search,
-        );
     }, []);
 
     const toggleMotion = () => {
@@ -124,247 +75,262 @@ export function LandingStage() {
         }
     };
 
-    const onScroll = useCallback(() => {
-        if (!scroller) return;
-        const tops = sectionEls.current.map((element) => element?.offsetTop ?? 0);
-        const top = scroller.scrollTop;
-        let index = 0;
-        tops.forEach((start, position) => {
-            if (top >= start - 1) index = position;
-        });
-        const start = tops[index] ?? 0;
-        const end = tops[index + 1];
-        progress.current =
-            end === undefined
-                ? index
-                : index + Math.min(1, Math.max(0, (top - start) / (end - start)));
-        const nearest = Math.round(progress.current);
-        setActive((current) => (current === nearest ? current : nearest));
-    }, [scroller]);
-
+    // One loop drives everything that moves: the rail, the copy and the camera all read `shown`.
     useEffect(() => {
-        onScroll();
-    }, [onScroll]);
+        const el = scroller.current;
+        if (!el) return;
+        const paint = (dt: number) => {
+            const progress = shown.current;
+            railPaint.current?.(progress);
+            copyEls.current.forEach((copy, index) => {
+                if (!copy) return;
+                const amount = motion ? reveal(progress - index) : 1;
+                copy.style.opacity = amount.toFixed(3);
+                copy.style.transform = amount >= 1 ? '' : `translate3d(0, ${((1 - amount) * 28).toFixed(1)}px, 0)`;
+            });
+            world.current?.frame(progress, dt);
+        };
+        const onScroll = () => {
+            target.current = progressOf(el.scrollTop, tops.current);
+            if (!motion) {
+                shown.current = target.current;
+                paint(0);
+            }
+        };
+        const measure = () => {
+            tops.current = sectionEls.current.map((section) => section?.offsetTop ?? 0);
+            onScroll();
+        };
+        const stopGlide = () => {
+            glide.current = null;
+        };
+        // Sections settle when a scroll ends close to one, on the same glide as a rail click.
+        const onScrollEnd = () => {
+            if (glide.current) return;
+            const goal = settleTarget(el.scrollTop, tops.current, el.clientHeight);
+            if (goal === undefined) return;
+            if (motion) glide.current = { from: el.scrollTop, to: goal };
+            else el.scrollTop = goal;
+        };
+        measure();
+        if (motion) shown.current = target.current;
+        const resize = new ResizeObserver(measure);
+        resize.observe(el);
+        for (const section of sectionEls.current) if (section) resize.observe(section);
+        el.addEventListener('scroll', onScroll, { passive: true });
+        el.addEventListener('scrollend', onScrollEnd);
+        el.addEventListener('wheel', stopGlide, { passive: true });
+        el.addEventListener('touchstart', stopGlide, { passive: true });
 
-    const goTo = (index: number) => {
-        const target = sectionEls.current[
-            Math.max(0, Math.min(SECTIONS.length - 1, index))
-        ];
-        target?.scrollIntoView({
-            behavior: motion ? 'smooth' : 'auto',
-            block: 'start',
-        });
-    };
+        let frame = 0;
+        let last = 0;
+        const tick = (now: number) => {
+            const dt = last === 0 ? 1 / 60 : Math.min(0.05, (now - last) / 1000);
+            last = now;
+            const k = dampFactor(dt);
+            const move = glide.current;
+            if (move) {
+                // A rail click glides the page on the same curve as the camera, so the two move as one.
+                move.from += (move.to - move.from) * k;
+                if (Math.abs(move.to - move.from) < 0.5) {
+                    el.scrollTop = move.to;
+                    stopGlide();
+                } else {
+                    el.scrollTop = move.from;
+                }
+                target.current = progressOf(el.scrollTop, tops.current);
+            }
+            shown.current += (target.current - shown.current) * k;
+            paint(dt);
+            frame = requestAnimationFrame(tick);
+        };
+        // The loop runs only while motion is on and the tab is visible.
+        const run = () => {
+            if (motion && !document.hidden) {
+                if (frame === 0) {
+                    last = 0;
+                    frame = requestAnimationFrame(tick);
+                }
+            } else if (frame !== 0) {
+                cancelAnimationFrame(frame);
+                frame = 0;
+            }
+        };
+        document.addEventListener('visibilitychange', run);
+        run();
+        if (!motion) paint(0);
+        return () => {
+            cancelAnimationFrame(frame);
+            document.removeEventListener('visibilitychange', run);
+            resize.disconnect();
+            el.removeEventListener('scroll', onScroll);
+            el.removeEventListener('scrollend', onScrollEnd);
+            el.removeEventListener('wheel', stopGlide);
+            el.removeEventListener('touchstart', stopGlide);
+            stopGlide();
+        };
+    }, [motion]);
 
-    const selectTab = (section: number, tab: number) => {
-        setTabs((current) => current.map((value, index) => (index === section ? tab : value)));
-    };
+    const scrollTo = useCallback(
+        (top: number) => {
+            const el = scroller.current;
+            if (!el) return;
+            if (motion) {
+                glide.current = { from: el.scrollTop, to: top };
+            } else {
+                el.scrollTop = top;
+            }
+        },
+        [motion],
+    );
 
-    const onTabKey = (event: KeyboardEvent, section: number, count: number) => {
-        const current = tabs[section] ?? 0;
-        const next =
-            event.key === 'ArrowRight'
-                ? (current + 1) % count
-                : event.key === 'ArrowLeft'
-                  ? (current + count - 1) % count
-                  : null;
-        if (next === null) return;
-        event.preventDefault();
-        selectTab(section, next);
-        document.getElementById(`tab-${section}-${next}`)?.focus();
-    };
+    const goTo = useCallback(
+        (index: number) => {
+            const top = tops.current[index];
+            if (top === undefined) return;
+            scrollTo(top);
+            // Focus follows the section, so a screen reader announces where the page went.
+            headingEls.current[index]?.focus({ preventScroll: true });
+        },
+        [scrollTo],
+    );
 
-    const current = SECTIONS[active] ?? SECTIONS[0]!;
-    const previous = SECTIONS[active - 1];
-    const next = SECTIONS[active + 1];
+    // The section crossing the middle of the screen is the active one.
+    useEffect(() => {
+        const el = scroller.current;
+        if (!el) return;
+        const observer = new IntersectionObserver(
+            (entries) => {
+                for (const entry of entries) {
+                    if (entry.isIntersecting) setActive(Number((entry.target as HTMLElement).dataset.index));
+                }
+            },
+            { root: el, rootMargin: '-49% 0px -50% 0px' },
+        );
+        for (const section of sectionEls.current) if (section) observer.observe(section);
+        return () => observer.disconnect();
+    }, []);
+
+    // `#contracts` opens the drawer; a section id in the address opens at that section.
+    useEffect(() => {
+        const sync = () => {
+            const hash = window.location.hash.slice(1);
+            setPanel(hash === 'contracts');
+            const index = SECTIONS.findIndex((section) => section.id === hash);
+            const top = tops.current[index];
+            if (index >= 0 && top !== undefined && scroller.current) scroller.current.scrollTop = top;
+        };
+        sync();
+        window.addEventListener('hashchange', sync);
+        return () => window.removeEventListener('hashchange', sync);
+    }, []);
+
+    // The address follows the active section, so a section can be linked to and survives a reload.
+    useEffect(() => {
+        if (window.location.hash === '#contracts') return;
+        const hash = active === 0 ? '' : `#${SECTIONS[active]?.id ?? ''}`;
+        if (window.location.hash === hash) return;
+        window.history.replaceState(null, '', window.location.pathname + window.location.search + hash);
+    }, [active]);
+
+    // Arrow keys, PageUp/PageDown, Home and End move between sections.
+    useEffect(() => {
+        const onKey = (event: KeyboardEvent) => {
+            const el = scroller.current;
+            if (!el || panel || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+            const from = event.target instanceof Element ? event.target : null;
+            if (from && from !== document.body && !el.contains(from)) return;
+            if (from?.closest(OWN_KEYS)) return;
+            const goal = keyTarget(event.key, el.scrollTop, tops.current, el.scrollHeight, el.clientHeight);
+            if (goal === undefined) return;
+            event.preventDefault();
+            const index = tops.current.findIndex((top) => Math.abs(top - goal) < 1);
+            if (index >= 0) goTo(index);
+            else scrollTo(goal);
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [panel, goTo, scrollTo]);
+
+    const closePanel = useCallback(() => {
+        setPanel(false);
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }, []);
 
     return (
         <div className="relative h-full min-h-[34rem] overflow-hidden bg-ground">
-            {failed ? <StaticScene /> : (
+            {motion && !failed ? (
                 <LandingCanvas
-                    // The scene reads the colour tokens once when it is built, so a theme change rebuilds it.
-                    key={theme}
-                    progress={progress}
-                    active={active}
-                    tab={tabs[active] ?? 0}
-                    hover={hover}
-                    motion={motion}
-                    hotspotLabels={current.tabs.map((tab) => tab.label)}
-                    pointerTarget={scroller}
-                    onHover={setHover}
-                    onSelect={(tab) => selectTab(active, tab)}
+                    world={world}
+                    theme={theme}
+                    markets={markets.data?.length ?? 0}
+                    deployed={DEPLOYED}
                     onFailed={() => setFailed(true)}
                 />
+            ) : (
+                <StaticScene index={active} />
             )}
 
             <div
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-x-0 bottom-0 z-[5] h-[68%] bg-gradient-to-t from-ground from-65% to-transparent md:hidden"
-            />
-
-            <div
-                ref={setScroller}
-                onScroll={onScroll}
-                tabIndex={0}
-                role="region"
-                aria-label="HUME, in five sections"
-                className={cn(
-                    'absolute inset-0 z-10 snap-y snap-mandatory overflow-y-auto overscroll-contain [scrollbar-width:none] focus-visible:outline-offset-[-2px] [&::-webkit-scrollbar]:hidden',
-                    motion && 'scroll-smooth',
-                )}
+                ref={scroller}
+                tabIndex={-1}
+                className="absolute inset-0 z-10 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
                 {SECTIONS.map((section, index) => {
-                    const isActive = index === active;
-                    const tab = tabs[index] ?? 0;
-                    const detail = section.tabs[tab];
-                    const Heading = index === 0 ? 'h1' : 'h2';
+                    const Body = SECTION_BODIES[index];
                     return (
                         <section
                             key={section.id}
                             id={section.id}
+                            data-index={index}
                             ref={(element) => {
                                 sectionEls.current[index] = element;
                             }}
                             aria-labelledby={`${section.id}-title`}
-                            inert={!isActive}
-                            className="relative flex min-h-full snap-start items-end md:items-center"
+                            className="relative flex min-h-full items-end md:items-center"
                         >
-                            <div
-                                className={cn(
-                                    LANDING_FRAME,
-                                    'pb-20 pt-24 md:pb-44 md:pt-36',
-                                )}
-                            >
+                            <div className={cn(LANDING_FRAME, 'pb-12 pt-[40dvh] md:py-32 md:pl-[calc(clamp(40px,4.2vw,112px)+11rem)]')}>
                                 <div
-                                    data-ui
-                                    className={cn(
-                                        'max-w-[46rem] transition-[opacity,transform] duration-700',
-                                        isActive
-                                            ? 'translate-y-0 opacity-100'
-                                            : 'translate-y-4 opacity-0',
-                                    )}
+                                    ref={(element) => {
+                                        copyEls.current[index] = element;
+                                    }}
+                                    // On a phone the scene shares the screen with the copy, so the copy sits on the ground.
+                                    className="max-w-[40rem] will-change-[opacity,transform] max-md:-mx-4 max-md:bg-ground/90 max-md:px-4 max-md:py-5"
                                 >
-                                    <p
-                                        className={cn(
-                                            SPACED_CAPS,
-                                            'flex items-center gap-3 text-muted',
-                                        )}
-                                    >
-                                        <span
-                                            aria-hidden="true"
-                                            className="size-1.5 bg-text"
-                                        />
+                                    <p className={cn(SPACED_CAPS, 'flex items-center gap-3 text-muted')}>
+                                        <span aria-hidden="true" className="size-1.5 bg-text" />
                                         {section.eyebrow}
                                     </p>
-                                    <Heading
-                                        id={`${section.id}-title`}
-                                        className="mt-5 font-display text-[clamp(2.5rem,min(7.5vw,13dvh),9.5rem)] font-bold md:whitespace-nowrap leading-[0.98] tracking-[-0.04em] text-text"
-                                    >
-                                        {section.title[0]}
-                                        <br />
-                                        {section.title[1]}
-                                    </Heading>
-                                    <p className="mt-6 max-w-[34rem] text-base leading-relaxed text-muted sm:text-lg">
-                                        {section.summary}
-                                    </p>
-
-                                    {section.tabs.length > 0 ? (
-                                        <div className="mt-8 max-w-[28rem]">
-                                            <div
-                                                role="tablist"
-                                                aria-label={`${section.nav} steps`}
-                                                className="flex border-b border-line"
-                                            >
-                                                {section.tabs.map((item, position) => {
-                                                    const selected = position === tab;
-                                                    return (
-                                                        <button
-                                                            key={item.label}
-                                                            id={`tab-${index}-${position}`}
-                                                            type="button"
-                                                            role="tab"
-                                                            aria-selected={selected}
-                                                            aria-controls={`panel-${index}`}
-                                                            tabIndex={selected ? 0 : -1}
-                                                            onClick={() => selectTab(index, position)}
-                                                            onKeyDown={(event) =>
-                                                                onTabKey(event, index, section.tabs.length)
-                                                            }
-                                                            onPointerEnter={() =>
-                                                                isActive && setHover(position)
-                                                            }
-                                                            onPointerLeave={() => setHover(null)}
-                                                            className={cn(
-                                                                '-mb-px flex flex-1 items-center gap-2 border-b py-3 text-left text-sm transition-colors duration-150',
-                                                                selected
-                                                                    ? 'border-text text-text'
-                                                                    : 'border-transparent text-faint hover:text-text',
-                                                            )}
-                                                        >
-                                                            <span className="text-[11px] tracking-[0.18em] text-faint">
-                                                                {pad(position + 1)}
-                                                            </span>
-                                                            {item.label}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                            <div
-                                                id={`panel-${index}`}
-                                                role="tabpanel"
-                                                aria-labelledby={`tab-${index}-${tab}`}
-                                                className="pt-5"
-                                            >
-                                                <p className="text-text">{detail?.lead}</p>
-                                                <p className="mt-2 leading-relaxed text-muted">
-                                                    {detail?.body}
-                                                </p>
-                                            </div>
-                                            {section.link ? (
-                                                <Link
-                                                    href={section.link.href}
-                                                    className="group mt-6 inline-flex items-center gap-2 text-sm text-accent-hover transition-colors duration-150 hover:text-text"
-                                                >
-                                                    {section.link.label}
-                                                    <ArrowIcon className="size-3 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                                                </Link>
-                                            ) : null}
-                                        </div>
-                                    ) : null}
-
                                     {index === 0 ? (
-                                        <>
-                                            <div className="mt-9 flex flex-wrap items-center gap-4">
-                                                <Link href="/perpetuals" className={primary}>
-                                                    Open App
-                                                    <ArrowIcon />
-                                                </Link>
-                                                <Link href="/markets" className={secondary}>
-                                                    Explore Markets
-                                                    <ArrowIcon />
-                                                </Link>
-                                            </div>
-                                            <p className="mt-4 text-sm text-muted">No wallet needed. Start in sample mode. The contracts are unaudited: trade only what you can lose.</p>
-                                            <ContractAddressBadge className="mt-6 md:hidden" />
-                                            <TrustStrip className="mt-12 max-w-[46rem]" />
-                                        </>
-                                    ) : null}
-                                    {index === SECTIONS.length - 1 ? (
-                                        <div className="mt-9 flex flex-wrap items-center gap-4">
-                                            <Link href="/perpetuals" className={primary}>
-                                                Open App
-                                                <ArrowIcon />
-                                            </Link>
-                                            <a href="#contracts" className={secondary}>
-                                                View contracts
-                                                <Plus />
-                                            </a>
-                                            <Link href="/features" className={secondary}>
-                                                All features
-                                                <Plus />
-                                            </Link>
-                                        </div>
-                                    ) : null}
+                                        <h1
+                                            id={`${section.id}-title`}
+                                            ref={(element) => {
+                                                headingEls.current[index] = element;
+                                            }}
+                                            tabIndex={-1}
+                                            className="mt-5 font-display font-bold leading-[0.9] tracking-[-0.04em] text-text outline-none"
+                                        >
+                                            <span className="block text-[clamp(4rem,min(14vw,22dvh),12rem)]">HUME</span>
+                                            <span className="mt-3 block text-[clamp(1.75rem,min(4vw,6dvh),3.5rem)] leading-[1.05] tracking-[-0.03em]">
+                                                {section.title}
+                                            </span>
+                                        </h1>
+                                    ) : (
+                                        <h2
+                                            id={`${section.id}-title`}
+                                            ref={(element) => {
+                                                headingEls.current[index] = element;
+                                            }}
+                                            tabIndex={-1}
+                                            className="mt-5 font-display text-[clamp(2.25rem,min(5.5vw,9dvh),5.5rem)] font-bold leading-[1] tracking-[-0.04em] text-text outline-none"
+                                        >
+                                            {section.title}
+                                        </h2>
+                                    )}
+                                    <p className="mt-5 max-w-[34rem] text-base leading-relaxed text-muted sm:text-lg">
+                                        {section.lede}
+                                    </p>
+                                    {Body ? <Body onContracts={() => (window.location.hash = 'contracts')} /> : null}
                                 </div>
                             </div>
                         </section>
@@ -372,116 +338,7 @@ export function LandingStage() {
                 })}
             </div>
 
-            <div
-                key={current.id}
-                aria-hidden="true"
-                className="pointer-events-none absolute bottom-40 left-[52%] z-20 hidden animate-[landing-fade_0.7s_ease-out] md:block"
-            >
-                <p className={cn(SPACED_CAPS, 'flex items-center gap-3 text-text')}>
-                    <span className="text-base leading-none">+</span>
-                    {current.caption[0]}
-                </p>
-                <p className="mt-1 pl-6 text-xs text-faint">{current.caption[1]}</p>
-            </div>
-
-            <div
-                className={cn(
-                    LANDING_FRAME,
-                    'absolute inset-x-0 bottom-[4.5rem] z-20 hidden items-center gap-4 md:flex',
-                )}
-            >
-                <button
-                    type="button"
-                    aria-pressed={motion}
-                    onClick={toggleMotion}
-                    className="flex items-center gap-2 text-xs text-muted transition-colors duration-150 hover:text-text"
-                >
-                    <span
-                        aria-hidden="true"
-                        className={cn(
-                            'size-1.5 rounded-pill',
-                            motion ? 'bg-text' : 'border border-faint',
-                        )}
-                    />
-                    Immersive motion
-                </button>
-            </div>
-
-            <nav
-                aria-label="Landing sections"
-                className="absolute inset-x-0 bottom-0 z-30 bg-ground/70 backdrop-blur-sm"
-            >
-                <div className={LANDING_FRAME}>
-                    <div className="hidden h-11 items-center justify-between gap-6 md:flex">
-                        <a
-                            href={X_URL}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-xs text-muted transition-colors duration-150 hover:text-text"
-                        >
-                            {X_HANDLE}
-                        </a>
-                        <div className="flex items-center gap-5 text-xs">
-                            <button
-                                type="button"
-                                disabled={!previous}
-                                onClick={() => goTo(active - 1)}
-                                className="flex items-center gap-2 text-muted transition-colors duration-150 hover:text-text disabled:opacity-30"
-                            >
-                                {previous ? <ArrowIcon className="size-3 rotate-180" /> : null}
-                                <span className="sr-only">Previous: </span>
-                                {previous?.nav ?? ''}
-                            </button>
-                            <button
-                                type="button"
-                                disabled={!next}
-                                onClick={() => goTo(active + 1)}
-                                className="flex items-center gap-2 text-text transition-colors duration-150 hover:text-accent-hover disabled:opacity-30"
-                            >
-                                <span className="sr-only">Next: </span>
-                                {next?.nav ?? ''}
-                                {next ? <ArrowIcon className="size-3" /> : null}
-                            </button>
-                        </div>
-                    </div>
-                    <ol className="flex border-t border-line">
-                        {SECTIONS.map((section, index) => {
-                            const isActive = index === active;
-                            return (
-                                <li key={section.id} className={cn('relative min-w-0 md:flex-1', isActive ? 'flex-[2.6]' : 'flex-1')}>
-                                    <span
-                                        aria-hidden="true"
-                                        className={cn(
-                                            'absolute inset-x-0 -top-px h-px transition-colors duration-300',
-                                            isActive ? 'bg-text' : 'bg-transparent',
-                                        )}
-                                    />
-                                    <button
-                                        type="button"
-                                        aria-current={isActive ? 'step' : undefined}
-                                        aria-label={`${pad(index)} ${section.nav}`}
-                                        onClick={() => goTo(index)}
-                                        className={cn(
-                                            'flex h-14 w-full items-center gap-3 border-l border-line px-3 text-left text-xs transition-colors duration-150 first:border-l-0 md:h-[4.5rem] md:px-4 md:text-[13px]',
-                                            isActive ? 'text-text' : 'text-faint hover:text-text',
-                                        )}
-                                    >
-                                        <span className="text-[11px] tracking-[0.18em]">{pad(index)}</span>
-                                        <span className={cn('truncate', isActive ? 'inline' : 'hidden md:inline')}>{section.nav}</span>
-                                        {isActive ? (
-                                            <span
-                                                aria-hidden="true"
-                                                className="ml-auto hidden size-1 rounded-pill bg-text md:block"
-                                            />
-                                        ) : null}
-                                    </button>
-                                </li>
-                            );
-                        })}
-                    </ol>
-                </div>
-            </nav>
-
+            <LandingRail active={active} paint={railPaint} onSelect={goTo} motion={motion} onToggleMotion={toggleMotion} />
             <ContractsPanel open={panel} onClose={closePanel} />
         </div>
     );
