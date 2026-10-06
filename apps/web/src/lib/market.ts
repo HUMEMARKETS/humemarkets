@@ -1,5 +1,5 @@
 import { hexToString } from "viem";
-import type { Hex } from "@hume/types";
+import type { Hex, MarketGroup } from "@hume/types";
 
 /// Market ids are ASCII right-padded with zero bytes (see `resolveMarketId` in the SDK), so the
 /// symbol is recoverable without a lookup table — new markets render with no code change.
@@ -19,3 +19,11 @@ export function tradeBlocker(active: boolean | undefined): string | undefined {
 
 /// What every screen says when the registry cannot be read, so two panels never word one failure two ways.
 export const REGISTRY_ERROR = "The registry could not be read right now. Try again in a moment.";
+
+/// How a market group (`MARKET_GROUPS` in `@hume/types`, assigned per market in `@hume/config`) is named on screen.
+export const MARKET_GROUP_LABEL: Record<MarketGroup, string> = {
+  "us-equities": "US equities",
+  china: "China",
+  crypto: "Crypto",
+  pons: "Pons",
+};

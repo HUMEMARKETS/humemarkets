@@ -7,7 +7,6 @@
 export const THEME_GROUND = "#f3f1ea";
 export const THEME_TEXT = "#0b0b0b";
 export const THEME_MUTED = "#57534c";
-export const THEME_ACCENT = "#0b0b0b";
 
 /// The PNL card, which is ivory in both themes, for the edge-rendered share image. The share image
 /// draws the card itself, so it uses the fixed card values: charcoal on ivory, a deep green frame and
