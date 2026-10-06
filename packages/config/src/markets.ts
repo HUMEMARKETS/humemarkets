@@ -73,10 +73,11 @@ export function validateMarkets(listings: readonly MarketListing[]): readonly Ma
 /// arrangement as the addresses above it: regenerate with `pnpm --filter @hume/config sync:markets`
 /// after editing that file, and `markets.test.ts` fails if the two ever drift.
 ///
-/// All 32 are `tradeable` and `us-equities`. The 32 are not a shortlist — `REFERENCE.md` Section 2
-/// Finding 1 measured that only 33 of the 194 tokenized assets on this chain have a Chainlink feed at
-/// all, and GLD is the one unused. The `china` group is empty at launch because Section 3.1 cut it to
-/// Phase 18, and the `crypto` group arrives in Phase 11, where a perp needs only a feed (Finding 5).
+/// All 32 are `tradeable`. The 32 are not a shortlist — `REFERENCE.md` Section 2 Finding 1 measured
+/// that only 33 of the 194 tokenized assets on this chain have a Chainlink feed at all, and GLD is the
+/// one unused. Groups are display only: `china` (BABA, TSM, EWY), `commodities` (SLV, USO) and `etf`
+/// (SPY, QQQ) regroup markets that already trade, and the rest are `us-equities`. The `crypto` group
+/// arrives in Phase 11, where a perp needs only a feed (Finding 5).
 const robinhoodMainnetMarkets: readonly MarketListing[] = [
   { symbol: "NVDA", name: "NVIDIA • Robinhood Token", token: "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC", feed: "0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
   { symbol: "AAPL", name: "Apple • Robinhood Token", token: "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9", feed: "0x6B22A786bAa607d76728168703a39Ea9C99f2cD0", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
@@ -87,15 +88,15 @@ const robinhoodMainnetMarkets: readonly MarketListing[] = [
   { symbol: "META", name: "Meta Platforms • Robinhood Token", token: "0xc0D6457C16Cc70d6790Dd43521C899C87ce02f35", feed: "0x7C38C00C30BEe9378381E7B6135d7283356D71b1", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
   { symbol: "COIN", name: "Coinbase • Robinhood Token", token: "0x6330D8C3178a418788dF01a47479c0ce7CCF450b", feed: "0xA3a468A452940B7D6b69991207B508c609a98Ef2", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
   { symbol: "MSTR", name: "Strategy Inc. • Robinhood Token", token: "0xec262a75e413fAfD0dF80480274532C79D42da09", feed: "0x396118bdFB181e6240E74D243F266B061c0edc3D", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
-  { symbol: "SPY", name: "SPDR S&P 500 ETF Trust • Robinhood Token", token: "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C", feed: "0x319724394D3A0e3669269846abE664Cd621f9f6A", maxLeverage: 10, maintenanceBps: 500, group: "us-equities", tier: "tradeable" },
-  { symbol: "QQQ", name: "Invesco QQQ • Robinhood Token", token: "0xD5f3879160bc7c32ebb4dC785F8a4F505888de68", feed: "0x80901d846d5D7B030F26B480776EE3b29374C2ae", maxLeverage: 10, maintenanceBps: 500, group: "us-equities", tier: "tradeable" },
+  { symbol: "SPY", name: "SPDR S&P 500 ETF Trust • Robinhood Token", token: "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C", feed: "0x319724394D3A0e3669269846abE664Cd621f9f6A", maxLeverage: 10, maintenanceBps: 500, group: "etf", tier: "tradeable" },
+  { symbol: "QQQ", name: "Invesco QQQ • Robinhood Token", token: "0xD5f3879160bc7c32ebb4dC785F8a4F505888de68", feed: "0x80901d846d5D7B030F26B480776EE3b29374C2ae", maxLeverage: 10, maintenanceBps: 500, group: "etf", tier: "tradeable" },
   { symbol: "AMD", name: "AMD • Robinhood Token", token: "0x86923f96303D656E4aa86D9d42D1e57ad2023fdC", feed: "0x943A29E7ae51A4798823ca9eEd2ed533B2A22C72", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
   { symbol: "ASML", name: "ASML Holding NV • Robinhood Token", token: "0x47F93d52cBeC7C6D2CfC080e154002370a60dAEA", feed: "0xB4106147E8cce40b7d46124090d373A71b70f87D", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
-  { symbol: "BABA", name: "Alibaba • Robinhood Token", token: "0xad25Ac6C84D497db898fa1E8387bf6Af3532a1c4", feed: "0x62Cc8F9b5f56a33c9C8A60c8B92779f523c4E984", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
+  { symbol: "BABA", name: "Alibaba • Robinhood Token", token: "0xad25Ac6C84D497db898fa1E8387bf6Af3532a1c4", feed: "0x62Cc8F9b5f56a33c9C8A60c8B92779f523c4E984", maxLeverage: 5, maintenanceBps: 750, group: "china", tier: "tradeable" },
   { symbol: "CLSK", name: "CleanSpark • Robinhood Token", token: "0xcBB95BBF36099d34dA091dc6Fa6F49EfA257Cee3", feed: "0x810c12D3a554Bc47fd39597Fe3b3AAC4941F50eF", maxLeverage: 3, maintenanceBps: 1000, group: "us-equities", tier: "tradeable" },
   { symbol: "CRCL", name: "Circle Internet Group • Robinhood Token", token: "0xdF0992E440dD0be65BD8439b609d6D4366bf1CB5", feed: "0x6652eDf64bA3731C4F2D3ce821A0Fb1f1f6b482a", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
   { symbol: "CRWV", name: "CoreWeave • Robinhood Token", token: "0x5f10A1C971B69e47e059e1dC91901B59b3fB49C3", feed: "0xe1b3aABCAFAd1c94708dc1367dcfF8Aa4407487C", maxLeverage: 3, maintenanceBps: 1000, group: "us-equities", tier: "tradeable" },
-  { symbol: "EWY", name: "iShares MSCI South Korea fund • Robinhood Token", token: "0x7f0aBeF0C07280F82c6a08ead09dEd6BAE2C13Fc", feed: "0xEFdf54610B62A7753Ec30bDc380847c12D32e1D1", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
+  { symbol: "EWY", name: "iShares MSCI South Korea fund • Robinhood Token", token: "0x7f0aBeF0C07280F82c6a08ead09dEd6BAE2C13Fc", feed: "0xEFdf54610B62A7753Ec30bDc380847c12D32e1D1", maxLeverage: 5, maintenanceBps: 750, group: "china", tier: "tradeable" },
   { symbol: "GME", name: "GameStop • Robinhood Token", token: "0x1b0E319c6A659F002271B69dB8A7df2F911c153E", feed: "0x27C71df6A64fB476468EdF256CF72c038baB5B67", maxLeverage: 3, maintenanceBps: 1000, group: "us-equities", tier: "tradeable" },
   { symbol: "INTC", name: "Intel • Robinhood Token", token: "0xc72b96e0E48ecd4DC75E1e45396e26300BC39681", feed: "0x3f390C5C24628Ac7C489515402235FeAD71D1913", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
   { symbol: "IONQ", name: "IonQ • Robinhood Token", token: "0x558378E000D634A36593E338eBacdd6207640EfE", feed: "0x22EfeC4919baf55F360E0EDee4AbEB26DE4971eb", maxLeverage: 3, maintenanceBps: 1000, group: "us-equities", tier: "tradeable" },
@@ -105,11 +106,11 @@ const robinhoodMainnetMarkets: readonly MarketListing[] = [
   { symbol: "PLTR", name: "Palantir Technologies • Robinhood Token", token: "0x894E1EC2D74FFE5AEF8Dc8A9e84686acCB964F2A", feed: "0x820ABedFF239034956B7A9d2F0a331f9F075eB4c", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
   { symbol: "RGTI", name: "Rigetti Computing • Robinhood Token", token: "0x284358abc07F9359f19f4b5b4aC91901Be2597Ba", feed: "0x2A045cF1C49c61c166C036d2f06FA2D2d984f765", maxLeverage: 3, maintenanceBps: 1000, group: "us-equities", tier: "tradeable" },
   { symbol: "RKLB", name: "Rocket Lab Corporation • Robinhood Token", token: "0x3b14C39E89D60D627b42a1A4CA45b5bb45Fc12e2", feed: "0x045477BF65Aef6f4F2386ad0164579e48381CC74", maxLeverage: 3, maintenanceBps: 1000, group: "us-equities", tier: "tradeable" },
-  { symbol: "SLV", name: "iShares Silver Trust • Robinhood Token", token: "0x411eFb0E7f985935DAec3D4C3ebaEa0d0AD7D89f", feed: "0x209b73908e92Ae021826eD79609845451Ecba2ce", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
+  { symbol: "SLV", name: "iShares Silver Trust • Robinhood Token", token: "0x411eFb0E7f985935DAec3D4C3ebaEa0d0AD7D89f", feed: "0x209b73908e92Ae021826eD79609845451Ecba2ce", maxLeverage: 5, maintenanceBps: 750, group: "commodities", tier: "tradeable" },
   { symbol: "SNDK", name: "Sandisk Corporation • Robinhood Token", token: "0xB90A19fF0Af67f7779afF50A882A9CfF42446400", feed: "0xfb133Fa4B7b385802B693a293606682Df47109A3", maxLeverage: 3, maintenanceBps: 1000, group: "us-equities", tier: "tradeable" },
   { symbol: "SPCX", name: "Space Exploration Technologies Corp. Class A Common Stock • Robinhood Token", token: "0x4a0E65A3EcceC6dBe60AE065F2e7bb85Fae35eEa", feed: "0xB265810950ba6c5C0Ff821c9963014a56fD8Bffb", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
-  { symbol: "TSM", name: "Taiwan Semiconductor Manufacturing • Robinhood Token", token: "0x58FfE4a942d3885bAa22D7520691F611EF09e7AA", feed: "0x874cF94aa8eC88Fd9560094dD065f2fB3E41Fc2F", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
-  { symbol: "USO", name: "United States Oil Fund • Robinhood Token", token: "0xa30FA36Db767ad9eD3f7a60fC79526fB4d56D344", feed: "0x75a9c76Ef439e2C7c2E5a34Ab105EcFe3766431c", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
+  { symbol: "TSM", name: "Taiwan Semiconductor Manufacturing • Robinhood Token", token: "0x58FfE4a942d3885bAa22D7520691F611EF09e7AA", feed: "0x874cF94aa8eC88Fd9560094dD065f2fB3E41Fc2F", maxLeverage: 5, maintenanceBps: 750, group: "china", tier: "tradeable" },
+  { symbol: "USO", name: "United States Oil Fund • Robinhood Token", token: "0xa30FA36Db767ad9eD3f7a60fC79526fB4d56D344", feed: "0x75a9c76Ef439e2C7c2E5a34Ab105EcFe3766431c", maxLeverage: 5, maintenanceBps: 750, group: "commodities", tier: "tradeable" },
 ];
 
 /// No market list is recorded for testnet: `deployments/robinhood_testnet.markets.json` does not
@@ -133,7 +134,7 @@ export function marketsForChain(chainId: ChainId): readonly MarketListing[] {
 
 /// Every market in a group, in file order. An unknown group is an error rather than an empty list: a
 /// typo in a group name would otherwise render an empty page that looks like a chain problem. A group
-/// that is known but has no markets yet — `china` and `pons` at launch — correctly returns `[]`.
+/// that is known but has no markets yet — `crypto` and `pons` at launch — correctly returns `[]`.
 export function marketsForGroup(chainId: ChainId, group: MarketGroup): readonly MarketListing[] {
   if (!isMarketGroup(group)) {
     throw new Error(`@hume/config: unknown market group "${String(group)}" (expected one of ${MARKET_GROUPS.join(", ")})`);
@@ -157,6 +158,13 @@ export function marketsForTier(chainId: ChainId, tier: ListingTier): readonly Ma
 /// to fall back; nothing here invents a market.
 export function marketForSymbol(chainId: ChainId, symbol: string): MarketListing | undefined {
   return marketsForChain(chainId).find((market) => market.symbol === symbol);
+}
+
+/// The group a ticker is shown under. A group classifies the asset, not the chain, so a chain with no
+/// recorded listing for the ticker (testnet, listed with mock tokens by `AddMarket.s.sol`) borrows the
+/// mainnet listing's group for the same ticker. A ticker listed nowhere has no group: `undefined`.
+export function groupForSymbol(chainId: ChainId, symbol: string): MarketGroup | undefined {
+  return (marketForSymbol(chainId, symbol) ?? marketForSymbol(ROBINHOOD_MAINNET_CHAIN_ID, symbol))?.group;
 }
 
 /// The feed address of a tradeable market. Throws for any other tier, which is the read path's half of

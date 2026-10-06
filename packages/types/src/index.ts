@@ -65,10 +65,11 @@ export interface PerpPosition {
 /// `packages/contracts/deployments/<network>.markets.json` and is read through `@hume/config`, so a
 /// regrouping is a data change and never an edit to app code.
 ///
-/// `china` is the group `REFERENCE.md` Section 2 Finding 2 researched: hard-capped at two tradeable
-/// names (BABA, TSM) because only those two have a Chainlink feed on chain 4663. It is empty at launch
-/// — Section 3.1 cut the group to Phase 18 — but the group exists here so the data can carry it.
-export const MARKET_GROUPS = ["us-equities", "china", "crypto", "pons"] as const;
+/// The order here is the order of the `/markets` tabs. `china` is shown as "China & Asia": it holds the
+/// two China names `REFERENCE.md` Section 2 Finding 2 found a Chainlink feed for (BABA, TSM) plus EWY.
+/// `commodities` and `etf` regroup listings that already trade (UI rework Session 5); a group is a
+/// display grouping only and never changes a market's tier, feed or leverage.
+export const MARKET_GROUPS = ["us-equities", "china", "commodities", "etf", "crypto", "pons"] as const;
 
 export type MarketGroup = (typeof MARKET_GROUPS)[number];
 

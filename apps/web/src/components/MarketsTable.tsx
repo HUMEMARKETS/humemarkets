@@ -1,15 +1,16 @@
 "use client";
 
-import { Panel, Skeleton, cn, chip } from "@hume/ui";
+import { groupForSymbol } from "@hume/config";
+import { Panel, Skeleton, Tabs, cn, chip } from "@hume/ui";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState, type ReactNode } from "react";
 import type { MarketStats } from "@hume/sdk";
-import type { MarketConfig } from "@hume/types";
+import type { MarketConfig, MarketGroup } from "@hume/types";
 import { useAllMarkets, useMarketOverviews, useMarketStats, useSettlementDecimals } from "@/hooks/queries";
 import { env } from "@/lib/env";
 import { fmtBps, fmtPrice, fmtUsdOrDash } from "@/lib/format";
-import { symbolOf } from "@/lib/market";
+import { groupTabs, inGroup, symbolOf, type GroupTab } from "@/lib/market";
 import { useTerminal } from "@/stores/terminal";
 import { Change } from "./Change";
 import { PanelState } from "./PanelState";
@@ -36,6 +37,7 @@ const linkClass = cn(chip, "h-8 px-2.5 text-xs font-medium");
 interface Line {
   market: MarketConfig;
   symbol: string;
+  group?: MarketGroup;
   stats?: MarketStats;
   overview: Overview;
   loading: boolean;
@@ -158,6 +160,7 @@ export function MarketsTable() {
   // `?q=` arrives from the landing page's market search.
   const [filter, setFilter] = useState(useSearchParams().get("q") ?? "");
   const [sort, setSort] = useState<{ key: SortKey; direction: "asc" | "desc" }>({ key: "asset", direction: "asc" });
+  const [group, setGroup] = useState<GroupTab>("all");
 
   const symbols = useMemo(() => (markets ?? []).map((market) => symbolOf(market.marketId)), [markets]);
   const overviews = useMarketOverviews(symbols);
@@ -166,12 +169,14 @@ export function MarketsTable() {
   const lines: Line[] = (markets ?? []).map((market, index) => ({
     market,
     symbol: symbols[index]!,
+    // The group is data in `@hume/config`; a registry market it does not list shows under "All" only.
+    group: groupForSymbol(env.chainId, symbols[index]!),
     stats: byId.get(market.marketId),
     overview: overviews[index]?.data,
     loading: overviews[index]?.isPending ?? true,
   }));
   const shown = sorted(
-    lines.filter((line) => line.symbol.includes(filter.trim().toUpperCase())),
+    inGroup(lines, group).filter((line) => line.symbol.includes(filter.trim().toUpperCase())),
     sort.key,
     sort.direction,
   );
@@ -179,6 +184,8 @@ export function MarketsTable() {
   function sortBy(key: SortKey) {
     setSort((current) => ({ key, direction: current.key === key && current.direction === "asc" ? "desc" : key === "asset" ? "asc" : "desc" }));
   }
+
+  const tabs = groupTabs(lines);
 
   return (
     <Panel
@@ -197,6 +204,7 @@ export function MarketsTable() {
         ) : null
       }
     >
+      {tabs.length > 0 ? <Tabs tabs={tabs} value={group} onChange={setGroup} label="Market groups" className="border-b border-line px-2" /> : null}
       <div className="flex flex-1 flex-col overflow-x-auto">
         {isPending ? (
           <PanelState>Loading markets…</PanelState>

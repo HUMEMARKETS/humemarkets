@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Num, Panel, Segmented, Skeleton, cn, chip } from "@hume/ui";
+import { Button, Num, Panel, SampleBadge, Segmented, Skeleton, cn, chip } from "@hume/ui";
 import type { LeaderboardEntry, LeaderboardMetric } from "@hume/sdk";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -8,6 +8,7 @@ import { useAccount } from "wagmi";
 import { useLeaderboard, usePortfolioSummary } from "@/hooks/queries";
 import { useAccountMode } from "@/hooks/useAccountMode";
 import { useOnline } from "@/hooks/useOnline";
+import { env } from "@/lib/env";
 import { fmtSigned, fmtUsd, shortHash, signTone } from "@/lib/format";
 import { fmtSignedBps, rankEntries, SAMPLE_SELF, sampleSelfEntry } from "@/lib/leaderboard";
 import { useSampleStore } from "@/stores/sample";
@@ -23,6 +24,9 @@ const head = "px-3 py-2 text-right text-xs font-normal text-muted";
 const headLeft = "px-3 py-2 text-left text-xs font-normal text-muted";
 const cell = "px-3 py-2.5 text-right tabular-nums";
 const cellLeft = "px-3 py-2.5 text-left tabular-nums";
+
+/// Profile links exist only behind the copy-trading flag, and only for a real wallet (sample traders are not addresses).
+const profileHref = (wallet: string) => (env.copyTrading && /^0x[0-9a-fA-F]{40}$/.test(wallet) ? `/traders/${wallet}` : undefined);
 
 function Skeletons() {
   return (
@@ -47,7 +51,7 @@ function Table({ entries, decimals, metric, self }: { entries: LeaderboardEntry[
   const strong = (m: LeaderboardMetric) => (metric === m ? "font-medium text-text" : "text-muted");
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm sm:min-w-[680px]">
+      <table className="w-full text-sm sm:min-w-[860px]">
         <caption className="sr-only">Traders ranked by {metrics.find((m) => m.value === metric)?.label}, all time</caption>
         <thead>
           <tr>
@@ -57,7 +61,14 @@ function Table({ entries, decimals, metric, self }: { entries: LeaderboardEntry[
             <th className={head}>ROI</th>
             <th className={cn(head, "max-sm:hidden")}>Volume</th>
             <th className={cn(head, "max-sm:hidden")}>Trades</th>
+            <th className={cn(head, "max-sm:hidden")}>Max drawdown</th>
             <th className={cn(head, "max-sm:hidden")}>Win rate</th>
+            <th className={cn(head, "max-sm:hidden")}>
+              <span className="inline-flex items-center gap-2">
+                Copy
+                <SampleBadge label="In development" />
+              </span>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -68,7 +79,13 @@ function Table({ entries, decimals, metric, self }: { entries: LeaderboardEntry[
                 <td className={cellLeft}>{entry.rank}</td>
                 <td className={cellLeft}>
                   <span className="inline-flex flex-wrap items-center gap-2">
-                    <span title={entry.wallet}>{entry.wallet === SAMPLE_SELF ? "You" : shortHash(entry.wallet)}</span>
+                    {profileHref(entry.wallet) ? (
+                      <Link href={profileHref(entry.wallet)!} title={entry.wallet} className="underline decoration-line underline-offset-4 hover:decoration-text">
+                        {shortHash(entry.wallet)}
+                      </Link>
+                    ) : (
+                      <span title={entry.wallet}>{entry.wallet === SAMPLE_SELF ? "You" : shortHash(entry.wallet)}</span>
+                    )}
                     {mine ? <span className="text-xs text-accent-hover">{entry.wallet === SAMPLE_SELF ? "your sample account" : "you"}</span> : null}
                   </span>
                 </td>
@@ -80,7 +97,15 @@ function Table({ entries, decimals, metric, self }: { entries: LeaderboardEntry[
                 </td>
                 <td className={cn(cell, strong("volume"), "max-sm:hidden")}>{fmtUsd(entry.volume, decimals, 0)}</td>
                 <td className={cn(cell, "max-sm:hidden")}>{entry.tradeCount}</td>
+                <td className={cn(cell, "text-muted max-sm:hidden")} title="Not recorded yet">
+                  –
+                </td>
                 <td className={cn(cell, "max-sm:hidden")}>{entry.winRateBps === null ? "–" : `${(entry.winRateBps / 100).toFixed(0)}%`}</td>
+                <td className={cn(cell, "max-sm:hidden")}>
+                  <Button size="sm" disabled aria-label={`Copy ${shortHash(entry.wallet)}: in development`}>
+                    Copy
+                  </Button>
+                </td>
               </tr>
             );
           })}
@@ -149,6 +174,9 @@ export function LeaderboardView() {
         {sample
           ? "Sample board: the other twelve traders are simulated. Place a sample trade and you appear here, ranked by the same rule. None of it is real, and nothing here carries over to a wallet."
           : "Ranked by total PNL (realised plus unrealised), ROI on capital deployed, or volume. Ties break on volume, then wallet. A wallet can hide itself from the board."}
+      </p>
+      <p className="max-w-prose text-xs leading-snug text-muted">
+        In development: max drawdown shows “–” until the indexer records it, and a minimum number of trades to be ranked is not applied yet, so one trade is enough today. Copy trading is not available yet.
       </p>
     </div>
   );

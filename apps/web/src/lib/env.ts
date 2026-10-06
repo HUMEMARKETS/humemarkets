@@ -43,6 +43,7 @@ const raw = {
   sampleStartingUsd: process.env.NEXT_PUBLIC_SAMPLE_START_USD,
   sampleMaxPositionUsd: process.env.NEXT_PUBLIC_SAMPLE_MAX_POSITION_USD,
   sampleTopUpUsd: process.env.NEXT_PUBLIC_SAMPLE_TOP_UP_USD,
+  featureCopyTrading: process.env.NEXT_PUBLIC_FEATURE_COPY_TRADING,
 };
 
 /// A whole number from the environment, or `fallback` when it is unset, not a number or out of range.
@@ -132,6 +133,9 @@ export const env = {
   limitOrders: Boolean(resolveAddresses().perpOrderManager),
   /// Cross margin needs a deployment that includes `CrossMarginManager`; the ticket hides it without one.
   crossMargin: Boolean(resolveAddresses().crossMargin),
+  /// The trader profile and copy flow routes (`/traders/...`). Off unless set to `true`; while on before
+  /// Phase 14 they are labelled shells with no data. The leaderboard's Copy action stays disabled either way.
+  copyTrading: raw.featureCopyTrading === "true",
   /// The sample account's own numbers, in whole dollars of sample USDG. They belong to the simulation
   /// only: the real caps live on chain and are read from there. A sample cap is deliberately larger
   /// than the launch caps, which are sized to a treasury of cents and would refuse every sample order.

@@ -1,0 +1,26 @@
+pass  /markets: rows loaded
+pass  /markets: tabs are All plus each group with a market, in order  (All · US · ETF)
+pass  /markets: every tab is one of US · China & Asia · Commodities · ETF
+pass  /markets [US]: rows equal the group's markets  (AAPL,AMD,AMZN,COIN,GOOGL,META,MSFT,MSTR,NVDA,PLTR,TSLA)
+pass  /markets [US]: tab marked selected
+pass  /markets [ETF]: rows equal the group's markets  (QQQ,SPY)
+pass  /markets [ETF]: tab marked selected
+pass  /markets [All]: every row back, ungrouped ones under All only  (21 rows; ungrouped: AVGO,DIS,E2E,HOOD,JPM,NFLX,SHOP,UBER)
+pass  /markets [ETF] + filter SPY: one row
+pass  /markets 1440 light: no horizontal scroll
+pass  /markets 1440 dark: no horizontal scroll
+pass  /markets 375 light: no horizontal scroll
+pass  /markets 375 dark: no horizontal scroll
+pass  /leaderboard: Max drawdown and Trades columns  (Rank | Trader | PNL | ROI | Volume | Trades | Max drawdown | Win rate | Copy IN DEVELOPMENT)
+pass  /leaderboard: Copy column marked In development
+pass  /leaderboard: drawdown is – on every row  (12 rows)
+pass  /leaderboard: Copy is a disabled button on every row
+pass  /leaderboard: minimum-trades note shown
+pass  /leaderboard: simulated rows carry the sample banner  (simulated=true banner=1)
+pass  /leaderboard: no profile links while the flag is off
+pass  /leaderboard 1440 light: no horizontal scroll
+pass  /leaderboard 1440 dark: no horizontal scroll
+pass  /leaderboard 375 light: no horizontal scroll
+pass  /leaderboard 375 dark: no horizontal scroll
+pass  /traders/0x0000000000000000000000000000000000000001: not found while the flag is off
+pass  /traders/0x0000000000000000000000000000000000000001/copy: not found while the flag is off
