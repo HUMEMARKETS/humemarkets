@@ -5,10 +5,12 @@ order. Every phase states its scope, the exact files and commands, and an accept
 can verify.
 
 - **Target:** Hume live on Robinhood Chain mainnet (chain ID `4663`)
-- **Launch:** 2026-10-06, **21:00 WIB** (UTC+7) = **14:00 UTC** — 30 minutes after US equity open, so
-  the feeds are fresh (Section 3.2)
-- **Launch shape:** a recorded walkthrough on Robinhood testnet (chain ID `46630`) passes first, then
-  mainnet opens the same day with caps and real USDG
+- **Launch:** **date set by the operator** (the original 2026-10-06 passed). Open 30 minutes after the US
+  equity open on a trading day, so the feeds are fresh (Section 3.2): **21:00 WIB = 14:00 UTC** while US
+  daylight time runs, **22:00 WIB = 15:00 UTC** from 2026-11-01
+- **Launch shape — testnet first (re-planned 2026-10-07).** Every remaining phase builds and verifies on
+  Robinhood testnet (chain ID `46630`), where gas and collateral cost nothing. Mainnet money (USDG, the
+  mainnet Railway compute, the paid plan) is spent only in **Phase L**, just before the open. Section 0.9
 - **Audit: skipped. No phase waits on a security review.** Decided 2026-10-03 and confirmed. Section 0.8
 - **Hosting:** a pnpm + Turborepo monorepo (`REFERENCE.md` Section 1.0). **Railway** runs the services
   **and** Postgres, **Vercel** serves the web app. Changed 2026-10-04 — Section 0.1
@@ -33,20 +35,21 @@ Every phase below carries a **Prompt** block. Paste it and the phase runs — th
 to read, the work, the acceptance check, and the instruction to stop afterwards. No other context is
 needed; the prompts are self-contained on purpose, so a phase can be run in a fresh session.
 
-| Day                  | Prompt order                                             |
-| -------------------- | -------------------------------------------------------- |
-| **Day 1** 2026-10-04 | Phase 0, 1, 2, 3, 4, 5                                   |
-| **Day 2** 2026-10-05 | Phase 6, 7, 8, 9                                         |
-| **Day 3** 2026-10-06 | Phase 10, 11, 12, 13, 14, 15, 16, 17 — open at 21:00 WIB |
-| After                | Phase 14b if it was skipped, then Phase 18               |
+| Stage                         | Prompt order                                                       |
+| ----------------------------- | ------------------------------------------------------------------ |
+| **Done** (2026-10-04 to 10-07) | Phase 0 to 10. Ambers carried: 5, 6, 8, 9, 10 (Section 0.9)        |
+| **Testnet**                   | **Phase T**, then 11, 12, 13, 14, 14b, 15 — all on chain `46630`   |
+| **Mainnet**                   | **Phase L**, then 16, 17 — the open                                |
+| After                         | Phase 18                                                           |
 
 **No phase carries an hour estimate.** Claude does the work, so the plan is an ordered list, not a
-timetable: run each phase, pass its acceptance check, run the next. The only fixed time in this file is
-the open, 2026-10-06 at 21:00 WIB (Section 3.2), and the only resource that is actually scarce is the
-$5-6 budget (Section 1).
+timetable: run each phase, pass its acceptance check, run the next. The open has no fixed date now: the
+operator sets it, at the hour in Section 3.2. The only resource that is actually scarce is the $5-6
+budget (Section 1).
 
 **Phase 14b (the mainnet/testnet toggle) is optional by design.** Nothing waits on it, so it is the first
-phase to skip when the open is near; it then becomes Phase 18 item 1c.
+phase to skip; it then becomes Phase 18 item 1c. Testnet-first makes it more useful than before: it is
+how a visitor reaches the testnet build from the public site.
 
 Each phase also carries a **Ship** block: the exact `git` and `gh` commands for its branch, commit, push
 and PR. **The operator runs those, not Claude** (Section 0.6). The prompts enforce it — each one ends
@@ -83,7 +86,7 @@ truth and this table only points at them. `LAUNCH_MODEL.md` Section 1 defines wh
 | 6   | PNL card              | 10, 15, 17           | **Open**                              | 10   |
 | 7   | Copy trading          | 14, **18**           | Entry point only, flag off            | 14   |
 | 8   | Lending / borrowing   | 4, 9, 15, 17         | **Open**, 1 pair, owner-seeded        | 9    |
-| +   | Crypto markets        | 11, 15, 17           | **Open** — BTC, ETH, LINK, GLD        | 11   |
+| +   | Crypto markets        | 11, 15, L, 17        | **Open** — BTC, ETH, LINK, GLD        | 11   |
 | +   | Sample mode           | 7, 15, 17            | **Live** — hard gate                  | 7    |
 | +   | Guided review         | 8, 15, 17            | **Live** — hard gate                  | 8    |
 | +   | Plain-language states | 12, 15, 17           | **Live** — hard gate                  | 12   |
@@ -155,7 +158,8 @@ Three phases depend on it directly:
 | 9     | Seeding the TSLA/USDG credit pair            | ~$2                        |
 | 17    | A vault pool reserve that is not zero        | ~$1                        |
 
-**Action required before Phase 4:** convert the $5–6 budget into USDG on chain 4663 at
+**Action required before Phase L** (was Phase 4; moved by the testnet-first re-plan, Section 0.9): convert
+the USDG part of the budget on chain 4663 at
 `0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168`, held by the owner address above. Target **$4–5 USDG**,
 leaving the rest for the Railway subscription.
 
@@ -283,6 +287,35 @@ integration suites — is the standing evidence, and `REFERENCE.md` Section 1 re
 **What actually gates the launch date now.** Not a review. Three operator items, all in Section 0.1 and
 0.3: add a git remote, write `.env`, fund the wallet with USDG. Phases 0 to 3 run without any of them.
 
+### 0.9 Testnet first, decided 2026-10-07
+
+The operator's call: test the whole product on testnet, and pay for mainnet only at launch. Until then
+the plan was mainnet-first, with testnet arriving at Phase 15. What was already done stays done:
+
+| Already on mainnet                                   | Cost while idle | What happens to it                                     |
+| ---------------------------------------------------- | --------------- | ------------------------------------------------------ |
+| Contracts, 32 markets, deployed and paused           | $0              | Kept. Opening is an unpause in Phase 17                |
+| Railway `mainnet` environment: api, pricing, indexer | ~$0.21/day      | **Stopped in Phase T** (operator confirms), back in Phase L |
+| Railway `mainnet` Postgres                           | a few cents/day | Kept, so the indexed history survives                  |
+
+**The ambers this closes on testnet, for $0:** Phase 8 (perp and option review figures in a browser,
+because simulator prices move at any hour; connected mode with a testnet wallet), Phase 9 (the credit
+pair deployed and seeded with minted collateral), Phase 10 (the leaderboard deployed against the testnet
+indexer). Their **mainnet** halves move to Phase L: the real round trip, the seeded pair, the mainnet
+leaderboard.
+
+**One environment at a time.** The account is on Railway's **Trial**: a one-time $5.00 credit from
+2026-10-04, 30 days or until it is spent, then the **Free** plan with $1 a month. Phase 5 measured one
+environment at **$0.21–0.26/day** (0.60–0.74 GB RAM across four services). Two environments double the
+burn, and the trial limits RAM to 1 GB, which two environments would pass. So Phase T stops the mainnet
+compute before it creates `testnet`, and Phase L does the reverse.
+
+**What the launch actually costs.** $1 a month cannot run the four always-on services (~$6.30/month
+measured), so unless the open lands while trial credit is left, the open needs **Railway Hobby, $5/month
+including $5 of usage** (about $1.30/month over at the measured rate), plus **$4–5 of USDG**. That is
+about **$10–11 for the first month**, not $5–6. The operator decides between paying that, opening while
+trial credit remains, or opening with USDG unfunded under Section 0.3.
+
 ---
 
 ## 1. Budget
@@ -292,14 +325,15 @@ integration suites — is the standing evidence, and `REFERENCE.md` Section 1 re
 | Contract deployments (credit, listings, caps, config)    | ~$0 of new spend      | Owner wallet's 0.000375 ETH already buys ~37M gas (Section 0.2)                                                                                                                                                                                                             |
 | Gas floats for keeper, liquidator, pauser                | ~0.00015 ETH          | Phase 16                                                                                                                                                                                                                                                                    |
 | **USDG for pool reserve, credit seed, real test trades** | **$4–5 — NOT FUNDED** | **Section 0.3. The one real blocker**                                                                                                                                                                                                                                       |
-| Railway — compute (indexer, API, pricing, keeper)        | see Phase 5           | **Free plan carries only $1/month of included usage** and Trial a one-time $5; four always-on containers exceed $1/month, and the indexer must not sleep. Hobby is $5/month with $5 included. Phase 5 reports the measured figure                                           |
-| **Railway Postgres — `mainnet` only**                    | **usage-based**       | Supabase's project limit was reached 2026-10-04. **Free and Trial cap the volume at 0.5 GB**, so `PRICE_TICK_RETENTION_DAYS` is sized against that in Phase 5. The `testnet` Postgres is created in Phase 15 and deleted after the recording, so only one runs continuously |
+| Railway — compute (indexer, API, pricing, keeper)        | ~$0.21–0.26/day       | **One environment at a time** (Section 0.9): `testnet` from Phase T to Phase L, `mainnet` from Phase L on. Trial: one-time $5 to ~2026-11-03. Free after that: $1/month, too little for four always-on services. Hobby: $5/month with $5 included, needed at the open unless trial credit remains |
+| **Railway Postgres — one per environment**               | **usage-based**       | Supabase's project limit was reached 2026-10-04. **Free and Trial cap the volume at 0.5 GB**, so `PRICE_TICK_RETENTION_DAYS` is sized against that in Phase 5. The `testnet` Postgres is created in Phase T and deleted in Phase L; the `mainnet` one is kept throughout |
 | Vercel (web)                                             | $0                    | Hobby plan. **DNS not pointed yet** — Section 0.1                                                                                                                                                                                                                           |
 | Domain                                                   | $0                    | Already held                                                                                                                                                                                                                                                                |
 | Testnet walkthrough, recording and sample mode           | $0                    | Faucet gas; the collateral token has a public `mint`                                                                                                                                                                                                                        |
 
-**First month ~$6, then ~$5/month.** The whole $5–6 is accounted for: roughly $5 of USDG on chain plus
-the Railway subscription. There is no slack, which is why Section 0.3 degrades rather than stalls.
+**Testnet stage: $0 beyond trial credit. Open: ~$10–11 for the first month** (Hobby $5 + ~$1.30 usage over
++ $4–5 USDG), then ~$6.30/month, unless the open lands while trial credit remains (Section 0.9). Section
+0.3 still degrades rather than stalls if USDG is not funded.
 
 ---
 
@@ -1166,8 +1200,9 @@ reads correctly at every step, four hashes recorded; or the amber path is record
 
 ### Day 3 — social layer, UI hardening, the recorded walkthrough, open
 
-Day 3 ends at **21:00 WIB** with the open, 30 minutes after US equity markets open so the feeds are
-fresh. Section 3.3 maps the phases to clock times.
+Superseded 2026-10-07 by the testnet-first order (Section 0.9): Phase 10 below is done, then the testnet
+stage (Phase T, 11 to 15), then the mainnet stage (Phase L, 16, 17). The open is still 30 minutes after the
+US equity open (Section 3.2), on a date the operator sets. Section 3.3's clock times are historical.
 
 #### Phase 10 — Leaderboard and PNL card
 
@@ -1245,19 +1280,100 @@ mode.
 
 **Cost.** $0.
 
+### Testnet stage — everything below runs on chain `46630` until Phase L (Section 0.9)
+
+#### Phase T — The testnet environment
+
+**Prompt.** Paste this to run the phase.
+
+```text
+Run Phase T of docs/DEVELOPMENT_PHASES.md: the testnet environment. Section 0.9 says why.
+
+From here until Phase L every phase builds and verifies on Robinhood testnet 46630, and only one Railway
+environment runs at a time, because the account is on the Trial ($5 one-time credit, 1 GB RAM).
+
+1. Read the Railway plan, credit left, trial days left and current usage, and record them as numbers.
+2. ASK ME before stopping anything on mainnet. With my yes, stop the mainnet api, pricing and indexer
+   deployments (remove the deployments, keep the services, variables and domains). Keep the mainnet
+   Postgres and its volume: its indexed history is not rebuilt cheaply. Delete nothing on mainnet.
+3. Create the Railway environment `testnet` with api, pricing and indexer, and its OWN Postgres service.
+   Point them at chain 46630 and the addresses in packages/contracts/deployments/robinhood_testnet.json
+   through packages/config, never at a mainnet value. One DATABASE_URL, the testnet Postgres, serves
+   runtime and Drizzle migrations; apply the migrations with Drizzle. Set the same 0.5 GB limits Phase 5
+   set and the same PRICE_TICK_RETENTION_DAYS.
+4. Start the simulator against testnet (bootstrap 4, start, backfill 72 replace) so prices move at any
+   hour. Never read or print .env; tell me which variables to set, by name.
+5. Print the testnet API URL and the NEXT_PUBLIC_* names a local web build needs to use it. Rerun
+   docs/evidence/phase-8/walk-in-session.mjs against that build: simulator prices move at any hour, so
+   the perp and option review figures can now be screenshotted.
+
+Acceptance: GET /v1/markets on the testnet API lists the testnet markets, with E2E as paused; the indexer
+is within 100 blocks of the testnet head; a simulator price change reaches GET /v1/prices; the mainnet
+compute is stopped (or kept, by my decision, recorded); the testnet daily burn is measured and the trial
+runway re-computed; the Phase 8 walk shows a perp and an option review with a liquidation line, at 375 and
+1440 px. Evidence in docs/evidence/phase-T.md.
+
+Do NOT commit, push, stage or open a PR — I do that myself. Leave the working tree dirty.
+Report pass, amber or fail, list the paths you changed, then print the Phase T Ship block for me to
+run. Do not start Phase 11.
+```
+
+**Ship.** You run these; Claude does not.
+
+```bash
+git checkout main && git pull
+git checkout -b phase-t-testnet-env
+
+git add docs/evidence/phase-T.md docs/evidence/phase-8 packages/config services
+git commit -m "chore(infra): run the testnet environment and stop mainnet compute until launch"
+
+git push -u origin phase-t-testnet-env
+
+gh pr create --base main \
+  --title "Phase T — Testnet environment" \
+  --body "Testnet-first: the Railway testnet environment with its own Postgres, the simulator driving prices, and the mainnet compute stopped until Phase L so one environment runs at a time.
+
+Acceptance: <paste the result Claude reported>.
+Evidence: docs/evidence/phase-T.md"
+```
+
+**Scope.** The environment every remaining testnet phase uses. No contract changes: the testnet
+deployment already exists (21 contracts), gas comes from the faucet, and the collateral token has a
+public `mint`.
+
+**Why mainnet compute stops.** Two environments double the ~$0.21–0.26/day burn and pass the trial's
+1 GB RAM limit (Phase 5 measured 0.60–0.74 GB for one). The mainnet contracts are paused and nobody can
+trade them, so an idle mainnet API serves no one until the open.
+
+**What it closes.** Phase 8's browser proof of the perp and option figures. Phase 9 and Phase 10 finish
+on this environment in Phase 15, with minted collateral and the testnet indexer.
+
+**Done when.** The acceptance in the prompt holds and `docs/evidence/phase-T.md` records it.
+
+**Cost.** Trial credit only, at one environment's rate.
+
 #### Phase 11 — The crypto set
 
 **Prompt.** Paste this to run the phase.
 
 ```text
-Run Phase 11 of docs/DEVELOPMENT_PHASES.md: the crypto set.
+Run Phase 11 of docs/DEVELOPMENT_PHASES.md: the crypto set. TESTNET FIRST (Section 0.9): list the
+four on testnet 46630 now; write the mainnet listing and dry-run it, but do NOT broadcast it — Phase L
+does.
 
 This is the 24/7 liveness fix. Without it the venue shows nothing but closed markets to anyone
 visiting outside US trading hours, which is most of the week. A perp needs an oracle feed and NOT a
 tokenized asset — underlyingToken is registry metadata and nothing transfers it, confirmed by
 grep -c underlyingToken returning 0 across src/perps/ and src/options/.
 
-Add group crypto, tier tradeable markets for BTC, ETH, LINK and GLD with AddMainnetMarket.s.sol:
+On testnet, prices come from mock feeds the simulator's price driver moves (services/simulator/README.md).
+Price the four the way the existing testnet markets are priced (read
+packages/contracts/deployments/robinhood_testnet.json and AddMarket.s.sol): one mock feed each, owned by
+the key the price driver signs with, and add the four to the simulator's driven set. Mock prices start
+from the real feeds' current readings.
+
+For mainnet, prepare group crypto, tier tradeable markets for BTC, ETH, LINK and GLD with
+AddMainnetMarket.s.sol, and run it WITHOUT --broadcast against the mainnet RPC:
   BTC   0xa2c5184bF03d373Dc9dE4876eb4Bce595B460251
   ETH   0x78F3556b67E17Df817D51Ef5a990cDaF09E8d3A9
   LINK  0xe86e3422Aa9B5e8ee9f3E41a63975bC387A8bce9
@@ -1270,9 +1386,9 @@ these are not less volatile, only fresher. Add /markets?group=crypto on the Phas
 
 The China group is NOT in this phase; Section 3.1 cut it to Phase 18 with its research intact.
 
-Acceptance: /markets?group=crypto lists all four with a live price; GLD and LINK read under 10 minutes
-old; one small perp opens and closes on one of them; docs/evidence/phase-11.md records a feed age per
-market.
+Acceptance (testnet): /markets?group=crypto lists all four with a moving price; one small perp opens and
+closes on one of them, hashes recorded. Acceptance (mainnet, read-only, $0): the AddMainnetMarket dry run
+succeeds, and docs/evidence/phase-11.md records a real feed age per market, GLD and LINK under 10 minutes.
 
 Do NOT commit, push, stage or open a PR — I do that myself. Leave the working tree dirty.
 Report pass, amber or fail, list the paths you changed, then print the Phase 11 Ship block for me to
@@ -1285,8 +1401,8 @@ run. Do not start Phase 12.
 git checkout main && git pull
 git checkout -b phase-11-crypto
 
-git add packages/contracts/deployments packages/config apps/web docs/evidence/phase-11.md
-git commit -m "feat(markets): list the BTC, ETH, LINK and GLD perps"
+git add packages/contracts packages/config services/simulator apps/web docs/evidence/phase-11.md
+git commit -m "feat(markets): list the BTC, ETH, LINK and GLD perps on testnet"
 
 git push -u origin phase-11-crypto
 
@@ -1335,7 +1451,7 @@ to anyone visiting outside US session hours, which is most of the week.
 read under 10 minutes old; one small perp opens and closes on one of them; and `docs/evidence/phase-11.md`
 records a feed-age reading per market.
 
-**Cost.** ~$0.20 gas per listed market, so about $0.80.
+**Cost.** $0 on testnet (faucet gas). The mainnet broadcast in Phase L: ~$0.20 gas per market, about $0.80.
 
 #### Phase 12 — Failure and empty states in plain language
 
@@ -1642,9 +1758,8 @@ for the open, which is why it is cut first.
    prices and simulated traders in the simulator README's words. Per `REFERENCE.md` Section 2's tier
    rules, a number whose source is not what it appears to be must say so on the row, not only in a
    banner — so the balance, PNL and leaderboard surfaces carry it too.
-6. **A testnet API that is actually reachable.** Phase 15 stands up a testnet API and database; this
-   phase needs it on a public host rather than localhost, which is one more Railway service in the
-   `testnet` environment, against the testnet Railway Postgres that Phase 15 creates.
+6. **A testnet API that is actually reachable.** Phase T stands up the testnet API and database on
+   Railway, on a public domain, so this phase reuses it. No extra service is needed.
 
 **Degradation.** If the testnet API is not hosted, ship the toggle disabled with the reason visible
 (not hidden), and record it amber. If the chain-state refactor turns out to touch more of
@@ -1675,8 +1790,8 @@ chain backfill, so a market that started five minutes ago films badly:
   pnpm --filter @hume/simulator backfill 72 replace   # if time is short
   pnpm --filter @hume/simulator nudge NVDA -6         # forces a liquidation on camera
 
-Point a testnet web build and API at chain 46630 with its own database. Deploy what Phase 9 added plus
-the Phase 11 crypto markets so every launch feature has something to film.
+Use the testnet environment Phase T created; do not create a second one, and do not delete it — Phase L
+does. Deploy what Phase 9 added on testnet if Phase T did not, so every launch feature has something to film.
 
 Record NINE clips, desktop 1440 px, plus 375 px for clips 2 and 6: sample mode with no wallet
 extension, perps, options, a liquidation, lending, leaderboard and PNL card, the crypto group,
@@ -1732,11 +1847,9 @@ public `mint`.
 
 **15.1 — Bring up the environment.**
 
-1. **Create the `testnet` Railway environment and its own Postgres service** — Phase 5 deliberately did
-   not, because a running Postgres is billed and the budget is $5–6 including gas. Point a testnet web
-   build and a testnet API at the existing chain `46630` deployment
-   (`packages/contracts/deployments/robinhood_testnet.json`, 21 contracts) against **that** database.
-   Never the mainnet one. **Delete this environment after the recording is captured.**
+1. **Use the `testnet` Railway environment from Phase T** and its own Postgres, pointed at the existing
+   chain `46630` deployment (`packages/contracts/deployments/robinhood_testnet.json`, 21 contracts).
+   Never the mainnet database. **Phase L deletes the environment**, after the recording is captured.
 2. Deploy to testnet what Phase 9 added on mainnet — the credit stack and one credit pair — and add the
    Phase 11 crypto markets, so every launch feature has something to film. Phase 14 added no tables, so
    there is nothing to deploy for copy trading.
@@ -1815,6 +1928,64 @@ and records the fork suite at 7/7 plus the pause and unpause. **Any Tier A failu
 that feature.**
 
 **Cost.** $0. Testnet gas from the faucet, test collateral minted.
+
+### Mainnet stage — the money is spent here, and only here (Section 0.9)
+
+#### Phase L — Mainnet bring-back and funding
+
+**Prompt.** Paste this to run the phase.
+
+```text
+Run Phase L of docs/DEVELOPMENT_PHASES.md: bring mainnet back and fund it. Section 0.9 says why this is
+the first phase that spends money. Phase 15 must have passed.
+
+Before anything, ask me three things and wait: the open date, the Railway plan for the open (Hobby
+$5/month, or trial credit if any is left), and whether USDG is funded. Re-read the owner's USDG and ETH
+balances on chain 4663; never trust an older figure.
+
+1. ASK ME, then delete the Railway testnet environment and its Postgres. Phase 15's recording must be
+   captured first.
+2. Redeploy the mainnet api, pricing and indexer. The indexer resumes from its last block; wait until it
+   is within 100 blocks of the head.
+3. Re-size the launch caps against the real USDG balance (SetLaunchCaps.s.sol, Phase 4's rules). If USDG
+   is unfunded, follow Section 0.3 exactly.
+4. Broadcast the Phase 11 mainnet listing (AddMainnetMarket.s.sol, BTC, ETH, LINK, GLD), paused like the
+   rest. Record the hashes and a feed age per market.
+5. With USDG: seed the credit pair (Phase 9's mainnet half) and run one real perp and one real option
+   round trip (Phase 6's). Deploy the Phase 10 leaderboard against the mainnet indexer.
+6. Re-measure the mainnet daily burn and confirm the plan covers it to the open plus 30 days.
+
+Acceptance: docs/evidence/phase-L.md holds every hash, the cap values and the balance they were sized
+against, the feed ages, the indexer lag, and a pass, amber or fail for the mainnet halves of Phases 6, 9,
+10 and 11. Unfunded USDG makes 6 and 9 amber under Section 0.3, not red.
+
+Do NOT commit, push, stage or open a PR — I do that myself. Leave the working tree dirty.
+Report pass, amber or fail, list the paths you changed, then print the Phase L Ship block for me to
+run. Do not start Phase 16.
+```
+
+**Ship.** You run these; Claude does not.
+
+```bash
+git checkout main && git pull
+git checkout -b phase-l-mainnet
+
+git add docs/evidence/phase-L.md packages/contracts/deployments packages/config
+git commit -m "chore(launch): bring mainnet back, list the crypto set and size the caps"
+
+git push -u origin phase-l-mainnet
+
+gh pr create --base main \
+  --title "Phase L — Mainnet bring-back and funding" \
+  --body "The first phase that spends money: the testnet environment is deleted, mainnet compute returns, the crypto set is listed paused, and the caps are sized against the real USDG balance.
+
+Acceptance: <paste the result Claude reported>.
+Evidence: docs/evidence/phase-L.md"
+```
+
+**Scope.** Everything testnet proved, made real on chain 4663, still paused. Phase 17 unpauses.
+
+**Cost.** Railway plan for the open (Section 0.9), $4–5 USDG if funded, ~$0.80 gas for the crypto set.
 
 #### Phase 16 — Safety rails and key separation on mainnet
 
@@ -2202,8 +2373,8 @@ P0 Freeze ─► P1 Brand ─► P2 Groups ────────────�
 - **Nothing is hardcoded.** Chain IDs, RPC URLs, addresses, leverage caps, fee percentages and market
   groups stay environment- or registry-driven, as `packages/config` already enforces.
 - **Testnet and mainnet never share a database.** Two Railway environments, `mainnet` and `testnet`,
-  each with its own Postgres service. Only `mainnet` runs continuously; Phase 15 creates the testnet one
-  and deletes it after the recording.
+  each with its own Postgres service. Only one runs at a time (Section 0.9): Phase T creates `testnet` and
+  stops the mainnet compute; Phase L deletes `testnet` and brings mainnet back.
 - **Railway runs compute and Postgres.** One direct `DATABASE_URL` per environment serves runtime and
   migrations both — no transaction pooler, so no `prepare: false` and no `DIRECT_DATABASE_URL`. Hosting
   moved off Supabase on 2026-10-04 when its project limit was reached.
