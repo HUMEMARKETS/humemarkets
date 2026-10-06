@@ -40,6 +40,18 @@ const click = async (x, y) => {
   await send("Input.dispatchMouseEvent", { type: "mouseMoved", x, y });
   for (const type of ["mousePressed", "mouseReleased"]) await send("Input.dispatchMouseEvent", { type, x, y, button: "left", clickCount: 1 });
 };
+/// Waits until the page stops moving (a glide has landed), up to 12 s. Headless Chrome draws WebGL in
+/// software, so its frames run slower than a real GPU's and a glide takes longer to land.
+const settle = async () => {
+  let last = -1;
+  let still = 0;
+  for (let i = 0; i < 60 && still < 3; i++) {
+    await sleep(200);
+    const top = await ev(`document.getElementById('start').parentElement.scrollTop`);
+    still = top === last ? still + 1 : 0;
+    last = top;
+  }
+};
 const key = async (k, vk) => { for (const type of ["keyDown", "keyUp"]) await send("Input.dispatchKeyEvent", { type, key: k, code: k, windowsVirtualKeyCode: vk }); };
 
 for (const [name, width, height] of [["1440", 1440, 900], ["375", 375, 812]]) {
@@ -68,7 +80,8 @@ await go("/");
 for (const index of [3, 1, 6, 0, 5]) {
   const box = await ev(`(() => { const a = document.querySelectorAll('nav[aria-label="Landing sections"] a')[${index}]; const r = a.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; })()`);
   await click(box.x, box.y);
-  await sleep(2600);
+  await sleep(300);
+  await settle();
   const state = await ev(`(() => { const s = document.getElementById('${ids[index]}'); return { top: s.parentElement.scrollTop, want: s.offsetTop, hash: location.hash, focus: document.activeElement?.id ?? '' }; })()`);
   const label = await current(true);
   check(`[1440] click ${navs[index]}: rail marks it, page at its top, hash and focus follow`,
@@ -80,13 +93,13 @@ for (const index of [3, 1, 6, 0, 5]) {
 await go("/");
 await ev(`document.activeElement?.blur()`);
 const at = () => ev(`(() => { const s = document.getElementById('start').parentElement; const tops = [...s.querySelectorAll('section')].map((e) => e.offsetTop); return tops.findIndex((t) => Math.abs(t - s.scrollTop) < 2); })()`);
-await key("ArrowDown", 40); await sleep(2400);
+await key("ArrowDown", 40); await sleep(300); await settle();
 check("[1440] ArrowDown moves to Markets", (await at()) === 1, String(await at()));
-await key("PageDown", 34); await sleep(2400);
+await key("PageDown", 34); await sleep(300); await settle();
 check("[1440] PageDown moves to Trade", (await at()) === 2, String(await at()));
-await key("End", 35); await sleep(3000);
+await key("End", 35); await sleep(300); await settle();
 check("[1440] End moves to Vision", (await at()) === 6, String(await at()));
-await key("Home", 36); await sleep(3000);
+await key("Home", 36); await sleep(300); await settle();
 check("[1440] Home moves to Start", (await at()) === 0, String(await at()));
 
 // The canvas follows the theme in place: same canvas element, lines dark on ivory, light on charcoal.

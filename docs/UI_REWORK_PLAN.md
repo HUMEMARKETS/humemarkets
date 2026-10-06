@@ -21,7 +21,7 @@ The landing page and app UI move from the dark green-black and Space Grotesk loo
 - The hero facts strip ("N markets · Nx max leverage · N contracts verified") reads every number from the registry or `packages/config`. Nothing is a literal.
 - "Any hour, no market hours" is false while `MarketHeader` shows "Closed · last close". The fix is honest copy. A mechanism change is out of scope.
 - **Landing UX (operator, 2026-10-06).** Navigation is a section rail like https://robinid.vercel.app/: a vertical rail on the left, with numbered items and labels, a "Start" link to the top, and the active section highlighted as the visitor scrolls.
-- **Landing visuals.** The visual language stays Zupiter: wireframe 3D, spaced-caps labels and slide-out panels.
+- **Landing visuals.** Spaced-caps labels and slide-out panels stay from Zupiter. The 3D is lit solid instanced geometry, after robinid.vercel.app: voxels that assemble, thin rings, particles and mono label pills, with the ground grid kept as line work (operator, 2026-10-06, replacing wireframe 3D).
 - **3D scenes.** The Three.js stack (`LandingCanvas`, `scenes.ts`, `StaticScene`) is kept and improved. The abstract decorative shapes (torus knot, spheres, octahedron "diamond") are replaced by one scene per section that depicts that section's content. The scenes are re-themed to the monochrome ivory/charcoal tokens in both themes.
 
 ## Step 0: Save this plan to the repo (on approval)

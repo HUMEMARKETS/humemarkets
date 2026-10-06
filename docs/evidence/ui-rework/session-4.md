@@ -8,7 +8,7 @@ Date: 2026-10-06. Plan: `docs/UI_REWORK_PLAN.md`, Session 4. Result: **pass**.
 | --- | --- | --- |
 | 1 | The five chapters (beginning, perpetuals, options, vault, move), the 00–04 bottom rail, the hotspots and the "THE HUME LANDSCAPE" caption are gone. `LandingStage` and `LandingCanvas` stay as the frame. The features page was the only other reader of the old chapters, so it now holds its three product modules itself. | `landing/content.ts`, `landing/LandingStage.tsx`, `app/features/page.tsx` |
 | 2 | Section rail, after robinid.vercel.app: "Start", then 01 Markets … 06 Vision in spaced caps on the left. A line fills with the scroll and a marker slides between items. The active item gets ink weight plus the marker, not a new colour. `IntersectionObserver` on a line across the middle of the screen picks the active section. A click glides there (or jumps under reduced motion), updates the hash and moves focus to the section heading. At 375 px the rail becomes a strip under the header with the current section, `n / 7` and the same fill. | `landing/LandingRail.tsx` (new), `landing/LandingStage.tsx` |
-| 3 | One world, seven wireframe stations along a Catmull-Rom camera path: Möbius loop mark (open), globe with one tick per registry market, option-value surface whose front edge is the expiry hockey stick, health gauge on a vault, trader network around a leader, one block per contract in the deployment (faint when it has no address), and the loop mark closed inside a tick ring. Colours come from `--color-text`, `--color-muted` and `--color-ground`. A theme change recolours the scene in place, with no remount. | `landing/scenes.ts`, `landing/LandingCanvas.tsx` |
+| 3 | *(Superseded by the solid rework below.)* One world, seven wireframe stations along a Catmull-Rom camera path: Möbius loop mark (open), globe with one tick per registry market, option-value surface whose front edge is the expiry hockey stick, health gauge on a vault, trader network around a leader, one block per contract in the deployment (faint when it has no address), and the loop mark closed inside a tick ring. Colours come from `--color-text`, `--color-muted` and `--color-ground`. A theme change recolours the scene in place, with no remount. | `landing/scenes.ts`, `landing/LandingCanvas.tsx` |
 | 4 | Seven section bodies. Hero: wordmark, "Global markets, onchain.", thesis, market search to `/markets?q=`, and the one facts strip. Markets: group tabs from `MARKET_GROUPS` and `marketForSymbol`. Trade: Perpetuals / Options / Strategies tabs, each with a payoff drawn by the SDK's `payoffCurve` and `analyzeStrategy`. Capital: `healthFactorBps` over the pair's limits, or the env example limits, with the lending page's `LtvBar`. Social: top 3 of the leaderboard, plus copy trading and risk metrics marked "In development". Verify: contracts with explorer links, "Verified source", per-market leverage tiers, paused list, the unaudited line and the CA badge (the drawer is `ContractsPanel`). Vision: Launch App and Explore Markets. `/markets` now reads `?q=`. | `landing/sections.tsx` (new), `lib/market.ts` (group labels), `components/MarketsTable.tsx`, `app/markets/page.tsx` |
 | 5 | One fixed canvas behind the sections. One rAF loop damps scroll progress (`DAMPING = 0.1` per 60 fps frame, frame-rate independent) and feeds the camera, the rail fill and marker, and the copy reveal (opacity and `translate3d` only). Rail clicks and keyboard moves glide `scrollTop` on the same curve. Arrow keys, PageUp/PageDown, Home and End move between sections. A section taller than the screen is paged through first. DPR is capped at 2, or 1.5 under 768 px, and phones get half the segments. The loop stops when the tab is hidden or motion is off. Reduced motion or "Immersive motion" off shows the per-section `StaticScene`, with no canvas. | `lib/landingScroll.ts` (+ test), `landing/LandingStage.tsx`, `landing/StaticScene.tsx` |
 | — | Removed dead code: the `landing-fade` keyframes and the `THEME_ACCENT` constant. | `app/globals.css`, `lib/theme-colors.ts` |
@@ -54,10 +54,10 @@ notches of 100 px down to Vision (`maxTop 5400 = vision offsetTop`), then 70 bac
 | --- | --- |
 | GPU | ANGLE (Intel, Mesa Intel UHD Graphics (TGL GT2), OpenGL 4.6), an integrated laptop GPU |
 | Viewport | 1440 × 900 @ 1x |
-| Frames | 1013, mean **59.6 fps** |
-| Frame time p50 / p95 / p99 | 16.7 / 16.7 / 16.8 ms. 7 frames over 20 ms |
+| Frames | 1020, mean **59.9 fps** |
+| Frame time p50 / p95 / p99 | 16.7 / 16.7 / 16.8 ms. 2 frames over 20 ms |
 | Long tasks (PerformanceObserver) | **none** |
-| Main-thread tasks over 50 ms in the trace | **none** (7467 tasks, longest 10.7 ms) |
+| Main-thread tasks over 50 ms in the trace | **none** (7527 tasks, longest 25.5 ms) |
 | CLS | **0** (no `LayoutShift` event in the trace) |
 
 To capture it by hand: run `pnpm --filter @hume/web build`, then `next start -p 3417`, then `DISPLAY=:0 node docs/evidence/ui-rework/s4/trace.mjs http://localhost:3417 docs/evidence/ui-rework/s4`.
@@ -90,6 +90,37 @@ Or open `/` in Chrome at 1440 × 900, go to DevTools > Performance, press Record
 | Capital | skeleton while the pair loads | "could not be read … example limits" + Try again | calculator only, nothing on chain | `statusSentence` (paused / reduce only) |
 | Social | row skeletons | "could not be read" + Try again | `SAMPLE DATA` badge (no page banner on `/`, per the Decisions) | n/a |
 | Verify | limit skeletons | `REGISTRY_ERROR` + Try again | as Markets | "Paused: E2E. …" |
+
+## Solid rework (operator follow-up, same session)
+
+The operator found the wireframe stations too plain and pointed to robinid.vercel.app. Its production bundle
+(the `story-canvas` scene) shows how it gets its look, with no post-processing:
+
+- lit `MeshStandardMaterial` solids under an ambient and a directional light;
+- instanced voxels (about 3,400 cubes in one draw call) that fly in with a staggered ease-out;
+- thin tilted rings and orbiting round particles;
+- mono-type label pills drawn on canvas textures;
+- stations 17 units apart, with a keyframed camera that holds still for the first and last fifth of each transition and rises in an arc between;
+- pointer parallax.
+
+The operator chose full solid, a voxel Möbius mark and all seven stations in one pass. The approved plan is
+`~/.claude/plans/alright-still-in-the-silly-locket.md`.
+
+| Change | Files |
+| --- | --- |
+| Kit: voxel fields (one `InstancedMesh` each, with the assembly), solids, rings, segments that can be updated in place, round particles from a `DataTexture`, and label pills drawn in the `--color-surface`, `--color-line` and `--color-text` tokens and the `--font-mono` font. No colour literal. | `landing/kit.ts` (new) |
+| Stations. Start: a voxel Möbius band (about 3,600 cubes on desktop, 1,300 on a phone) that sweeps in around the loop, three rings, 90 particles, and up to 8 registry markets as `SYMBOL · Nx` pills. Markets: a globe of tiles with one pillar per registry market, as tall as its leverage cap, and paused markets short and muted. Trade: an option-value bar field, with the expiry row in the text tone, that breathes. Capital: a vault of stacked block rings under a health gauge whose needle sweeps. Social: a solid leader with icosahedron traders, links that follow the bobbing nodes, and pulses along the follow links. Verify: one block per `CONTRACTS` entry, chained, missing ones smaller, and a scan that lights the deployed blocks in turn. Vision: the mark again inside an instanced tick ring. | `landing/scenes.ts` |
+| Camera: RobinID-style keyframes (`cameraAt`) with a dwell and an arc. Ambient light 1.5 and a directional light 2.2 that follows the look point. Pointer parallax (mouse only). DPR caps 1.75 / 1.4. Only stations within 1.05 of the progress are drawn. Each station assembles the first time it is seen. The canvas takes the registry list. A theme change still recolours in place. | `landing/LandingCanvas.tsx`, `landing/LandingStage.tsx` |
+| Labels draw on top (`depthTest: false`), so a pill never clips into the band. | `landing/kit.ts` |
+| Contract and plan: the motion budget row adds the voxel assembly and the parallax. The "Landing visuals" assumption now names lit solid instanced geometry. | `docs/UI_CONTRACT.md` §8, `docs/UI_REWORK_PLAN.md` Assumptions |
+| Check script: after a rail click or key, it waits for the glide to land (3 stable samples, up to 12 s) instead of a fixed sleep. Headless Chrome draws WebGL in software, where frames hit the 50 ms dt cap and a glide lands more slowly. The GPU recording shows the real speed. | `s4/check.mjs` |
+
+Results on the solid build (production, `next start`):
+
+- `s4/check.mjs`: **73 pass, 0 fail**. The 28 screenshots in `s4/` are re-taken. Theme luminance in the scene region: light `mean 219, min 4`, dark `mean 29, max 241`, and the same canvas node.
+- `s4/trace.mjs` on the GPU (Intel UHD TGL GT2), full scroll to Vision and back: **59.9 fps** mean, p99 16.8 ms, no long task, longest main-thread task 25.5 ms, **CLS 0**. This covers the assembly of stations 1 to 6, which happens during the scroll.
+- `s4/hero-assembly-1440.mp4`: the hero voxels sweeping in on page load, captured headed on the GPU.
+- `s4/rail-click-1440.mp4`: re-recorded on the solid world.
 
 ## End-of-session commands
 

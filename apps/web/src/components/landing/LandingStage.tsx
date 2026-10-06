@@ -1,5 +1,6 @@
 'use client';
 
+import type { MarketConfig } from '@hume/types';
 import { cn } from '@hume/ui';
 import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -22,6 +23,7 @@ const LandingCanvas = dynamic(
 
 const MOTION_KEY = 'hume.landing.motion';
 const DEPLOYED = CONTRACTS.map((contract) => Boolean(contract.address));
+const NO_MARKETS: MarketConfig[] = [];
 
 /// Keys the page itself answers, so a control that uses them keeps them.
 const OWN_KEYS = 'input, textarea, select, [role="tablist"], [role="dialog"], [contenteditable="true"]';
@@ -263,7 +265,7 @@ export function LandingStage() {
                 <LandingCanvas
                     world={world}
                     theme={theme}
-                    markets={markets.data?.length ?? 0}
+                    markets={markets.data ?? NO_MARKETS}
                     deployed={DEPLOYED}
                     onFailed={() => setFailed(true)}
                 />
