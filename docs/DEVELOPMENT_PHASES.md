@@ -73,21 +73,21 @@ Ship block instead.
 One row per feature, for progress at a glance. It duplicates nothing: the phases are the source of
 truth and this table only points at them. `LAUNCH_MODEL.md` Section 1 defines what each feature is.
 
-| #   | Feature               | Phases that touch it | State at open                       | Gate |
-| --- | --------------------- | -------------------- | ----------------------------------- | ---- |
-| 1   | Perps                 | 4, 6, 15, 17         | **Open**, capped, 32 equity markets | 6    |
-| 2   | Options               | 4, 6, 15, 17         | **Open**, capped                    | 6    |
-| 3   | China market          | 2, **18**            | Cut from launch — research done     | —    |
-| 4   | Pons market           | **18**               | Cut from launch — stack ported      | —    |
-| 5   | Leaderboard           | 10, 15, 17           | **Open**, one window (`all`)        | 10   |
-| 6   | PNL card              | 10, 15, 17           | **Open**                            | 10   |
-| 7   | Copy trading          | 14, **18**           | Entry point only, flag off          | 14   |
-| 8   | Lending / borrowing   | 4, 9, 15, 17         | **Open**, 1 pair, owner-seeded      | 9    |
-| +   | Crypto markets        | 11, 15, 17           | **Open** — BTC, ETH, LINK, GLD      | 11   |
-| +   | Sample mode           | 7, 15, 17            | **Live** — hard gate                | 7    |
-| +   | Guided review         | 8, 15, 17            | **Live** — hard gate                | 8    |
-| +   | Plain-language states | 12, 15, 17           | **Live** — hard gate                | 12   |
-| +   | Mobile and keyboard   | 13, 15, 17           | **Live** — hard gate                | 13   |
+| #   | Feature               | Phases that touch it | State at open                         | Gate |
+| --- | --------------------- | -------------------- | ------------------------------------- | ---- |
+| 1   | Perps                 | 4, 6, 15, 17         | **Open**, capped, 32 equity markets   | 6    |
+| 2   | Options               | 4, 6, 15, 17         | **Open**, capped                      | 6    |
+| 3   | China market          | 2, **18**            | Cut from launch — research done       | —    |
+| 4   | Pons market           | **18**               | Cut from launch — stack ported        | —    |
+| 5   | Leaderboard           | 10, 15, 17           | **Open**, one window (`all`)          | 10   |
+| 6   | PNL card              | 10, 15, 17           | **Open**                              | 10   |
+| 7   | Copy trading          | 14, **18**           | Entry point only, flag off            | 14   |
+| 8   | Lending / borrowing   | 4, 9, 15, 17         | **Open**, 1 pair, owner-seeded        | 9    |
+| +   | Crypto markets        | 11, 15, 17           | **Open** — BTC, ETH, LINK, GLD        | 11   |
+| +   | Sample mode           | 7, 15, 17            | **Live** — hard gate                  | 7    |
+| +   | Guided review         | 8, 15, 17            | **Live** — hard gate                  | 8    |
+| +   | Plain-language states | 12, 15, 17           | **Live** — hard gate                  | 12   |
+| +   | Mobile and keyboard   | 13, 15, 17           | **Live** — hard gate                  | 13   |
 | +   | Network toggle        | 14b, **18**          | Optional — cut first if time is short | —    |
 
 The four `+` interface rows are not on the original feature list. They are hard gates anyway, because
@@ -102,19 +102,19 @@ Section 1.
 
 Checked rather than assumed. Three items were reported available and measured otherwise.
 
-| Resource                  | Verified state                                                                                                                                                                           | Used by                 |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| Railway CLI               | **Account changed 2026-10-04.** Hume lives in a project on a **second email**, id `fcfcb48b-28fc-4469-8e70-3f3fdae9d235`. Runs compute **and** Postgres, on a **free or trial plan** — Phase 5 holds what that constrains                 | Phase 5                 |
-| Supabase                  | **Dropped 2026-10-04 — project limit reached.** Postgres moved to Railway. No Supabase project, no `supabase` CLI, and nothing in the code ever imported its SDK                         | —                       |
-| Railway MCP in Claude Code | **Needs re-auth.** It is authenticated as the first account and returns `You don't have the required role (viewer)` on the new project. Run `/mcp` in a fresh session before Phase 5     | Phase 5                 |
-| Vercel CLI                | **OK** — logged in as `rubencahyadi504-9120`                                                                                                                                             | Phase 6                 |
-| Mainnet RPC `4663`        | **OK** — reachable, block 79,197,152                                                                                                                                                     | Most phases             |
-| Testnet RPC `46630`       | **OK** — reachable, `eth_chainId` returns `0xb626`                                                                                                                                       | Phase 15                |
-| Toolchain                 | **OK** — node v24.16.0, pnpm 9.15.0, forge 1.8.3, `node_modules` present, `turbo typecheck` passes                                                                                       | All                     |
-| **`.env`**                | **MISSING.** No `.env` and no `packages/contracts/.env` anywhere in the repo — only `.env.example`. `.env*` is correctly gitignored (`.gitignore:45`)                                    | **Blocks 4, 9, 11, 16** |
-| **`hume.tech` DNS**       | **NOT RESOLVING.** Registered in whois, but no A record and no NS records                                                                                                                | **Blocks 6**            |
-| **Vercel `hume-mainnet`** | **DOES NOT EXIST.** Projects are `alphamarkets`, `leverage-market-web`, `alphaperp-web` and four unrelated. The old README's claim that `hume-mainnet` serves `hume.tech` was never true | **Blocks 6**            |
-| Screen recorder           | `ffmpeg` present; `wf-recorder`, OBS, grim absent. **X11 + XFCE**, so `ffmpeg -f x11grab` or `simplescreenrecorder` works with no install                                                | Phase 15                |
+| Resource                   | Verified state                                                                                                                                                                                                            | Used by                 |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| Railway CLI                | **Account changed 2026-10-04.** Hume lives in a project on a **second email**, id `fcfcb48b-28fc-4469-8e70-3f3fdae9d235`. Runs compute **and** Postgres, on a **free or trial plan** — Phase 5 holds what that constrains | Phase 5                 |
+| Supabase                   | **Dropped 2026-10-04 — project limit reached.** Postgres moved to Railway. No Supabase project, no `supabase` CLI, and nothing in the code ever imported its SDK                                                          | —                       |
+| Railway MCP in Claude Code | **Needs re-auth.** It is authenticated as the first account and returns `You don't have the required role (viewer)` on the new project. Run `/mcp` in a fresh session before Phase 5                                      | Phase 5                 |
+| Vercel CLI                 | **OK** — logged in as `rubencahyadi504-9120`                                                                                                                                                                              | Phase 6                 |
+| Mainnet RPC `4663`         | **OK** — reachable, block 79,197,152                                                                                                                                                                                      | Most phases             |
+| Testnet RPC `46630`        | **OK** — reachable, `eth_chainId` returns `0xb626`                                                                                                                                                                        | Phase 15                |
+| Toolchain                  | **OK** — node v24.16.0, pnpm 9.15.0, forge 1.8.3, `node_modules` present, `turbo typecheck` passes                                                                                                                        | All                     |
+| **`.env`**                 | **MISSING.** No `.env` and no `packages/contracts/.env` anywhere in the repo — only `.env.example`. `.env*` is correctly gitignored (`.gitignore:45`)                                                                     | **Blocks 4, 9, 11, 16** |
+| **`hume.tech` DNS**        | **NOT RESOLVING.** Registered in whois, but no A record and no NS records                                                                                                                                                 | **Blocks 6**            |
+| **Vercel `hume-mainnet`**  | **DOES NOT EXIST.** Projects are `alphamarkets`, `leverage-market-web`, `alphaperp-web` and four unrelated. The old README's claim that `hume-mainnet` serves `hume.tech` was never true                                  | **Blocks 6**            |
+| Screen recorder            | `ffmpeg` present; `wf-recorder`, OBS, grim absent. **X11 + XFCE**, so `ffmpeg -f x11grab` or `simplescreenrecorder` works with no install                                                                                 | Phase 15                |
 
 **Consequence.** Phases 0 to 3 need none of the missing items and can run now. Phase 4 stops without
 `.env`. Phase 6 needs either DNS plus a Vercel project, or an explicit
@@ -287,16 +287,16 @@ integration suites — is the standing evidence, and `REFERENCE.md` Section 1 re
 
 ## 1. Budget
 
-| Item                                                     | Cost                  | Note                                                            |
-| -------------------------------------------------------- | --------------------- | --------------------------------------------------------------- |
-| Contract deployments (credit, listings, caps, config)    | ~$0 of new spend      | Owner wallet's 0.000375 ETH already buys ~37M gas (Section 0.2) |
-| Gas floats for keeper, liquidator, pauser                | ~0.00015 ETH          | Phase 16                                                        |
-| **USDG for pool reserve, credit seed, real test trades** | **$4–5 — NOT FUNDED** | **Section 0.3. The one real blocker**                           |
-| Railway — compute (indexer, API, pricing, keeper)        | see Phase 5           | **Free plan carries only $1/month of included usage** and Trial a one-time $5; four always-on containers exceed $1/month, and the indexer must not sleep. Hobby is $5/month with $5 included. Phase 5 reports the measured figure |
+| Item                                                     | Cost                  | Note                                                                                                                                                                                                                                                                        |
+| -------------------------------------------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Contract deployments (credit, listings, caps, config)    | ~$0 of new spend      | Owner wallet's 0.000375 ETH already buys ~37M gas (Section 0.2)                                                                                                                                                                                                             |
+| Gas floats for keeper, liquidator, pauser                | ~0.00015 ETH          | Phase 16                                                                                                                                                                                                                                                                    |
+| **USDG for pool reserve, credit seed, real test trades** | **$4–5 — NOT FUNDED** | **Section 0.3. The one real blocker**                                                                                                                                                                                                                                       |
+| Railway — compute (indexer, API, pricing, keeper)        | see Phase 5           | **Free plan carries only $1/month of included usage** and Trial a one-time $5; four always-on containers exceed $1/month, and the indexer must not sleep. Hobby is $5/month with $5 included. Phase 5 reports the measured figure                                           |
 | **Railway Postgres — `mainnet` only**                    | **usage-based**       | Supabase's project limit was reached 2026-10-04. **Free and Trial cap the volume at 0.5 GB**, so `PRICE_TICK_RETENTION_DAYS` is sized against that in Phase 5. The `testnet` Postgres is created in Phase 15 and deleted after the recording, so only one runs continuously |
-| Vercel (web)                                             | $0                    | Hobby plan. **DNS not pointed yet** — Section 0.1               |
-| Domain                                                   | $0                    | Already held                                                    |
-| Testnet walkthrough, recording and sample mode           | $0                    | Faucet gas; the collateral token has a public `mint`            |
+| Vercel (web)                                             | $0                    | Hobby plan. **DNS not pointed yet** — Section 0.1                                                                                                                                                                                                                           |
+| Domain                                                   | $0                    | Already held                                                                                                                                                                                                                                                                |
+| Testnet walkthrough, recording and sample mode           | $0                    | Faucet gas; the collateral token has a public `mint`                                                                                                                                                                                                                        |
 
 **First month ~$6, then ~$5/month.** The whole $5–6 is accounted for: roughly $5 of USDG on chain plus
 the Railway subscription. There is no slack, which is why Section 0.3 degrades rather than stalls.
@@ -761,11 +761,11 @@ walkthrough and deleted after the recording. Phase 15 owns that step.
 **The plan, measured from Railway's docs 2026-10-04.** The operator intends to run this on a free
 account, so these are the numbers the phase has to fit inside:
 
-| Plan      | Subscription | Included usage       | RAM / service | Replicas | Volume cap |
-| --------- | ------------ | -------------------- | ------------- | -------- | ---------- |
-| **Free**  | $0           | **$1 per month**     | 0.5 GB        | 1        | **0.5 GB** |
-| **Trial** | $0           | **$5, one time**     | 1 GB          | 2        | **0.5 GB** |
-| **Hobby** | $5 / month   | $5 per month         | 48 GB         | 6        | 5 GB       |
+| Plan      | Subscription | Included usage   | RAM / service | Replicas | Volume cap |
+| --------- | ------------ | ---------------- | ------------- | -------- | ---------- |
+| **Free**  | $0           | **$1 per month** | 0.5 GB        | 1        | **0.5 GB** |
+| **Trial** | $0           | **$5, one time** | 1 GB          | 2        | **0.5 GB** |
+| **Hobby** | $5 / month   | $5 per month     | 48 GB         | 6        | 5 GB       |
 
 Resources bill on top: RAM $10/GB/month, CPU $20/vCPU/month, egress $0.05/GB, volume $0.15/GB/month.
 Builds are free.
@@ -807,10 +807,10 @@ so dropping Supabase touches documentation and environment variables only.
 **One connection string, not two.** Railway Postgres is a direct connection with no transaction-mode
 pooler, so the two things the Supabase plan required are both unnecessary here:
 
-| Dropped                | Why it is not needed on Railway                                                        |
-| ---------------------- | -------------------------------------------------------------------------------------- |
-| `prepare: false`       | No transaction pooler, so `postgres.js` prepared statements work as they do locally    |
-| `DIRECT_DATABASE_URL`  | One direct `DATABASE_URL` serves runtime and DDL both; Railway injects it per service  |
+| Dropped               | Why it is not needed on Railway                                                       |
+| --------------------- | ------------------------------------------------------------------------------------- |
+| `prepare: false`      | No transaction pooler, so `postgres.js` prepared statements work as they do locally   |
+| `DIRECT_DATABASE_URL` | One direct `DATABASE_URL` serves runtime and DDL both; Railway injects it per service |
 
 Keep `transform: postgres.camel` in `services/api/src/db.ts` exactly where it is.
 
@@ -1022,9 +1022,16 @@ guessing. Add the Guided/Pro toggle to AppShell per the Phase 3 split, remembere
 keeps today's one-shot OrderPanel and TradeSheet behaviour exactly. Wire it in sample mode first so
 the flow is exercised without gas.
 
+Also close the paused-market gap the UI rework QA found (docs/evidence/ui-rework/session-6.md): the
+option ticket does not say a market is paused. Make it refuse a paused market with `tradeBlocker`
+from apps/web/src/lib/market.ts, the same way OrderPanel does, before the review step is reached.
+Mark a paused underlying in the strategy builder and a paused market's position on /portfolio with the
+same sentence. Prices keep showing. A paused market renders, prices and refuses trades.
+
 Acceptance: all three paths show a review with a liquidation price before any signature, in sample and
 connected mode; the Pro toggle restores the one-shot panel; the review cannot be skipped by keyboard
-or by deep link.
+or by deep link; the option ticket refuses a paused market with a plain sentence and no review step,
+and /strategies and /portfolio mark one.
 
 Do NOT commit, push, stage or open a PR — I do that myself. Leave the working tree dirty.
 Report pass, amber or fail, list the paths you changed, then print the Phase 8 Ship block for me to
@@ -1071,12 +1078,17 @@ Each shows, before the signature:
    than guessing.
 4. Order the first-time path deposit-and-caps-explained **before** the first token approval.
 5. Wire it in sample mode first, so the flow is exercised without gas.
+6. **Paused markets on the option path.** `OptionTicket` reads the market's `active` flag and refuses
+   with `tradeBlocker` before the review step, as `OrderPanel` does for perps. `/strategies` marks a
+   paused underlying and `/portfolio` marks a position in a paused market, with the same sentence.
+   The price keeps updating. A unit test covers the option refusal; a market that is paused on the
+   testnet registry (E2E) proves it in the browser.
 
 **Full scope, Phase 18.** A multi-step stepper for option strategies and `StrategyBuilder`, per-leg.
 
 **Done when.** All three paths show a review with a liquidation price before any signature, in sample and
 connected mode; the Pro toggle restores the one-shot panel; the review cannot be skipped by keyboard or
-deep link.
+deep link; the option ticket refuses a paused market and `/strategies` and `/portfolio` mark one.
 
 **Cost.** $0 in sample mode; a small gas spend for connected mode.
 
@@ -1603,7 +1615,7 @@ positions, the wallet and the explorer links. One build, two chains.
 
 **Why it is worth doing, and why it is not a gate.** Sample mode (Phase 7) already lets someone see the
 product with no wallet, so the toggle is not what makes the venue approachable. What it adds is a place
-to *trade* without real money — which, at the Section 0.3 caps of 0.008 USDG of notional per market, is
+to _trade_ without real money — which, at the Section 0.3 caps of 0.008 USDG of notional per market, is
 the only way anyone can take a position worth watching. It also replaces Phase 15's separate testnet
 build with a switch on the real one, so the thing filmed is the thing shipped. None of that is required
 for the open, which is why it is cut first.
@@ -1891,6 +1903,13 @@ Run Phase 17 of docs/DEVELOPMENT_PHASES.md: the launch gate and the open.
 This is the only phase that makes Hume live, and it is irreversible in effect. Confirm with me before
 the first unpause transaction.
 
+Before filling the gate, open every contract explorer link the landing page shows (list them from
+docs/evidence/ui-rework/s6/results-links.txt) in a browser and confirm each shows verified source.
+The explorer's API sits behind a bot challenge, so this cannot be checked over HTTP. For any contract
+that is not verified, run `packages/contracts/script/verify-full.sh` (it verifies the 20 proxy
+implementations on Blockscout) and open it again. Open the proxy pages and the implementation pages. Gate 17 stays red until every one
+shows verified source, because the landing page says "Verified source".
+
 Fill the 17-row gate in docs/evidence/launch-gate.md with evidence links from every phase. Apply the
 stop rule exactly: gates 1-5, 7, 8, 12, 13, 15, 16 and 17 are HARD, so if any is red NOTHING opens.
 Gates 6, 9, 10, 11 and 14 are per feature — a red one keeps that feature paused and does not stop the
@@ -1942,7 +1961,7 @@ Evidence: docs/evidence/phase-17.md"
 | 5   | Indexer within 10 blocks of head; API serving mainnet                              | Hard | Phase 5  |
 | 6   | One real perp and one real option round trip on mainnet                            | Feat | Phase 6  |
 | 7   | **Sample mode works with no wallet extension installed**                           | Hard | Phase 7  |
-| 8   | **Review step with a liquidation price on all three money paths**                  | Hard | Phase 8  |
+| 8   | **Review step with a liquidation price on all three money paths; a paused market is refused at the option ticket** | Hard | Phase 8  |
 | 9   | Credit lifecycle passed on mainnet                                                 | Feat | Phase 9  |
 | 10  | Leaderboard reconciles for one hand-checked wallet; not blank in sample mode       | Feat | Phase 10 |
 | 11  | Crypto set live: BTC, ETH, LINK, GLD priced; GLD and LINK under 10 min old         | Feat | Phase 11 |
@@ -1951,7 +1970,7 @@ Evidence: docs/evidence/phase-17.md"
 | 14  | Copy trading entry visible and clearly unavailable; flag off; design written       | Feat | Phase 14 |
 | 15  | **Testnet walkthrough green per item; 10 clips recorded; `MainnetFork.t.sol` 7/7** | Hard | Phase 15 |
 | 16  | Pause rehearsed on mainnet; alerts received; roles on distinct addresses           | Hard | Phase 16 |
-| 17  | Unaudited notice visible on every page with a trade button                         | Hard | Phase 6  |
+| 17  | Unaudited notice visible on every page with a trade button; every contract on the landing page shows verified source on the explorer | Hard | Phase 6, 17 |
 
 ##### 17.2 Stop rule
 
@@ -2033,8 +2052,8 @@ only after an hour of clean readings. Write the first incident review even if no
 | #   | Deferred item                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | From                 |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------- |
 | 1   | Anything that went amber at the gate — in particular the mainnet round trip and the credit seed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Section 0.3          |
-| 1b  | **The China group** — 2 tradeable (BABA, TSM), 4 quoted (UMC, FUTU, EWT, SIMO), labelled "China & Greater China" with Taiwan stated plainly. Plus the quoted-tier UI: tier badges, source and age on a quoted price, no trade button on a quoted row, search spanning all tiers. Research is done; what is left is execution                                                                                                                                                                                                                                                                                                                                                        | §3.1, Phase 11       |
-| 1c  | **The mainnet/testnet toggle** (Phase 14b, if it was cut) — one deployment serving chain 4663 and chain 46630, switched at runtime, with the wallet switching chain and a persistent testnet label. The blocker is that `apps/web/src/lib/env.ts` resolves the chain once at module load; both address sets already exist in `packages/config`                                                                                                                                                                                                                                                                                              | Phase 14b            |
+| 1b  | **The China group** — 2 tradeable (BABA, TSM), 4 quoted (UMC, FUTU, EWT, SIMO), labelled "China & Greater China" with Taiwan stated plainly. Plus the quoted-tier UI: tier badges, source and age on a quoted price, no trade button on a quoted row, search spanning all tiers. Research is done; what is left is execution                                                                                                                                                                                                                                                                                                                                                         | §3.1, Phase 11       |
+| 1c  | **The mainnet/testnet toggle** (Phase 14b, if it was cut) — one deployment serving chain 4663 and chain 46630, switched at runtime, with the wallet switching chain and a persistent testnet label. The blocker is that `apps/web/src/lib/env.ts` resolves the chain once at module load; both address sets already exist in `packages/config`                                                                                                                                                                                                                                                                                                                                       | Phase 14b            |
 | 2   | Full failure and empty-state pass on the remaining pages; copy review                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Phase 12             |
 | 3   | Full mobile pass on all 8 pages; screen-reader pass                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Phase 13             |
 | 4   | Landing page rework: large display type, numbered `01`–`04` sections, motion within budget                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Phase 18             |
