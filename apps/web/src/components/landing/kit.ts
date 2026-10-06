@@ -39,7 +39,7 @@ export function voxelField(
     { size = 0.1, live = false, geometry }: { size?: number; live?: boolean; geometry?: THREE.BufferGeometry } = {},
 ) {
     geometry ??= new THREE.BoxGeometry(1, 1, 1);
-    const material = new THREE.MeshStandardMaterial({ roughness: 0.55, metalness: 0.05 });
+    const material = new THREE.MeshStandardMaterial({ roughness: 0.55, metalness: 0.05, transparent: true });
     const mesh = new THREE.InstancedMesh(geometry, material, Math.max(1, specs.length));
     mesh.count = specs.length;
     mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
@@ -90,6 +90,9 @@ export function voxelField(
             if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
         },
         recolor: paint,
+        fade(amount: number) {
+            material.opacity = amount;
+        },
         dispose() {
             geometry!.dispose();
             material.dispose();
@@ -100,12 +103,15 @@ export function voxelField(
 
 /// A solid mesh in one tone, for single objects (a gauge needle, the leader node).
 export function solid(geometry: THREE.BufferGeometry, palette: Palette, tone: Tone) {
-    const material = new THREE.MeshStandardMaterial({ color: palette[tone], roughness: 0.5, metalness: 0.08 });
+    const material = new THREE.MeshStandardMaterial({ color: palette[tone], roughness: 0.5, metalness: 0.08, transparent: true });
     const mesh = new THREE.Mesh(geometry, material);
     return {
         mesh,
         recolor() {
             material.color.copy(palette[tone]);
+        },
+        fade(amount: number) {
+            material.opacity = amount;
         },
         dispose() {
             geometry.dispose();
@@ -122,6 +128,9 @@ export function lineMaterial(palette: Palette, tone: Tone, opacity: number) {
         recolor() {
             material.color.copy(palette[tone]);
         },
+        fade(amount: number) {
+            material.opacity = opacity * amount;
+        },
     };
 }
 
@@ -132,6 +141,7 @@ export function orbitRing(radius: number, palette: Palette, tone: Tone = 'muted'
     return {
         mesh,
         recolor: paint.recolor,
+        fade: paint.fade,
         dispose() {
             geometry.dispose();
             paint.material.dispose();
@@ -156,6 +166,9 @@ export function segments(points: number[], palette: Palette, tone: Tone, opacity
         },
         recolor() {
             material.color.copy(palette[tone]);
+        },
+        fade(amount: number) {
+            material.opacity = opacity * amount;
         },
         dispose() {
             geometry.dispose();
@@ -210,6 +223,9 @@ export function particles(count: number, palette: Palette, tone: Tone = 'text', 
         recolor() {
             material.color.copy(palette[tone]);
         },
+        fade(amount: number) {
+            material.opacity = amount;
+        },
         dispose() {
             geometry.dispose();
             material.dispose();
@@ -253,6 +269,9 @@ export function label(text: string) {
     return {
         sprite,
         recolor: draw,
+        fade(amount: number) {
+            material.opacity = amount;
+        },
         dispose() {
             texture.dispose();
             material.dispose();

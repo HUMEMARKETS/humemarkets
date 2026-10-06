@@ -64,11 +64,11 @@ PASS [1440] PageDown moves to Trade — 2
 PASS [1440] End moves to Vision — 6
 PASS [1440] Home moves to Start — 0
 PASS theme switch keeps the one canvas (no remount)
-PASS light theme: ivory ground, dark lines — {"min":4,"max":241,"mean":219}
-PASS dark theme: charcoal ground, light lines — {"min":10,"max":241,"mean":29}
+PASS light theme: ivory ground, dark lines — {"min":4,"max":241,"mean":217}
+PASS dark theme: charcoal ground, light lines — {"min":10,"max":241,"mean":31}
 PASS hero search routes to /markets?q= and pre-fills the filter — {"path":"/markets?q=nvda","filter":"nvda"}
 PASS facts strip count matches the markets section — {"dd":["21","10x","20"],"explore":"Explore all 21 markets","chips":21}
-PASS wheel: twelve 100 px notches move the page down, none pulled back — 100,100,200,300,400,500,700,700,800,900,1100,1200 rest=1200
+PASS wheel: twelve 100 px notches move the page down, none pulled back — 0,100,200,300,400,500,600,700,800,1000,1100,1100 rest=1200
 PASS reduced motion: StaticScene, no WebGL canvas — {"staticScene":true,"canvas":false}
 PASS reduced motion: a rail click jumps, no glide
 
