@@ -11,8 +11,8 @@ Work is serial: one session, one phase at a time, in the order of the Phase inde
 - **Never touch git.** No `commit`, `push`, `add`, `stage`, `tag` or `gh pr create`. Leave the
   working tree dirty, list the paths you changed, and print the phase's **Ship** block for the
   operator to run. The operator owns every git mutation.
-- **Never read `docs/DEVELOPMENT_PHASES.md` whole.** It is 2454 lines. Read only your phase's line
-  range from the Phase index below: `sed -n '1326,1405p' docs/DEVELOPMENT_PHASES.md`.
+- **Never read `docs/DEVELOPMENT_PHASES.md` whole.** It is 2534 lines. Read only your phase's line
+  range from the Phase index below: `sed -n '1404,1485p' docs/DEVELOPMENT_PHASES.md`.
 - **A phase is done only when its acceptance check passes.** Nothing is ticked because it looks
   finished. Report `pass`, `amber` or `fail` in one line, and do not start the next phase.
 - **Secrets never reach a commit, an evidence file or the transcript.** Addresses are fine. Never
@@ -54,23 +54,24 @@ Line ranges in `docs/DEVELOPMENT_PHASES.md` (start of phase to start of next). O
 file is edited; re-check with `grep -n '^#### Phase' docs/DEVELOPMENT_PHASES.md`.
 
 Order (testnet first, re-planned 2026-10-07, `docs/DEVELOPMENT_PHASES.md` Sections 0.9 and 0.10):
-0–10 done → **T** → 11 → 12 → 13 → 14 → 15 (testnet `46630`; 14b skipped) → **L** → 16 → 17 (mainnet) → 18.
+0–10 done → **T0** → **T** → 11 → 12 → 13 → 14 → 15 (testnet `46630`; 14b skipped) → **L** → 16 → 17 (mainnet) → 18.
 The open is **2026-10-08, 03:00 WIB** (= 2026-10-07 20:00 UTC, the US equity close).
 
-| Phase | Lines     | Phase | Lines     |
-| ----- | --------- | ----- | --------- |
-| 0     | 388-456   | 11    | 1406-1506 |
-| 1     | 457-511   | 12    | 1507-1574 |
-| 2     | 512-579   | 13    | 1575-1636 |
-| 3     | 580-663   | 14    | 1637-1717 |
-| 4     | 664-735   | 14b   | 1718-1825 |
-| 5     | 736-936   | 15    | 1826-1988 |
-| 6     | 937-1003  | **L** | 1989-2046 |
-| 7     | 1004-1081 | 16    | 2047-2124 |
-| 8     | 1082-1169 | 17    | 2125-2231 |
-| 9     | 1170-1247 | 18    | 2232-2454 |
-| 10    | 1248-1325 |       |           |
-| **T** | 1326-1405 |       |           |
+| Phase   | Lines     | Phase | Lines     |
+| ------- | --------- | ----- | --------- |
+| 0       | 393-461   | 11    | 1486-1586 |
+| 1       | 462-516   | 12    | 1587-1654 |
+| 2       | 517-584   | 13    | 1655-1716 |
+| 3       | 585-668   | 14    | 1717-1797 |
+| 4       | 669-740   | 14b   | 1798-1905 |
+| 5       | 741-941   | 15    | 1906-2068 |
+| 6       | 942-1008  | **L** | 2069-2126 |
+| 7       | 1009-1086 | 16    | 2127-2204 |
+| 8       | 1087-1174 | 17    | 2205-2311 |
+| 9       | 1175-1252 | 18    | 2312-2534 |
+| 10      | 1253-1330 |       |           |
+| **T0**  | 1331-1403 |       |           |
+| **T**   | 1404-1485 |       |           |
 
 ## Scope
 

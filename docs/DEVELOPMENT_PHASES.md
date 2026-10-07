@@ -39,7 +39,7 @@ needed; the prompts are self-contained on purpose, so a phase can be run in a fr
 | Stage                         | Prompt order                                                       |
 | ----------------------------- | ------------------------------------------------------------------ |
 | **Done** (2026-10-04 to 10-07) | Phase 0 to 10. Ambers carried: 5, 6, 8, 9, 10 (Section 0.9)        |
-| **Testnet**                   | **Phase T**, then 11, 12, 13, 14, 15 (14b skipped, Section 0.10) — chain `46630` |
+| **Testnet**                   | **Phase T0**, **T**, then 11, 12, 13, 14, 15 (14b skipped, Section 0.10) — chain `46630` |
 | **Mainnet**                   | **Phase L**, then 16, 17 — the open                                |
 | After                         | Phase 18                                                           |
 
@@ -346,6 +346,11 @@ stays serial and every hard gate stays. Three things are cut or changed to make 
 2. **Phase 14b is skipped.** It becomes Phase 18 item 1c.
 3. **The operator films Phase 15 personally.** Claude writes the shot list and runs every check that is not
    filmed. The recording is still the hard gate; only who holds the recorder changed.
+4. **Phase T0 comes first: a fresh testnet deployment.** The operator holds neither the testnet admin key nor
+   the key that owns the mock price feeds (found 2026-10-07, read from chain and the CHANGELOG), so prices
+   could not move and the pause could not be rehearsed. T0 redeploys under two new testnet-only keys. It
+   costs faucet gas only, but it needs the operator to fund two addresses at
+   https://faucet.testnet.chain.robinhood.com before it can deploy.
 
 **Never cut, here as before:** sample mode, the review step, the error mapping, Phase 15 including the
 recording and the fork suite, Phase 16's pauser and alerts, and Phase 17's gate and the operator's
@@ -1323,6 +1328,79 @@ mode.
 
 ### Testnet stage — everything below runs on chain `46630` until Phase L (Section 0.9)
 
+#### Phase T0 — A fresh testnet deployment under wallets the operator controls
+
+**Prompt.** Paste this to run the phase.
+
+```text
+Run Phase T0 of docs/DEVELOPMENT_PHASES.md: a fresh testnet deployment. Read only your phase's lines with
+sed, plus Sections 0.9 and 0.10.
+
+Why: the existing testnet deployment is admin-owned by 0xC804c6c50CE6F5B5dFB035378A3F84145914697F and its
+mock price feeds are owned by 0xa22e9da21Ae258f733EE932f767c46CB6508eD69. I do not hold either key
+(packages/contracts/CHANGELOG.md). Without them the feeds cannot move and the pause cannot be rehearsed.
+Redeploy under keys I control. This is testnet only, so it costs faucet gas and no real money.
+
+1. Generate two NEW testnet-only keys locally with cast: a deployer and a keeper. Write them to the
+   gitignored file .env.testnet (variables PRIVATE_KEY for the deployer, KEEPER_PRIVATE_KEY for the keeper).
+   Check with git check-ignore that .env.testnet is ignored BEFORE writing. Never print a private key, in
+   the transcript, a commit or an evidence file: addresses only. Never read .env or .env.testnet back to me.
+2. STOP and give me the two addresses. I fund both from the official faucet,
+   https://faucet.testnet.chain.robinhood.com. Wait until cast balance shows gas on both, then go on. If the
+   faucet limits me, tell me how much it gave and size the work to that.
+3. Before leaving the old deployment, read its market list from the old MarketRegistry
+   (0xb87fd9Caa50e13F9Be66e8B20E2E7ff6881978ea): every market id, and each mock feed's latest price. That
+   is the market set to recreate, at the same prices.
+4. Deploy a new stack with script/DeployAll.s.sol, keeping the existing testnet collateral token
+   0x70b0FDa35dEb7BA710C601Ed9c45b9F992027112 (mUSDC, 18 decimals, public mint, confirmed) as
+   COLLATERAL_TOKEN. Then recreate the markets from step 3 with script/AddMarket.s.sol or
+   script/add-markets.sh, with PRICE_FEED_OWNER set to the keeper address, and one more market named E2E,
+   left paused, so the paused refusal can be proven in a browser. Then deploy the credit stack
+   (script/DeployCreditStack.s.sol) so lending has a pair on testnet; seed it with minted collateral
+   later, in Phase 15. Use the NETWORK_NAME the scripts expect so deployments/robinhood_testnet.json and
+   robinhood_testnet.implementations.json are rewritten.
+5. Point the repo at the new deployment. packages/config/src/deployments.ts carries the testnet addresses as
+   literals; replace them from the new deployments json, and keep the old ones in the CHANGELOG as the
+   abandoned deployment. Run the packages/config tests, then pnpm typecheck && pnpm lint && pnpm test.
+6. Verify on chain and record it: the new registry lists the markets; each feed's owner() is the keeper;
+   hasRole(DEFAULT_ADMIN_ROLE, deployer) is true on the registry; E2E is paused; the new settlement token is
+   unchanged; mint works from an unrelated address.
+
+Acceptance: docs/evidence/phase-T0.md lists the new addresses (not keys), the transaction hashes of the
+deployment, and the six verifications above. pnpm typecheck, lint and test pass. The old deployment is
+recorded as abandoned.
+
+Do NOT commit, push, stage or open a PR — I do that myself. Never stage .env.testnet. List the paths you
+changed, then print the Phase T0 Ship block. Do not start Phase T.
+```
+
+**Ship.** You run these; Claude does not.
+
+```bash
+git checkout main && git pull
+git checkout -b phase-t0-fresh-testnet
+
+git add packages/contracts packages/config docs/evidence/phase-T0.md
+git commit -m "chore(contracts): redeploy testnet under operator-held keys"
+
+git push -u origin phase-t0-fresh-testnet
+
+gh pr create --base main \
+  --title "Phase T0 — Fresh testnet deployment" \
+  --body "The previous testnet deployment's admin and mock-feed owner keys are not held by the operator, so prices could not move and the pause could not be rehearsed. This redeploys the stack under two new testnet-only keys, recreates the market set at the same prices, adds a paused E2E market and the credit stack, and points packages/config at it.
+
+Acceptance: <paste the result Claude reported>.
+Evidence: docs/evidence/phase-T0.md"
+```
+
+**Scope.** Testnet only. The mainnet deployment, its keys and the mainnet environment are not touched.
+The new keys live only in the gitignored `.env.testnet`; the Railway testnet environment (Phase T) gets
+the keeper key as a variable, and the mainnet environment never does (Section 0.10).
+
+**Done when.** The acceptance in the prompt holds.
+
+**Cost.** $0: faucet gas, and the collateral token mints for free.
+
 #### Phase T — The testnet environment
 
 **Prompt.** Paste this to run the phase.
@@ -1339,6 +1417,8 @@ environment runs at a time, because the account is on the Trial ($5 one-time cre
    Postgres and its volume: its indexed history is not rebuilt cheaply. Delete nothing on mainnet.
 3. Create the Railway environment `testnet` with api, pricing and indexer, and its OWN Postgres service.
    Point them at chain 46630 and the addresses in packages/contracts/deployments/robinhood_testnet.json
+   (the fresh deployment from Phase T0; its keys are in the gitignored .env.testnet, load it for the
+   simulator and forge)
    through packages/config, never at a mainnet value. One DATABASE_URL, the testnet Postgres, serves
    runtime and Drizzle migrations; apply the migrations with Drizzle. Set the same 0.5 GB limits Phase 5
    set and the same PRICE_TICK_RETENTION_DAYS.
