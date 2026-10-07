@@ -51,13 +51,38 @@ export function keyTarget(
   return undefined;
 }
 
-/// Where the page settles once a scroll ends: the nearest section top when it is within 8% of the
-/// screen, otherwise nowhere. CSS `scroll-snap-type: y proximity` was measured pulling a single wheel
-/// notch (100 px) back to the section top, which traps the wheel; a band this narrow cannot.
-export function settleTarget(scrollTop: number, tops: readonly number[], view: number): number | undefined {
-  let nearest: number | undefined;
-  for (const top of tops) if (nearest === undefined || Math.abs(top - scrollTop) < Math.abs(nearest - scrollTop)) nearest = top;
-  if (nearest === undefined) return undefined;
-  const distance = Math.abs(nearest - scrollTop);
-  return distance >= 1 && distance <= view * 0.08 ? nearest : undefined;
+/// One wheel gesture so far: when its last event came, its direction, its largest delta and its
+/// smallest delta since that peak.
+export interface WheelGesture {
+  at: number;
+  sign: number;
+  peak: number;
+  low: number;
+}
+
+export const wheelGesture = (): WheelGesture => ({ at: -Infinity, sign: 0, peak: 0, low: 0 });
+
+/// A wheel pause this long (ms) ends a gesture.
+const QUIET_MS = 180;
+
+/// One step per wheel gesture: +1 down, -1 up, 0 for every later event of the same gesture, so a
+/// trackpad's momentum tail never moves a second section. A new gesture is a pause of `QUIET_MS`, a
+/// change of direction, or a delta rising again after it has decayed (a second flick during momentum).
+/// Free of the DOM; updates `state` in place.
+export function wheelStep(state: WheelGesture, deltaY: number, now: number): -1 | 0 | 1 {
+  if (deltaY === 0) return 0;
+  const size = Math.abs(deltaY);
+  const sign = Math.sign(deltaY);
+  // ponytail: fixed thresholds tuned on Chrome trackpad trains; recalibrate if a device double-steps.
+  const decayed = state.low < state.peak * 0.7;
+  const fresh = now - state.at > QUIET_MS || sign !== state.sign || (decayed && size > state.low * 1.5 + 4);
+  state.at = now;
+  if (fresh) {
+    state.sign = sign;
+    state.peak = state.low = size;
+    return sign > 0 ? 1 : -1;
+  }
+  if (size > state.peak) state.peak = state.low = size;
+  else state.low = Math.min(state.low, size);
+  return 0;
 }

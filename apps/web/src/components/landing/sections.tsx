@@ -5,7 +5,7 @@ import { analyzeStrategy, payoffCurve, type Leg } from '@hume/sdk';
 import { Num, SampleBadge, Skeleton, Tabs, cn } from '@hume/ui';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useMemo, useState, type ComponentType, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ComponentType, type FormEvent, type ReactNode } from 'react';
 import { ArrowIcon } from '@/components/ArrowIcon';
 import { ContractAddressBadge } from '@/components/ContractAddressBadge';
 import { LtvBar } from '@/components/LendingView';
@@ -18,6 +18,7 @@ import { fmtSigned, shortHash, signTone } from '@/lib/format';
 import { MONO, SPACED_CAPS } from '@/lib/frame';
 import { fmtHealth, healthBand, healthFactorBps, healthWords, statusSentence } from '@/lib/lending';
 import { groupTabs, inGroup, REGISTRY_ERROR, symbolOf, type GroupTab } from '@/lib/market';
+import { useLandingLink } from '@/stores/landing';
 import { TRADE_PRODUCTS } from './content';
 
 /// The body of each landing section, below its eyebrow, title and lede (which `LandingStage` draws from
@@ -143,6 +144,10 @@ function Markets() {
     );
     const tabs = groupTabs(rows);
     const shown = inGroup(rows, group);
+    // The globe turns to face the chosen group.
+    useEffect(() => {
+        useLandingLink.setState({ region: group === 'all' ? [] : inGroup(rows, group).map((row) => row.market.marketId) });
+    }, [group, rows]);
     return (
         <div className="mt-8">
             {tabs.length > 0 ? (
@@ -212,6 +217,9 @@ function Payoff({ legs, caption }: { legs: Leg[]; caption: string }) {
     const bottom = Math.min(0, ...values);
     const x = (price: number) => ((price - low) / (high - low)) * width;
     const y = (value: number) => 6 + (1 - (value - bottom) / (top - bottom)) * (height - 12);
+    // The pointer's price, shared with the 3D price line; the curve's value there is read off its nearest point.
+    const share = useLandingLink((state) => state.price);
+    const at = share === null ? null : points[Math.round(share * (points.length - 1))];
     return (
         <figure>
             <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`Payoff at expiry. ${caption}`} className="w-full overflow-visible">
@@ -221,6 +229,12 @@ function Payoff({ legs, caption }: { legs: Leg[]; caption: string }) {
                     className="fill-none stroke-text"
                     strokeWidth={1.5}
                 />
+                {at ? (
+                    <g aria-hidden="true">
+                        <line x1={x(at[0])} x2={x(at[0])} y1={0} y2={height} className="stroke-text" strokeOpacity={0.45} />
+                        <circle cx={x(at[0])} cy={y(at[1])} r={2.5} className="fill-text" />
+                    </g>
+                ) : null}
                 {breakEvens
                     .filter((price) => price > low && price < high)
                     .map((price) => (
@@ -269,6 +283,11 @@ function Capital() {
     // Health depends only on the share borrowed, so any collateral value gives the same answer.
     const health = healthFactorBps(10_000n, ltv, liquidationLtv);
     const band = healthBand(health);
+    // The 3D gauge needle: nothing borrowed at the left end, the liquidation limit at the right.
+    useEffect(() => {
+        const limit = Number(liquidationLtv);
+        useLandingLink.setState({ gauge: limit > 0 ? Math.min(1, Number(ltv) / limit) : 0 });
+    }, [ltv, liquidationLtv]);
     const refusal = pair ? statusSentence(pair.status) : undefined;
     const note = !deployed
         ? 'Example limits: lending is not live on this network yet.'
@@ -400,6 +419,14 @@ function Verify({ onContracts }: SectionProps) {
         return [...byLeverage.entries()].sort(([a], [b]) => (a === b ? 0 : a > b ? -1 : 1));
     }, [markets.data]);
     const paused = (markets.data ?? []).filter((market) => !market.active).map((market) => symbolOf(market.marketId));
+    const lit = useLandingLink((state) => state.contract);
+    // A row and its 3D block light together, from a pointer or from keyboard focus.
+    const point = (index: number) => ({
+        onPointerEnter: () => useLandingLink.setState({ contract: index }),
+        onPointerLeave: () => useLandingLink.setState({ contract: -1 }),
+        onFocus: () => useLandingLink.setState({ contract: index }),
+        onBlur: () => useLandingLink.setState({ contract: -1 }),
+    });
     return (
         <div className="mt-8 grid max-w-[34rem] gap-6">
             <div>
@@ -417,9 +444,17 @@ function Verify({ onContracts }: SectionProps) {
                         {listed.slice(0, CONTRACT_ROWS).map((contract) => {
                             const address = contract.address!;
                             const url = explorerAddressUrl(env.explorerUrl, address);
+                            const index = CONTRACTS.indexOf(contract);
                             return (
-                                <li key={contract.label} className="flex items-center justify-between gap-3 py-2 text-sm">
-                                    <span className="text-text">{contract.label}</span>
+                                <li
+                                    key={contract.label}
+                                    {...point(index)}
+                                    className={cn(
+                                        'flex items-center justify-between gap-3 py-2 text-sm transition-colors duration-150',
+                                        lit === index && 'bg-surface',
+                                    )}
+                                >
+                                    <span className={cn('text-text', lit === index && 'font-medium')}>{contract.label}</span>
                                     {url ? (
                                         <a
                                             href={url}

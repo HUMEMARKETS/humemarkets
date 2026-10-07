@@ -1,0 +1,24 @@
+{
+  "url": "http://localhost:3001/",
+  "viewport": "1440x900 @1x",
+  "webgl": "ANGLE (Intel, Mesa Intel(R) UHD Graphics (TGL GT2), OpenGL 4.6)",
+  "scrollMs": 16981,
+  "frames": 1019,
+  "fpsMean": 59.9,
+  "frameMsP50": 16.7,
+  "frameMsP95": 16.7,
+  "frameMsP99": 16.8,
+  "framesOver20ms": 2,
+  "longTasksObserved": [],
+  "mainThreadTasksOver50msInTrace": [],
+  "mainThreadTasksInTrace": 7381,
+  "longestMainThreadTaskMs": 10,
+  "cls": 0,
+  "layoutShiftEventsInTrace": 0,
+  "traceEvents": 253338,
+  "scroll": {
+    "maxTop": 5400,
+    "visionTop": 5400,
+    "endTop": 0
+  }
+}

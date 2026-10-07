@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { dampFactor, DAMPING, keyTarget, progressOf, settleTarget } from "./landingScroll.js";
+import { dampFactor, DAMPING, keyTarget, progressOf, wheelGesture, wheelStep } from "./landingScroll.js";
 
 const tops = [0, 900, 1800, 3000];
 
@@ -32,9 +32,25 @@ test("keyTarget steps sections, and pages through a section taller than the scre
   assert.equal(keyTarget("Tab", 0, tops, 4000, view), undefined);
 });
 
-test("settleTarget settles only close to a section top, so a wheel notch is never pulled back", () => {
-  assert.equal(settleTarget(40, tops, 900), 0);
-  assert.equal(settleTarget(870, tops, 900), 900);
-  assert.equal(settleTarget(100, tops, 900), undefined);
-  assert.equal(settleTarget(900, tops, 900), undefined);
+/// A trackpad flick: a ramp up, then momentum decaying every 16 ms until `ms` have passed.
+const flick = (start: number, ms: number) => {
+  const events: [number, number][] = [];
+  for (let t = 0, i = 0; t <= ms; t += 16, i += 1) events.push([start + t, Math.max(1, i < 4 ? 15 * (i + 1) : 60 * 0.93 ** (i - 4))]);
+  return events;
+};
+const steps = (events: [number, number][]) => {
+  const state = wheelGesture();
+  return events.map(([at, delta]) => wheelStep(state, delta, at)).filter((step) => step !== 0);
+};
+
+test("wheelStep: a mouse notch is one step, each way", () => {
+  assert.deepEqual(steps([[0, 100], [400, 100], [800, -100]]), [1, 1, -1]);
+});
+
+test("wheelStep: a one-second momentum train is exactly one step", () => {
+  assert.deepEqual(steps(flick(0, 1000)), [1]);
+});
+
+test("wheelStep: two quick flicks are two steps, even inside the first one's momentum", () => {
+  assert.deepEqual(steps([...flick(0, 300), ...flick(316, 1000)]), [1, 1]);
 });
