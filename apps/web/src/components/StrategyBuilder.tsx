@@ -155,8 +155,10 @@ export function StrategyBuilder() {
       });
       return { error: undefined, value: analyzeStrategy(legs) };
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      return { error: message === "loading" ? undefined : message.replace(/^strategies: /, ""), value: undefined };
+      const message = error instanceof Error ? error.message : "";
+      // Only the builder's own validation sentences ("strategies: a call strike must be above zero") are fit to show.
+      const known = message.startsWith("strategies: ");
+      return { error: message === "loading" ? undefined : known ? message.replace(/^strategies: /, "") : "This strategy could not be priced right now. Try again in a moment.", value: undefined };
     }
   }, [kind, values, quotes, quantity, validQuantity, spot]);
 

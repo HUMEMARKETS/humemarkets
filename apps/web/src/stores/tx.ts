@@ -1,24 +1,7 @@
 import { create } from "zustand";
 import { SampleNoPriceError, SampleRefusedError, SampleUnsupportedError } from "@/lib/sampleEngine";
-import {
-  DeadlineExpiredError,
-  InsufficientCollateralError,
-  InsufficientMarginError,
-  InvalidOraclePriceError,
-  InvalidQuoteError,
-  PremiumOutOfBoundsError,
-  MarketPausedError,
-  InsufficientPoolReservesError,
-  OpenInterestLimitExceededError,
-  PositionLimitExceededError,
-  QuoteAlreadyUsedError,
-  QuoteExpiredError,
-  SlippageExceededError,
-  StaleOraclePriceError,
-  UserRejectedError,
-  type TxEvent,
-  type TxStatus,
-} from "@hume/sdk";
+import { HumeContractError, UserRejectedError, type TxEvent, type TxStatus } from "@hume/sdk";
+import { revertReason } from "@/lib/revertReasons";
 
 /// One row per user action (approve, deposit, open position, close position). The store holds
 /// what the Section 30 confirmation panel needs: the current state, the hash once there is one,
@@ -32,6 +15,8 @@ export interface TxRecord {
   hash?: `0x${string}`;
   blockNumber?: bigint;
   error?: string;
+  /// The person declined the wallet prompt. That is a choice, not a failure: shown calmly, nothing to fix.
+  rejected?: boolean;
   positionId?: bigint;
 }
 
@@ -63,6 +48,7 @@ export const useTxStore = create<TxState>((set) => ({
               hash: event.hash ?? record.hash,
               blockNumber: event.receipt?.blockNumber ?? record.blockNumber,
               error: event.error ? errorMessage(event.error) : record.error,
+              rejected: event.error ? event.error instanceof UserRejectedError : record.rejected,
             }
           : record,
       ),
@@ -71,27 +57,14 @@ export const useTxStore = create<TxState>((set) => ({
   dismiss: (id) => set((state) => ({ records: state.records.filter((record) => record.id !== id) })),
 }));
 
-/// What a person needs to read: what went wrong and what to do next, without stack traces.
+/// What a person needs to read: what went wrong and what to do next, without stack traces, hex or a
+/// wallet's own wording. A contract revert is looked up by its error name; anything else is generic.
 /// Uses `instanceof`, not class names, because production builds minify class names.
 export function errorMessage(error: unknown): string {
   if (error instanceof UserRejectedError) return "You declined the request in your wallet. Nothing was sent.";
-  if (error instanceof MarketPausedError) return "This market is paused. Try again once trading resumes.";
-  if (error instanceof StaleOraclePriceError) return "The price feed is out of date, so orders are blocked. Try again shortly.";
-  if (error instanceof InvalidOraclePriceError) return "The price feed returned an invalid price. Try again shortly.";
-  if (error instanceof InsufficientCollateralError) return "Not enough available collateral. Deposit more or reduce the size.";
-  if (error instanceof InsufficientMarginError) return "The margin is too low for this size. Add collateral or lower leverage.";
-  if (error instanceof PositionLimitExceededError) return "This size is above the position limit for the market.";
-  if (error instanceof InsufficientPoolReservesError) return "The pool cannot pay this profit right now. Your position is still open. Try again in a few minutes.";
-  if (error instanceof OpenInterestLimitExceededError) return "The market's open interest limit is reached. Try a smaller size.";
-  if (error instanceof QuoteExpiredError) return "The option price expired before it confirmed. Request a new price and try again.";
-  if (error instanceof QuoteAlreadyUsedError) return "That option price was already used. Request a new price and try again.";
-  if (error instanceof PremiumOutOfBoundsError) return "The option price was outside the allowed range for the current market price. Request a new price and try again.";
-  if (error instanceof InvalidQuoteError) return "The option price could not be verified. Request a new price and try again.";
-  if (error instanceof DeadlineExpiredError) return "The order took too long to confirm. Submit it again.";
-  if (error instanceof SlippageExceededError) return "The price moved past your slippage limit. Submit it again at the new price.";
+  if (error instanceof HumeContractError) return revertReason(error.errorName);
   if (error instanceof SampleNoPriceError) return "There is no price for this market yet, so a sample order cannot fill. Try again once it has one.";
   if (error instanceof SampleRefusedError) return error.message;
   if (error instanceof SampleUnsupportedError) return "Sample mode does not simulate that. Everything else works the same as with a wallet.";
-  if (error instanceof Error) return error.message.split("\n")[0] ?? "The transaction failed.";
-  return "The transaction failed.";
+  return "The transaction did not go through. Nothing was lost. Try again, and tell us if it keeps happening.";
 }

@@ -42,3 +42,18 @@ The API listed 23 of 25 markets right after (LINK and GLD wait for the next `*/5
 Mainnet, read-only, feed ages at 2026-10-07 ~19:46 UTC (`latestRoundData`, 8 decimals): BTC $83,345.38 aged 3.3 h, ETH $2,554.62 aged 1.1 h, LINK $13.37 aged 1.1 h, GLD $376.28 aged 3.5 h. Acceptance wanted GLD and LINK under 10 minutes: **not met at this reading**. Feeds update on 0.5% deviation or heartbeat, so a "tight constant" `MAX_PRICE_AGE` would make BTC and ETH reads revert for hours.
 
 Open for Phase L: (1) `AddMainnetMarket.s.sol` calls `symbol()` and `decimals()` on `TOKEN`, so it reverts for BTC, ETH and LINK, which have no tokenized asset (token = feed address); it needs a feed-only path. (2) Pick `MAX_PRICE_AGE` per feed from its heartbeat, not a global tight value. (3) GLD token is `0xC9a981FEE1F9DEc688bb123ccDeCc63D0deBFC4e` (from api.robinhood.com/rhj/assets).
+
+## WP2 / Phase 12 — failures and empty states in plain language (2026-10-08)
+
+Result: **pass**.
+
+- **Map:** `apps/web/src/lib/revertReasons.ts` holds one sentence plus one next action for each of the 81 custom errors the SDK decodes (`allErrorsAbi`, now exported from `@hume/sdk`). `revertReasons.test.ts` fails when the ABI gains an error without a sentence, and when a sentence shows hex, "revert", "Error" or its own error name. `errorMessage` (`stores/tx.ts`) looks a `HumeContractError` up by `errorName`; an unmapped one reads "That did not go through (Name). Nothing was lost. Try again…"; any other error is generic, never hex and never the wallet's wording.
+- **Declined signature:** `TxRecord.rejected`; the toast reads "<action> cancelled" in muted text, not "failed" in the error colour.
+- **Failed orders on testnet (real reverts, deployer account):** opening on the paused `E2E` market shows "This market is paused. Try again once trading resumes."; 10,000,000 collateral on NVDA shows "This size is above the position limit for the market. Lower the size."
+- **Raw text removed:** `StrategyBuilder` shows only its own validation sentences, anything else is "This strategy could not be priced right now."; `OptionPositionsTable` no longer names `NEXT_PUBLIC_API_URL`.
+- **Empty and loading:** `EmptyRow` (shared with Portfolio) gives Activity's empty states a next-step link; Activity's "Loading…" strips are `Skeleton` rows. Portfolio, Lending, Perpetuals and Options already had designed states.
+- **Walk:** `docs/evidence/phase-12/walk-empty-states.mjs` against `bash scripts/web-testnet.sh start`: five pages (`perpetuals`, `options`, `portfolio`, `activity`, `lending`) in a fresh sample account at 1440 and 375 px, no hex, env var name, revert or wallet wording on any (`PASS`). Screenshots in `docs/evidence/phase-12/`.
+
+Not done: the SDK error ABI does not include `MarketSessionClosed`, `InvalidTradingSession` or the Pons errors, so those would read as the generic sentence without a name. Add them to `generate-abis.mjs` if a session-gated market goes live.
+
+Seen while walking, for WP3: `/lending` shows the testnet TSLA/USDG pair caps as "$1,000,000,000,000,000,000" borrowed and "1,000,000,000 TSLA" supplied. The pair is unseeded and its caps are not demo-sized; set them with an admin call before filming.

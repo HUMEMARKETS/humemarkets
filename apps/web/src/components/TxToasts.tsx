@@ -46,7 +46,7 @@ function Toast({ record }: { record: TxRecord }) {
   return (
     <li className="pointer-events-auto w-full rounded-lg border border-line bg-raised p-3 sm:w-80">
       <div className="flex items-start justify-between gap-3">
-        <p className="font-medium">{done ? `${record.title} confirmed` : failed ? `${record.title} failed` : record.title}</p>
+        <p className="font-medium">{done ? `${record.title} confirmed` : failed ? `${record.title} ${record.rejected ? "cancelled" : "failed"}` : record.title}</p>
         {done || failed ? (
           <Button variant="secondary" size="sm" className="-mt-1" onClick={() => dismiss(record.id)} aria-label="Dismiss">
             Close
@@ -55,7 +55,7 @@ function Toast({ record }: { record: TxRecord }) {
       </div>
 
       {failed ? (
-        <p className="mt-2 leading-snug text-down">{record.error}</p>
+        <p className={cn("mt-2 leading-snug", record.rejected ? "text-muted" : "text-down")}>{record.error}</p>
       ) : (
         <ol className="mt-3 flex gap-1" aria-label="Progress">
           {steps.map((step, index) => (

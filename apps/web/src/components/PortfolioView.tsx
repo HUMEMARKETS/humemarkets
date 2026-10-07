@@ -14,6 +14,7 @@ import { FundingTable, HistoryTable } from "./ActivityTables";
 import { OptionPositionsTable } from "./OptionPositionsTable";
 import { OrdersTable } from "./OrdersTable";
 import { PanelState } from "./PanelState";
+import { EmptyRow } from "./EmptyRow";
 import { PerpPositionsTable } from "./PositionsTable";
 
 type Tab = "all" | "options" | "perps" | "orders" | "funding" | "history";
@@ -28,19 +29,6 @@ const tabs: Array<{ id: Tab; label: string }> = [
 ];
 
 /// An empty section says what is missing and offers the next step.
-function Empty({ children, action }: { children: string; action?: { href: string; label: string } }) {
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-3 p-3">
-      <p className="text-muted">{children}</p>
-      {action ? (
-        <Link href={action.href} className={cn(chip, "h-8 px-2.5 text-xs font-medium")}>
-          {action.label}
-        </Link>
-      ) : null}
-    </div>
-  );
-}
-
 /// Percentages for the two-part bar under the portfolio value.
 function lockedShare(available: bigint, locked: bigint): { available: number; locked: number } {
   const total = available + locked;
@@ -129,16 +117,16 @@ export function PortfolioView() {
           {tab === "all" || tab === "perps" ? (
             <section aria-label="Perpetual positions">
               {tab === "all" ? <h3 className="px-3 pt-3 text-xs text-muted">Perpetuals</h3> : null}
-              {perps.length === 0 ? <Empty action={{ href: "/perpetuals", label: "Open a perpetual" }}>No open perpetual positions.</Empty> : <PerpPositionsTable positions={perps} decimals={decimals} />}
+              {perps.length === 0 ? <EmptyRow action={{ href: "/perpetuals", label: "Open a perpetual" }}>No open perpetual positions.</EmptyRow> : <PerpPositionsTable positions={perps} decimals={decimals} />}
             </section>
           ) : null}
           {tab === "all" || tab === "options" ? (
             <section aria-label="Option positions" className={tab === "all" ? "border-t border-line" : undefined}>
               {tab === "all" ? <h3 className="px-3 pt-3 text-xs text-muted">Options</h3> : null}
               {(tab === "all" ? openOptions : options).length === 0 ? (
-                <Empty action={{ href: "/options", label: "Open the option chain" }}>
+                <EmptyRow action={{ href: "/options", label: "Open the option chain" }}>
                   {tab === "all" ? "No open option positions." : "No option positions yet."}
-                </Empty>
+                </EmptyRow>
               ) : (
                 <OptionPositionsTable positions={tab === "all" ? openOptions : options} />
               )}

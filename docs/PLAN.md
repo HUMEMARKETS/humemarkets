@@ -42,3 +42,4 @@ recorded the demo.
 ## Findings carried to WP4 (mainnet)
 
 - Crypto listing (Phase 11 mainnet half): `AddMainnetMarket.s.sol` needs a feed-only path (no `symbol()` check when token is the feed), and `MAX_PRICE_AGE` must follow each feed's heartbeat. See `docs/evidence/testnet.md`.
+- Testnet demo polish (WP3): the credit pair's caps display as 10^18 dollars; set demo-sized caps and seed the pair before filming.

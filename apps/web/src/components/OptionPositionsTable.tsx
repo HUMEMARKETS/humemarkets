@@ -66,7 +66,7 @@ function OptionRow({ position, decimals }: { position: OptionPosition; decimals:
       const [quote, fees] = await Promise.all([humeRead.options.quoteClose(position.positionId, address), humeRead.fees.get(symbol)]);
       setConfirm({ quote, fee: margin.feeFromBps(quote.premium, fees.optionCloseFee) });
     } catch (error) {
-      setProblem(error instanceof Error && error.message.includes("apiUrl") ? "Closing needs NEXT_PUBLIC_API_URL." : "Could not get a closing price. Try again.");
+      setProblem("Could not get a closing price. Try again in a moment.");
     }
     setBusy(false);
   }

@@ -27,6 +27,7 @@ export {
   TriggerPriceNotReachedError,
   UserRejectedError,
 } from "./errors.js";
+export { allErrorsAbi } from "./abis.js";
 export { resolveMarketId } from "./utils.js";
 export { convertDecimals, fromBaseUnits, PRICE_DECIMALS, toBaseUnits, type Amount } from "./amounts.js";
 export { executeTx, type TxEvent, type TxOptions, type TxResult, type TxStatus } from "./transactions.js";
