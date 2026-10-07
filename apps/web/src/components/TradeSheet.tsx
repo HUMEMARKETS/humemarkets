@@ -34,6 +34,36 @@ export function TradeSheet({
     seen.current = openWhen;
   }, [openWhen]);
 
+  // A phone sheet is modal: focus moves into it, Tab wraps inside it, Escape closes it and focus goes
+  // back to where it was. On a wide screen the panel is not modal, so none of this applies.
+  const panel = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open || !window.matchMedia("(max-width: 1023px)").matches) return;
+    const opener = document.activeElement as HTMLElement | null;
+    panel.current?.focus();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") return setOpen(false);
+      if (event.key !== "Tab" || !panel.current) return;
+      const items = [...panel.current.querySelectorAll<HTMLElement>("a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), summary")].filter((el) => el.offsetParent !== null);
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (!first || !last) return;
+      const here = document.activeElement;
+      if (event.shiftKey && (here === first || here === panel.current)) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && here === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      opener?.focus();
+    };
+  }, [open]);
+
   // Keep the page behind a phone sheet from scrolling under it.
   useEffect(() => {
     if (!open) return;
@@ -50,15 +80,18 @@ export function TradeSheet({
     <>
       <div
         className={cn(
-          "min-h-0 lg:block",
+          "min-h-0 outline-none lg:block",
           // top offset: header (h-20, 5 rem) + markets ticker (h-11, 2.75 rem) = 7.75 rem
           "max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0 max-lg:top-[7.75rem] max-lg:z-30 max-lg:flex max-lg:flex-col max-lg:bg-surface",
           open ? "" : "max-lg:hidden",
         )}
+        ref={panel}
+        tabIndex={-1}
         role={open ? "dialog" : undefined}
+        aria-modal={open || undefined}
         aria-label={title}
       >
-        <div className="flex h-11 shrink-0 items-center justify-end border-b border-line px-1 lg:hidden">
+        <div className="flex h-11 shrink-0 items-center justify-end border-b border-line px-4 lg:hidden">
           <Button variant="secondary" size="sm" aria-label={`Close ${title.toLowerCase()}`} onClick={() => setOpen(false)}>
             Close
           </Button>

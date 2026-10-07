@@ -57,3 +57,23 @@ Result: **pass**.
 Not done: the SDK error ABI does not include `MarketSessionClosed`, `InvalidTradingSession` or the Pons errors, so those would read as the generic sentence without a name. Add them to `generate-abis.mjs` if a session-gated market goes live.
 
 Seen while walking, for WP3: `/lending` shows the testnet TSLA/USDG pair caps as "$1,000,000,000,000,000,000" borrowed and "1,000,000,000 TSLA" supplied. The pair is unseeded and its caps are not demo-sized; set them with an admin call before filming.
+
+## WP2 / Phase 13 — mobile and keyboard (2026-10-08)
+
+Result: **pass** on the four launch surfaces (landing, `/markets`, `/perpetuals`, `/portfolio`).
+
+Measured with `docs/evidence/phase-13/measure-375.mjs` and `keyboard-order.mjs` against `bash scripts/web-testnet.sh start`, screenshots in `docs/evidence/phase-13/`.
+
+| Check at 375 px | Before | After |
+| --- | --- | --- |
+| Horizontal page scroll | 0 px on all four | 0 px on all four |
+| Controls under 44 px | 49 on landing, 69 on `/markets`, 22 on `/perpetuals`, 17 on `/portfolio` | none (the hidden skip link is the one 1 px exception) |
+| Trade ticket reachable | sheet opened by Long or Short, no Escape, focus not managed | sheet takes focus, Tab wraps inside it, Escape closes it and returns focus |
+
+Changes: one phone-width rule in `globals.css` gives every control a 44 px minimum (inline links in a sentence are unaffected); the chart's interval and chart-type controls had fixed widths that clipped "1d" at 375 px, now minimum widths; `TradeSheet` gained modal focus handling and a 16 px gutter on its Close row; two search inputs had their focus outline removed, now they keep it.
+
+Keyboard-only walk, `/perpetuals` in sample mode, Tab, Enter and Escape only: open the ticket (Long on a phone), Escape closes it, reopen, type 100, Review order, the review shows the liquidation line, Confirm, toast "Open long confirmed". 375 px: 109 stops, 0 without a visible focus indicator, PASS. 1440 px: 92 stops, 0 without, PASS.
+
+Contrast: `apps/web/src/lib/contrast.test.ts` reads the tokens from `globals.css` for both themes and asserts the recorded 17.42, 6.76 and 5.77 ratios, 4.5:1 for text, muted and faint on ground, surface and raised, the accent ink on the accent, and up and down on ground. It passes.
+
+Not covered (Phase 18): the other pages at 375 px, and a screen-reader pass. The Markets rows are taller at 375 px because the 44 px rule stacks the symbol and its Options link.

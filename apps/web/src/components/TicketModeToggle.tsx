@@ -11,7 +11,7 @@ export function TicketModeToggle() {
   return (
     <Segmented<TicketMode>
       label="Ticket layout"
-      className="w-36"
+      className="w-fit min-w-36"
       value={ticket}
       onChange={setTicket}
       options={[

@@ -108,7 +108,7 @@ export function PriceChart() {
       actions={
         <div className="flex flex-wrap items-center gap-2 py-1">
           {showCandles ? (
-            <Segmented label="Candle interval" value={interval} onChange={setInterval} options={INTERVALS.map((value) => ({ value, label: value }))} className="w-44" />
+            <Segmented label="Candle interval" value={interval} onChange={setInterval} options={INTERVALS.map((value) => ({ value, label: value }))} className="w-fit min-w-44" />
           ) : null}
           <button type="button" onClick={() => setResetToken((value) => value + 1)} className={cn(chip, "h-7 rounded-md px-2.5 text-xs")}>
             Reset view
@@ -121,7 +121,7 @@ export function PriceChart() {
               { value: "line", label: "Line" },
               { value: "candles", label: "Candles", disabled: !env.apiUrl },
             ]}
-            className="w-36"
+            className="w-fit min-w-36"
           />
         </div>
       }

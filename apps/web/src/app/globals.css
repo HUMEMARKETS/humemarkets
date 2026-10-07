@@ -155,6 +155,21 @@ body {
   [role="radio"]:not(:disabled) {
     cursor: pointer;
   }
+
+  /* Phone width: every control is at least a 44 px target. `min-height` does nothing to an inline
+     link inside a sentence, so only controls and block or flex links grow. The skip link stays hidden. */
+  @media (max-width: 767px) {
+    button,
+    summary,
+    select,
+    [role="tab"],
+    [role="radio"],
+    input:not([type="checkbox"], [type="radio"], [type="hidden"]),
+    a[href]:not(.sr-only) {
+      min-height: 44px;
+      min-width: 44px;
+    }
+  }
 }
 
 ::selection {

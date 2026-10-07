@@ -69,7 +69,7 @@ export function PositionTriggers({ position, mark }: { position: PerpPosition; m
       )}
 
       <div className="flex flex-wrap items-end gap-3">
-        <Segmented label="Trigger type" className="w-56" value={kind} onChange={setKind} options={KIND_OPTIONS} />
+        <Segmented label="Trigger type" className="w-fit min-w-56" value={kind} onChange={setKind} options={KIND_OPTIONS} />
         <TextField
           label="Trigger price"
           className="w-44"
