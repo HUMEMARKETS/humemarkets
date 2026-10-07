@@ -5,6 +5,7 @@ import Fastify from "fastify";
 import { createPublicClient, http, type PublicClient } from "viem";
 import { registerCors } from "./cors.js";
 import { resolveCreditPair } from "./credit.js";
+import { registerCopyRoutes } from "./routes/copy.js";
 import { registerCreditRoutes } from "./routes/credit.js";
 import { registerAdvancedRoutes } from "./routes/advanced.js";
 import { registerAnalyticsRoutes } from "./routes/analytics.js";
@@ -46,6 +47,7 @@ export function buildServer() {
     registerAnalyticsRoutes(instance);
     registerAdvancedRoutes(instance, hume);
     registerLeaderboardRoutes(instance, hume);
+    registerCopyRoutes(instance, hume);
     registerCreditRoutes(instance, createPublicClient({ transport: http(rpcUrl) }), resolveCreditPair(hume.addresses, process.env.CREDIT_PAIR_ADDRESS));
     registerTradeRoutes(instance, hume);
     registerRfqRoutes(instance, hume);

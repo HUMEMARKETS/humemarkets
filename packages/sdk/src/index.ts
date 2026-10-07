@@ -27,7 +27,7 @@ export {
   TriggerPriceNotReachedError,
   UserRejectedError,
 } from "./errors.js";
-export { allErrorsAbi } from "./abis.js";
+export { allErrorsAbi, perpPositionManagerAbi } from "./abis.js";
 export { resolveMarketId } from "./utils.js";
 export { convertDecimals, fromBaseUnits, PRICE_DECIMALS, toBaseUnits, type Amount } from "./amounts.js";
 export { executeTx, type TxEvent, type TxOptions, type TxResult, type TxStatus } from "./transactions.js";
@@ -174,3 +174,4 @@ export type {
 export { CREDIT_STATUS } from "./credit.js";
 export type { CreditNamespace, CreditStatus } from "./credit.js";
 export type { PonsNamespace } from "./pons.js";
+export { copyFollowMessage, copyUnfollowMessage, type CopyFollowTerms } from "./copy.js";

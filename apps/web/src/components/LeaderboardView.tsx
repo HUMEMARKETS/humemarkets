@@ -65,7 +65,7 @@ function Table({ entries, decimals, metric, self }: { entries: LeaderboardEntry[
             <th className={cn(head, "max-sm:hidden")}>
               <span className="inline-flex items-center gap-2">
                 Copy
-                <SampleBadge label="In development" />
+                {env.copyTrading ? null : <SampleBadge label="In development" />}
               </span>
             </th>
           </tr>
@@ -101,9 +101,15 @@ function Table({ entries, decimals, metric, self }: { entries: LeaderboardEntry[
                 </td>
                 <td className={cn(cell, "max-sm:hidden")}>{entry.winRateBps === null ? "–" : `${(entry.winRateBps / 100).toFixed(0)}%`}</td>
                 <td className={cn(cell, "max-sm:hidden")}>
-                  <Button size="sm" disabled title="Copy trading is not available yet" aria-label={`Copy ${shortHash(entry.wallet)}: not available yet`}>
-                    Copy
-                  </Button>
+                  {env.copyTrading && /^0x[0-9a-fA-F]{40}$/.test(entry.wallet) ? (
+                    <Link href={`/traders/${entry.wallet}/copy`} aria-label={`Copy ${shortHash(entry.wallet)}`} tabIndex={-1}>
+                      <Button size="sm">Copy</Button>
+                    </Link>
+                  ) : (
+                    <Button size="sm" disabled title="Copy trading is not available yet" aria-label={`Copy ${shortHash(entry.wallet)}: not available yet`}>
+                      Copy
+                    </Button>
+                  )}
                 </td>
               </tr>
             );
@@ -164,7 +170,9 @@ export function LeaderboardView() {
         {"Ranked by total PNL (realised plus unrealised), ROI on capital deployed, or volume. Ties break on volume, then wallet. A wallet can hide itself from the board."}
       </p>
       <p className="max-w-prose text-xs leading-snug text-muted">
-        In development: max drawdown shows “–” until the indexer records it, and a minimum number of trades to be ranked is not applied yet, so one trade is enough today. Copy trading is not available yet. It opens once leaders have a track record, and no date is promised.
+        {env.copyTrading
+          ? "In development: max drawdown shows “–” until the indexer records it, and a minimum number of trades to be ranked is not applied yet, so one trade is enough today. Copy mirrors a trader's new perp trades into a separate account with limits you set."
+          : "In development: max drawdown shows “–” until the indexer records it, and a minimum number of trades to be ranked is not applied yet, so one trade is enough today. Copy trading is not available yet. It opens once leaders have a track record, and no date is promised."}
       </p>
     </div>
   );

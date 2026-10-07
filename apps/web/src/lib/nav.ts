@@ -4,6 +4,8 @@ export type NavEntry = NavLink | { label: string; items: NavLink[] };
 /// The primary navigation. A group is a disclosure menu in the header and a titled section in the mobile
 /// sheet. The route paths are unchanged: only the grouping is new. Copy trading joins Social when its
 /// route exists.
+const copyOn = process.env.NEXT_PUBLIC_FEATURE_COPY_TRADING === "true";
+
 export const NAV: NavEntry[] = [
   { label: "Markets", href: "/markets" },
   {
@@ -16,7 +18,7 @@ export const NAV: NavEntry[] = [
     ],
   },
   { label: "Capital", items: [{ label: "Lending", href: "/lending" }] },
-  { label: "Social", items: [{ label: "Leaderboard", href: "/leaderboard" }] },
+  { label: "Social", items: [{ label: "Leaderboard", href: "/leaderboard" }, ...(copyOn ? [{ label: "Copy trading", href: "/copy" }] : [])] },
   { label: "Portfolio", href: "/portfolio" },
 ];
 

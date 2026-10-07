@@ -461,3 +461,65 @@ export const ponsQuery = () => ({
 export function usePonsTokens() {
   return useQuery(ponsQuery());
 }
+
+export interface CopyFollowRow {
+  id: number;
+  follower: string;
+  leader: string;
+  subaccount: Address;
+  maxTradeSize: string;
+  maxExposure: string;
+  maxLeverage: number;
+  markets: string[] | null;
+  active: boolean;
+  createdAt: string;
+}
+
+export interface CopyExecutionRow {
+  followId: number;
+  leaderPositionId: string;
+  followerPositionId: string | null;
+  status: "open" | "closed" | "skipped" | "failed" | "opening";
+  reason: string | null;
+  market: string;
+  isLong: boolean;
+  leaderSize: string;
+  followerSize: string | null;
+  updatedAt: string;
+}
+
+async function copyGet<T>(path: string): Promise<T> {
+  const response = await fetch(`${env.apiUrl}${path}`);
+  if (!response.ok) throw new Error("copy unavailable");
+  return response.json();
+}
+
+/// The executor address a follower authorises, from `services/api` (`/v1/copy/config`).
+export function useCopyConfig() {
+  return useQuery({
+    queryKey: ["copy-config", env.apiUrl],
+    queryFn: () => copyGet<{ executor: Address | null }>("/v1/copy/config"),
+    enabled: Boolean(env.apiUrl),
+    staleTime: 60_000,
+    retry: false,
+  });
+}
+
+export function useCopyFollows(follower: Address | undefined) {
+  return useQuery({
+    queryKey: ["copy-follows", env.apiUrl, follower],
+    queryFn: () => copyGet<{ follows: CopyFollowRow[]; executions: CopyExecutionRow[] }>(`/v1/copy/follows?follower=${follower}`),
+    enabled: Boolean(env.apiUrl && follower),
+    refetchInterval: 10_000,
+    retry: false,
+  });
+}
+
+export function useCopyFollowers(leader: string) {
+  return useQuery({
+    queryKey: ["copy-followers", env.apiUrl, leader],
+    queryFn: () => copyGet<{ followers: number }>(`/v1/copy/followers/${leader}`),
+    enabled: Boolean(env.apiUrl),
+    retry: false,
+  });
+}

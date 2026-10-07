@@ -107,3 +107,53 @@ export const leaderboardVisibility = pgTable("leaderboard_visibility", {
   issuedAt: bigint("issued_at", { mode: "bigint" }).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/// A follower's standing instruction to mirror one leader's perp trades into a copy subaccount (copy trading,
+/// `docs/COPY_TRADING.md`). Written by `services/api` after it verifies the follower's EIP-191 signature over the
+/// caps and checks on chain that the follower owns the subaccount. `services/keeper`'s copy executor reads the
+/// active rows. The caps (all in settlement-token base units, leverage in whole multiples) are the follower's own
+/// limits; `markets` is a list of symbols, or null for every market. Stopping a follow sets `active` false at once;
+/// the follower should also revoke the executor as a delegate on chain, which the executor re-checks every pass.
+export const copyFollows = pgTable(
+  "copy_follows",
+  {
+    id: serial("id").primaryKey(),
+    follower: text("follower").notNull(),
+    leader: text("leader").notNull(),
+    subaccount: text("subaccount").notNull(),
+    maxTradeSize: text("max_trade_size").notNull(),
+    maxExposure: text("max_exposure").notNull(),
+    maxLeverage: integer("max_leverage").notNull(),
+    markets: jsonb("markets"),
+    active: boolean("active").notNull().default(true),
+    /// `issued_at` of the last accepted signed change, so an old signature cannot undo a newer one.
+    issuedAt: bigint("issued_at", { mode: "bigint" }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [unique("copy_follows_follower_leader_key").on(table.follower, table.leader)],
+);
+
+/// What the executor did with one leader position for one follow. `existing`: the leader already held it when the
+/// follow began, so it is never copied. `open` / `closed`: mirrored and later unwound. `skipped`: deliberately not
+/// mirrored, with the reason in plain words (a cap, margin, a paused market); nothing was opened, not even a part.
+export const copyExecutions = pgTable(
+  "copy_executions",
+  {
+    id: serial("id").primaryKey(),
+    followId: integer("follow_id").notNull(),
+    leaderPositionId: text("leader_position_id").notNull(),
+    followerPositionId: text("follower_position_id"),
+    status: text("status").notNull(),
+    reason: text("reason"),
+    market: text("market").notNull(),
+    isLong: boolean("is_long").notNull(),
+    leaderSize: text("leader_size").notNull(),
+    followerSize: text("follower_size"),
+    openTx: text("open_tx"),
+    closeTx: text("close_tx"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [unique("copy_executions_follow_leader_position_key").on(table.followId, table.leaderPositionId)],
+);

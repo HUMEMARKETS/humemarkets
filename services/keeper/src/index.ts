@@ -6,6 +6,8 @@ import { Hume } from "@hume/sdk";
 import { createPublicClient, createWalletClient, http, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { chains } from "@hume/config";
+import postgres from "postgres";
+import { createCopyExecutor } from "./copy.js";
 import { createKeeper } from "./keeper.js";
 
 const chainId = resolveChainId(process.env.CHAIN_ID);
@@ -28,12 +30,29 @@ const keeper = createKeeper({
   refreshFeeds,
 });
 
-console.log(`keeper: ${account.address} on chain ${chainId}, every ${intervalMs}ms (feed refresh ${refreshFeeds ? "on" : "off"})`);
+/// Copy trading: mirrors leaders into followers' copy subaccounts. On whenever the keeper has a database, because
+/// the follows live there; the keeper's own account is the executor the follower authorises.
+const copy = process.env.DATABASE_URL
+  ? createCopyExecutor({
+      hume,
+      publicClient: createPublicClient({ chain: chains[chainId], transport }),
+      sql: postgres(process.env.DATABASE_URL, { idle_timeout: 20 }),
+      executor: account.address,
+      log: console.log,
+    })
+  : undefined;
+
+console.log(`keeper: ${account.address} on chain ${chainId}, every ${intervalMs}ms (feed refresh ${refreshFeeds ? "on" : "off"}, copy trading ${copy ? "on" : "off"})`);
 for (;;) {
   try {
     await keeper.tick();
   } catch (error) {
     console.error("keeper: tick failed", error);
+  }
+  try {
+    await copy?.tick();
+  } catch (error) {
+    console.error("keeper: copy pass failed", error);
   }
   if (runOnce) process.exit(0);
   await new Promise((resolve) => setTimeout(resolve, intervalMs));
