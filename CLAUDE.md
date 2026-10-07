@@ -23,7 +23,7 @@ Work is serial: one session, one phase at a time, in the order of the Phase inde
   states per screen. No signature without a review step. No raw revert strings on screen.
 - **Drizzle owns the schema.** `services/indexer/src/db/schema.ts` is the source of truth. Drizzle is
   the only migration system — do not add a second one.
-- **Testnet and mainnet never share a database.** Railway runs compute *and* Postgres, in two
+- **Testnet and mainnet never share a database.** Railway runs compute _and_ Postgres, in two
   environments, `mainnet` and `testnet`, each with its own Postgres service. One `DATABASE_URL` per
   environment serves both runtime and migrations: Railway Postgres is a direct connection, so there is
   no transaction pooler and no second connection string.

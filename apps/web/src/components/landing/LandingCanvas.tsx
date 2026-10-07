@@ -3,9 +3,10 @@
 import type { MarketConfig } from '@hume/types';
 import { useEffect, useRef, type MutableRefObject } from 'react';
 import * as THREE from 'three';
+import { dampFactor } from '@/lib/landingScroll';
 import type { Theme } from '@/lib/theme';
 import { THEME_GROUND, THEME_MUTED, THEME_TEXT } from '@/lib/theme-colors';
-import { buildGround, buildPath, buildStations, type Palette } from './scenes';
+import { buildGround, buildPath, buildStations, type Palette, type Pointer } from './scenes';
 
 /// What the landing stage drives each frame: the scroll position as a fractional section index, already
 /// damped, so the camera, the rail and the copy share one value.
@@ -35,11 +36,14 @@ const smooth = (value: number) => {
 
 /// Where the light stands relative to the point the camera looks at, so every station is lit alike.
 const SUN = new THREE.Vector3(6, 10, 8);
+/// How far the eye moves with the pointer at the screen's edge, in world units: about 3° at the stand-off.
+const PARALLAX = { x: 0.6, y: 0.4 };
 
 /// The one WebGL canvas behind the landing page: lit solid stations (after robinid.vercel.app) in one world,
 /// with a camera that travels a path through them, so moving between sections is a journey, never a cut. Each station's
 /// voxels assemble the first time it comes into view. The canvas never remounts while the page scrolls; a
-/// theme change recolours it in place.
+/// theme change recolours it in place. A fine pointer moves the eye a few degrees and every station reacts
+/// to it; a touch screen keeps the idle motion only. With reduced motion this canvas is not mounted at all.
 export function LandingCanvas({ world, theme, markets, deployed, onFailed }: Props) {
     const host = useRef<HTMLDivElement>(null);
     const canvas = useRef<HTMLCanvasElement>(null);
@@ -94,6 +98,38 @@ export function LandingCanvas({ world, theme, markets, deployed, onFailed }: Pro
         const eye = new THREE.Vector3();
         const look = new THREE.Vector3();
 
+        // One pointer for the whole world: `target` is set by the event, `pointer` eases after it each frame.
+        // A hit test runs on the frame after a move, once, on the active station only.
+        const target = { x: 0, y: 0, hover: 0 };
+        const pointer: Pointer = { x: 0, y: 0, hover: 0, world: new THREE.Vector3(), view: new THREE.Vector3() };
+        const raycaster = new THREE.Raycaster();
+        const ndc = new THREE.Vector2();
+        const plane = new THREE.Plane();
+        const normal = new THREE.Vector3();
+        const centre = new THREE.Vector3();
+        let bounds = hostEl.getBoundingClientRect();
+        let moved = false;
+        let active = 0;
+        const onMove = (event: PointerEvent) => {
+            if (event.pointerType === 'touch') return;
+            target.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
+            target.y = 1 - ((event.clientY - bounds.top) / bounds.height) * 2;
+            target.hover = 1;
+            moved = true;
+        };
+        const onOut = (event: PointerEvent) => {
+            if (event.relatedTarget) return;
+            target.x = target.y = target.hover = 0;
+            moved = true;
+        };
+        const onClick = () => stations[active]?.poke?.(performance.now() / 1000);
+        const fine = window.matchMedia('(pointer: fine)').matches;
+        if (fine) {
+            window.addEventListener('pointermove', onMove, { passive: true });
+            document.addEventListener('pointerout', onOut, { passive: true });
+        }
+        window.addEventListener('click', onClick, { passive: true });
+
         api.current = {
             recolor() {
                 readPalette();
@@ -108,6 +144,7 @@ export function LandingCanvas({ world, theme, markets, deployed, onFailed }: Pro
             const width = hostEl!.clientWidth;
             const height = hostEl!.clientHeight;
             if (width === 0 || height === 0) return;
+            bounds = hostEl!.getBoundingClientRect();
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, width < 768 ? 1.4 : 1.75));
             renderer.setSize(width, height, false);
             const buffer = renderer.getDrawingBufferSize(new THREE.Vector2());
@@ -132,8 +169,34 @@ export function LandingCanvas({ world, theme, markets, deployed, onFailed }: Pro
                 const t = THREE.MathUtils.clamp(progress / (stations.length - 1), 0, 1);
                 path.eye.getPoint(t, eye);
                 path.look.getPoint(t, look);
+                const k = dampFactor(dt);
+                pointer.x += (target.x - pointer.x) * k;
+                pointer.y += (target.y - pointer.y) * k;
+                pointer.hover += (target.hover - pointer.hover) * k;
                 camera.position.copy(eye);
+                camera.position.x += pointer.x * PARALLAX.x;
+                camera.position.y += pointer.y * PARALLAX.y;
                 camera.lookAt(look);
+                camera.updateMatrixWorld();
+
+                const current = THREE.MathUtils.clamp(Math.round(progress), 0, stations.length - 1);
+                if (current !== active) {
+                    stations[active]?.pick?.(null);
+                    active = current;
+                    moved = true;
+                }
+                if (moved) {
+                    moved = false;
+                    raycaster.setFromCamera(ndc.set(target.x, target.y), camera);
+                    stations[active]?.pick?.(target.hover > 0 ? raycaster : null);
+                }
+                // The eased pointer on the plane through the active station, facing the camera.
+                raycaster.setFromCamera(ndc.set(pointer.x, pointer.y), camera);
+                camera.getWorldDirection(normal);
+                stations[active]!.group.getWorldPosition(centre);
+                plane.setFromNormalAndCoplanarPoint(normal, centre);
+                if (!raycaster.ray.intersectPlane(plane, pointer.world)) pointer.world.copy(centre);
+                pointer.view.copy(pointer.world).applyMatrix4(camera.matrixWorldInverse);
                 sun.position.copy(look).add(SUN);
                 sun.target.position.copy(look);
                 floor.follow(eye);
@@ -148,7 +211,7 @@ export function LandingCanvas({ world, theme, markets, deployed, onFailed }: Pro
                         begun[index] = true;
                         station.begin(now);
                     }
-                    station.update(time, now);
+                    station.update(time, now, pointer, fade);
                 });
                 renderer.render(scene, camera);
             },
@@ -158,6 +221,9 @@ export function LandingCanvas({ world, theme, markets, deployed, onFailed }: Pro
             world.current = null;
             api.current = null;
             observer.disconnect();
+            window.removeEventListener('pointermove', onMove);
+            document.removeEventListener('pointerout', onOut);
+            window.removeEventListener('click', onClick);
             for (const station of stations) station.dispose();
             floor.dispose();
             renderer.dispose();

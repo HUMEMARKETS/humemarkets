@@ -7,7 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePerpMarkets } from '@/hooks/queries';
 import { CONTRACTS } from '@/lib/contracts';
 import { LANDING_FRAME, SPACED_CAPS } from '@/lib/frame';
-import { dampFactor, keyTarget, progressOf, settleTarget } from '@/lib/landingScroll';
+import { dampFactor, keyTarget, progressOf, wheelGesture, wheelStep } from '@/lib/landingScroll';
 import { useTheme } from '@/lib/theme';
 import { ContractsPanel } from './ContractsPanel';
 import { SECTIONS } from './content';
@@ -34,8 +34,8 @@ const reveal = (distance: number) => {
     return t * t * (3 - 2 * t);
 };
 
-/// The landing page: seven sections over one fixed WebGL world. Native scroll moves the page; one
-/// damped progress value moves the camera, the rail and the copy together. The text is all in the page,
+/// The landing page: seven sections over one fixed WebGL world. A wheel gesture, a key or a swipe moves
+/// one section (a section taller than the screen is paged through first); one damped progress value moves the camera, the rail and the copy together. The text is all in the page,
 /// so it reads without WebGL, without motion and without a pointer. Extended motion is allowed here and
 /// nowhere else (docs/UI_CONTRACT.md Section 8).
 export function LandingStage() {
@@ -103,16 +103,10 @@ export function LandingStage() {
             tops.current = sectionEls.current.map((section) => section?.offsetTop ?? 0);
             onScroll();
         };
+        // Snapping is paused while a glide runs (see `scrollTo`) and resumes when it ends.
         const stopGlide = () => {
             glide.current = null;
-        };
-        // Sections settle when a scroll ends close to one, on the same glide as a rail click.
-        const onScrollEnd = () => {
-            if (glide.current) return;
-            const goal = settleTarget(el.scrollTop, tops.current, el.clientHeight);
-            if (goal === undefined) return;
-            if (motion) glide.current = { from: el.scrollTop, to: goal };
-            else el.scrollTop = goal;
+            el.style.scrollSnapType = '';
         };
         measure();
         if (motion) shown.current = target.current;
@@ -120,8 +114,6 @@ export function LandingStage() {
         resize.observe(el);
         for (const section of sectionEls.current) if (section) resize.observe(section);
         el.addEventListener('scroll', onScroll, { passive: true });
-        el.addEventListener('scrollend', onScrollEnd);
-        el.addEventListener('wheel', stopGlide, { passive: true });
         el.addEventListener('touchstart', stopGlide, { passive: true });
 
         let frame = 0;
@@ -166,8 +158,6 @@ export function LandingStage() {
             document.removeEventListener('visibilitychange', run);
             resize.disconnect();
             el.removeEventListener('scroll', onScroll);
-            el.removeEventListener('scrollend', onScrollEnd);
-            el.removeEventListener('wheel', stopGlide);
             el.removeEventListener('touchstart', stopGlide);
             stopGlide();
         };
@@ -178,6 +168,8 @@ export function LandingStage() {
             const el = scroller.current;
             if (!el) return;
             if (motion) {
+                // Mandatory snapping would pull every frame of the glide back to a section top.
+                el.style.scrollSnapType = 'none';
                 glide.current = { from: el.scrollTop, to: top };
             } else {
                 el.scrollTop = top;
@@ -190,6 +182,7 @@ export function LandingStage() {
         (index: number) => {
             const top = tops.current[index];
             if (top === undefined) return;
+            setActive(index);
             scrollTo(top);
             // Focus follows the section, so a screen reader announces where the page went.
             headingEls.current[index]?.focus({ preventScroll: true });
@@ -197,12 +190,14 @@ export function LandingStage() {
         [scrollTo],
     );
 
-    // The section crossing the middle of the screen is the active one.
+    // `goTo` sets the active section; the section crossing the middle of the screen corrects it after a
+    // native scroll (a swipe, the scrollbar). A glide's passing sections are ignored.
     useEffect(() => {
         const el = scroller.current;
         if (!el) return;
         const observer = new IntersectionObserver(
             (entries) => {
+                if (glide.current) return;
                 for (const entry of entries) {
                     if (entry.isIntersecting) setActive(Number((entry.target as HTMLElement).dataset.index));
                 }
@@ -235,6 +230,22 @@ export function LandingStage() {
         window.history.replaceState(null, '', window.location.pathname + window.location.search + hash);
     }, [active]);
 
+    /// One step for a key: to a section top through `goTo`, or a page inside a tall section. False when
+    /// the key is not a step.
+    const step = useCallback(
+        (key: string) => {
+            const el = scroller.current;
+            if (!el) return false;
+            const goal = keyTarget(key, el.scrollTop, tops.current, el.scrollHeight, el.clientHeight);
+            if (goal === undefined) return false;
+            const index = tops.current.findIndex((top) => Math.abs(top - goal) < 1);
+            if (index >= 0) goTo(index);
+            else scrollTo(goal);
+            return true;
+        },
+        [goTo, scrollTo],
+    );
+
     // Arrow keys, PageUp/PageDown, Home and End move between sections.
     useEffect(() => {
         const onKey = (event: KeyboardEvent) => {
@@ -243,16 +254,26 @@ export function LandingStage() {
             const from = event.target instanceof Element ? event.target : null;
             if (from && from !== document.body && !el.contains(from)) return;
             if (from?.closest(OWN_KEYS)) return;
-            const goal = keyTarget(event.key, el.scrollTop, tops.current, el.scrollHeight, el.clientHeight);
-            if (goal === undefined) return;
-            event.preventDefault();
-            const index = tops.current.findIndex((top) => Math.abs(top - goal) < 1);
-            if (index >= 0) goTo(index);
-            else scrollTo(goal);
+            if (step(event.key)) event.preventDefault();
         };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
-    }, [panel, goTo, scrollTo]);
+    }, [panel, step]);
+
+    // One wheel gesture, one step; a trackpad's momentum tail and any gesture during a glide move nothing.
+    useEffect(() => {
+        const el = scroller.current;
+        if (!el) return;
+        const gesture = wheelGesture();
+        const onWheel = (event: WheelEvent) => {
+            if (event.ctrlKey || event.deltaY === 0) return; // pinch zoom, sideways scroll
+            event.preventDefault();
+            const direction = wheelStep(gesture, event.deltaY, event.timeStamp);
+            if (direction !== 0 && !glide.current) step(direction > 0 ? 'ArrowDown' : 'ArrowUp');
+        };
+        el.addEventListener('wheel', onWheel, { passive: false });
+        return () => el.removeEventListener('wheel', onWheel);
+    }, [step]);
 
     const closePanel = useCallback(() => {
         setPanel(false);
@@ -276,7 +297,7 @@ export function LandingStage() {
             <div
                 ref={scroller}
                 tabIndex={-1}
-                className="absolute inset-0 z-10 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                className="absolute inset-0 z-10 snap-y snap-mandatory overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
                 {SECTIONS.map((section, index) => {
                     const Body = SECTION_BODIES[index];
@@ -289,7 +310,7 @@ export function LandingStage() {
                                 sectionEls.current[index] = element;
                             }}
                             aria-labelledby={`${section.id}-title`}
-                            className="relative flex min-h-full items-end md:items-center"
+                            className="relative flex min-h-full snap-start snap-always items-end md:items-center"
                         >
                             <div className={cn(LANDING_FRAME, 'pb-12 pt-[40dvh] md:py-32 md:pl-[calc(clamp(40px,4.2vw,112px)+11rem)]')}>
                                 <div
