@@ -77,3 +77,11 @@ Keyboard-only walk, `/perpetuals` in sample mode, Tab, Enter and Escape only: op
 Contrast: `apps/web/src/lib/contrast.test.ts` reads the tokens from `globals.css` for both themes and asserts the recorded 17.42, 6.76 and 5.77 ratios, 4.5:1 for text, muted and faint on ground, surface and raised, the accent ink on the accent, and up and down on ground. It passes.
 
 Not covered (Phase 18): the other pages at 375 px, and a screen-reader pass. The Markets rows are taller at 375 px because the 44 px rule stacks the symbol and its Options link.
+
+## WP2 / Phase 14 — copy trading entry point (2026-10-08)
+
+Result: **pass**. Nothing is behind it.
+
+- Leaderboard: every row has a disabled "Copy" button (`title` "Copy trading is not available yet"), the column header carries an "In development" badge, and the note under the table reads "Copy trading is not available yet. It opens once leaders have a track record, and no date is promised." Verified in a browser at 1440 px: 10 disabled buttons, note present (`docs/evidence/phase-14/leaderboard-1440.png`). On phones the Copy column is hidden and the note stays.
+- Flag: `NEXT_PUBLIC_FEATURE_COPY_TRADING` is unset, so `env.copyTrading` is false; `/traders/<wallet>` renders the 404 page (Next streams a 200 status around it).
+- No tables, endpoints, subaccounts or executor were added. The Phase 18 design is in `docs/COPY_TRADING.md`.

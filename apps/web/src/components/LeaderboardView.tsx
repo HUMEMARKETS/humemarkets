@@ -102,7 +102,7 @@ function Table({ entries, decimals, metric, self }: { entries: LeaderboardEntry[
                 </td>
                 <td className={cn(cell, "max-sm:hidden")}>{entry.winRateBps === null ? "–" : `${(entry.winRateBps / 100).toFixed(0)}%`}</td>
                 <td className={cn(cell, "max-sm:hidden")}>
-                  <Button size="sm" disabled aria-label={`Copy ${shortHash(entry.wallet)}: in development`}>
+                  <Button size="sm" disabled title="Copy trading is not available yet" aria-label={`Copy ${shortHash(entry.wallet)}: not available yet`}>
                     Copy
                   </Button>
                 </td>
@@ -176,7 +176,7 @@ export function LeaderboardView() {
           : "Ranked by total PNL (realised plus unrealised), ROI on capital deployed, or volume. Ties break on volume, then wallet. A wallet can hide itself from the board."}
       </p>
       <p className="max-w-prose text-xs leading-snug text-muted">
-        In development: max drawdown shows “–” until the indexer records it, and a minimum number of trades to be ranked is not applied yet, so one trade is enough today. Copy trading is not available yet.
+        In development: max drawdown shows “–” until the indexer records it, and a minimum number of trades to be ranked is not applied yet, so one trade is enough today. Copy trading is not available yet. It opens once leaders have a track record, and no date is promised.
       </p>
     </div>
   );
