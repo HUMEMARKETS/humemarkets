@@ -3,7 +3,7 @@
 #   bash scripts/demo.sh up 0xYourWallet   fund your wallet, fund 5 bots + the liquidator, start the simulator
 #   bash scripts/demo.sh down              stop it (it spends gas every minute while it runs)
 #   bash scripts/demo.sh status            balances and whether it runs
-# The simulator moves 8 mock feeds once a minute (about 0.0004 ETH an hour) and runs 5 bots. Mock feeds go
+# The simulator moves 11 mock feeds once a minute (about 0.0006 ETH an hour) and runs 5 bots. Mock feeds go
 # stale after an hour, so a stopped simulator means markets stop trading until it runs again.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -16,7 +16,7 @@ DEPLOYER=$(cast wallet address --private-key "$PRIVATE_KEY")
 
 export CHAIN_ID=46630 RPC_URL=$R SIM_RPC_URL=$R HUME_ADDRESSES=
 export SIM_TICK_MS=60000
-export SIM_MARKETS=NVDA,TSLA,AAPL,META,SPY,BTC,ETH,GLD
+export SIM_MARKETS=NVDA,TSLA,AAPL,META,SPY,BTC,ETH,GLD,BABA,TSM,EWY
 export SIM_BOTS=scalper-1,trend-1,reverter-1,degen-long,degen-short
 
 running() { [ -f "$PIDF" ] && kill -0 "$(cat "$PIDF")" 2>/dev/null; }

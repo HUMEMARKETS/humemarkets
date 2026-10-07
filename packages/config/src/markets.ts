@@ -115,6 +115,10 @@ const robinhoodMainnetMarkets: readonly MarketListing[] = [
   { symbol: "ETH", name: "Ether", token: "0x78F3556b67E17Df817D51Ef5a990cDaF09E8d3A9", feed: "0x78F3556b67E17Df817D51Ef5a990cDaF09E8d3A9", maxLeverage: 5, maintenanceBps: 750, group: "crypto", tier: "tradeable" },
   { symbol: "LINK", name: "Chainlink", token: "0xe86e3422Aa9B5e8ee9f3E41a63975bC387A8bce9", feed: "0xe86e3422Aa9B5e8ee9f3E41a63975bC387A8bce9", maxLeverage: 5, maintenanceBps: 750, group: "crypto", tier: "tradeable" },
   { symbol: "GLD", name: "SPDR Gold Trust • Robinhood Token", token: "0xC9a981FEE1F9DEc688bb123ccDeCc63D0deBFC4e", feed: "0x470A51258068043bd43dC0a56245625C9fE86eB0", maxLeverage: 5, maintenanceBps: 750, group: "crypto", tier: "tradeable" },
+  { symbol: "UMC", name: "United Microelectronics • Robinhood Token", token: "0x0E6e67Ba88e7b5d9B67636A215c76779B948dE79", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted" },
+  { symbol: "FUTU", name: "Futu Holdings • Robinhood Token", token: "0xeB30663bDFf0622Ef4e4E5cBb4E975F19f33f51D", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted" },
+  { symbol: "EWT", name: "iShares MSCI Taiwan Capped ETF • Robinhood Token", token: "0x1c690498150252222C275A5CEd69d3A6b1f52D5E", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted" },
+  { symbol: "SIMO", name: "Silicon Motion • Robinhood Token", token: "0x77E655E37F4d913fB9540e0d541D824171a60e81", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted" },
 ];
 
 /// No market list is recorded for testnet: `deployments/robinhood_testnet.markets.json` does not

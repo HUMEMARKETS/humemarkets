@@ -13,6 +13,7 @@ import { registerMarketRoutes } from "./routes/markets.js";
 import { registerOptionRoutes } from "./routes/options.js";
 import { registerPerpRoutes } from "./routes/perps.js";
 import { registerPortfolioRoutes } from "./routes/portfolio.js";
+import { registerQuotedRoutes } from "./routes/quoted.js";
 import { registerPriceRoutes } from "./routes/prices.js";
 import { registerRfqRoutes } from "./routes/rfq.js";
 import { httpUpstream, registerRpcProxy } from "./rpcProxy.js";
@@ -38,6 +39,7 @@ export function buildServer() {
     registerPerpRoutes(instance, hume);
     registerPriceRoutes(instance, hume);
     registerPortfolioRoutes(instance, hume);
+    registerQuotedRoutes(instance);
     registerStatsRoutes(instance);
     registerAnalyticsRoutes(instance);
     registerAdvancedRoutes(instance, hume);

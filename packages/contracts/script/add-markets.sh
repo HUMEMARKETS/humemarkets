@@ -34,6 +34,9 @@ MARKETS=(
   "ETH|Ether (mock)|2555|5|750|250000|3000000"
   "LINK|Chainlink (mock)|13|5|750|250000|3000000"
   "GLD|SPDR Gold Trust (tokenized, mock)|376|5|750|250000|3000000"
+  "BABA|Alibaba (tokenized, mock)|150|5|750|250000|3000000"
+  "TSM|Taiwan Semiconductor (tokenized, mock)|300|5|750|250000|3000000"
+  "EWY|iShares MSCI South Korea ETF (tokenized, mock)|75|5|750|250000|3000000"
 )
 
 for row in "${MARKETS[@]}"; do

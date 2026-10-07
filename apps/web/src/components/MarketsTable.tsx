@@ -14,6 +14,7 @@ import { groupTabs, inGroup, symbolOf, type GroupTab } from "@/lib/market";
 import { useTerminal } from "@/stores/terminal";
 import { Change } from "./Change";
 import { PanelState } from "./PanelState";
+import { QuotedRows } from "./QuotedRows";
 
 type Overview = ReturnType<typeof useMarketOverviews>[number]["data"];
 
@@ -253,6 +254,7 @@ export function MarketsTable() {
           </table>
         )}
       </div>
+      {filter ? null : <QuotedRows group={group} />}
       {!env.apiUrl ? (
         <p className="border-t border-line p-3 text-muted">
           24h change and volumes come from the indexer. Set NEXT_PUBLIC_API_URL to show them.

@@ -361,6 +361,42 @@
       "maintenanceBps": 750,
       "group": "crypto",
       "tier": "tradeable"
+    },
+    {
+      "symbol": "UMC",
+      "name": "United Microelectronics \u2022 Robinhood Token",
+      "token": "0x0E6e67Ba88e7b5d9B67636A215c76779B948dE79",
+      "maxLeverage": 1,
+      "maintenanceBps": 750,
+      "group": "china",
+      "tier": "quoted"
+    },
+    {
+      "symbol": "FUTU",
+      "name": "Futu Holdings \u2022 Robinhood Token",
+      "token": "0xeB30663bDFf0622Ef4e4E5cBb4E975F19f33f51D",
+      "maxLeverage": 1,
+      "maintenanceBps": 750,
+      "group": "china",
+      "tier": "quoted"
+    },
+    {
+      "symbol": "EWT",
+      "name": "iShares MSCI Taiwan Capped ETF \u2022 Robinhood Token",
+      "token": "0x1c690498150252222C275A5CEd69d3A6b1f52D5E",
+      "maxLeverage": 1,
+      "maintenanceBps": 750,
+      "group": "china",
+      "tier": "quoted"
+    },
+    {
+      "symbol": "SIMO",
+      "name": "Silicon Motion \u2022 Robinhood Token",
+      "token": "0x77E655E37F4d913fB9540e0d541D824171a60e81",
+      "maxLeverage": 1,
+      "maintenanceBps": 750,
+      "group": "china",
+      "tier": "quoted"
     }
   ]
 }

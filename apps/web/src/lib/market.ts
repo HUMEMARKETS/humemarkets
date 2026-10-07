@@ -23,7 +23,7 @@ export const REGISTRY_ERROR = "The registry could not be read right now. Try aga
 /// How a market group (`MARKET_GROUPS` in `@hume/types`, assigned per market in `@hume/config`) is named on screen.
 export const MARKET_GROUP_LABEL: Record<MarketGroup, string> = {
   "us-equities": "US",
-  china: "China & Asia",
+  china: "China & Greater China",
   commodities: "Commodities",
   etf: "ETF",
   crypto: "Crypto",

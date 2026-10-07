@@ -399,3 +399,30 @@ export function useCreditCollateralPrice(oracle?: Address, collateralToken?: Add
   });
   return fromPair.data !== undefined ? { price: fromPair.data, source: "pair" as const, isPending: false } : { price: fromTerminal.data, source: "terminal" as const, isPending: fromTerminal.isPending };
 }
+
+export interface QuotedRow {
+  symbol: string;
+  name: string;
+  group: string;
+  token: string;
+  price: number | null;
+  source: string;
+  asOf: string | null;
+}
+
+/// Display-only rows from `services/api` (`/v1/quoted`): price, source and age, nothing to trade.
+export const quotedQuery = () => ({
+  queryKey: ["quoted", env.apiUrl],
+  queryFn: async (): Promise<QuotedRow[]> => {
+    const response = await fetch(`${env.apiUrl}/v1/quoted`);
+    if (!response.ok) throw new Error("quoted unavailable");
+    return response.json();
+  },
+  enabled: Boolean(env.apiUrl),
+  refetchInterval: 60_000,
+  retry: false,
+});
+
+export function useQuotedMarkets() {
+  return useQuery(quotedQuery());
+}

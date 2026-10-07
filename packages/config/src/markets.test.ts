@@ -46,10 +46,14 @@ test("the checked-in literal matches deployments/robinhood_mainnet.markets.json"
   );
 });
 
-test("all 36 mainnet markets are tradeable, and every one has a feed", () => {
+test("36 mainnet markets are tradeable with a feed, and 4 China names are quoted without one", () => {
   const all = marketsForChain(ROBINHOOD_MAINNET_CHAIN_ID);
-  assert.equal(all.length, 36);
+  assert.equal(all.length, 40);
   for (const market of all) {
+    if (market.tier === "quoted") {
+      assert.equal(market.feed, undefined, market.symbol);
+      continue;
+    }
     assert.equal(market.tier, "tradeable", market.symbol);
     assert.ok(market.feed, `${market.symbol} has no feed`);
   }
@@ -57,7 +61,7 @@ test("all 36 mainnet markets are tradeable, and every one has a feed", () => {
 
 test("marketsForGroup returns each group's set, the groups partition the list, and an empty group is []", () => {
   const symbols = (group: MarketGroup) => marketsForGroup(ROBINHOOD_MAINNET_CHAIN_ID, group).map((m) => m.symbol);
-  assert.deepEqual(symbols("china"), ["BABA", "EWY", "TSM"]);
+  assert.deepEqual(symbols("china"), ["BABA", "EWY", "TSM", "UMC", "FUTU", "EWT", "SIMO"]);
   assert.deepEqual(symbols("commodities"), ["SLV", "USO"]);
   assert.deepEqual(symbols("etf"), ["SPY", "QQQ"]);
   assert.equal(symbols("us-equities").length, 25);
@@ -73,7 +77,7 @@ test("marketsForGroup returns each group's set, the groups partition the list, a
 
 test("marketsForTier returns the tier's set, and the tiers partition the list", () => {
   assert.equal(marketsForTier(ROBINHOOD_MAINNET_CHAIN_ID, "tradeable").length, 36);
-  assert.deepEqual(marketsForTier(ROBINHOOD_MAINNET_CHAIN_ID, "quoted"), []);
+  assert.deepEqual(marketsForTier(ROBINHOOD_MAINNET_CHAIN_ID, "quoted").map((m) => m.symbol), ["UMC", "FUTU", "EWT", "SIMO"]);
   assert.deepEqual(marketsForTier(ROBINHOOD_MAINNET_CHAIN_ID, "listed"), []);
   const total = LISTING_TIERS.reduce((sum, tier) => sum + marketsForTier(ROBINHOOD_MAINNET_CHAIN_ID, tier).length, 0);
   assert.equal(total, marketsForChain(ROBINHOOD_MAINNET_CHAIN_ID).length);

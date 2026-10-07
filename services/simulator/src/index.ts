@@ -25,7 +25,7 @@ import { createRng } from "./prng.js";
 import { deriveAccount, loadSeed } from "./wallets.js";
 
 const STATE_DIR = fileURLToPath(new URL("../../../.simulator", import.meta.url));
-const SYMBOLS = (process.env.SIM_MARKETS ?? "NVDA,TSLA,AAPL,META,HOOD,AMZN,PLTR,NFLX,AMD,MSFT,GOOGL,COIN,MSTR,SPY,QQQ,AVGO,JPM,DIS,UBER,SHOP,BTC,ETH,LINK,GLD").split(",").map((s) => s.trim().toUpperCase());
+const SYMBOLS = (process.env.SIM_MARKETS ?? "NVDA,TSLA,AAPL,META,HOOD,AMZN,PLTR,NFLX,AMD,MSFT,GOOGL,COIN,MSTR,SPY,QQQ,AVGO,JPM,DIS,UBER,SHOP,BTC,ETH,LINK,GLD,BABA,TSM,EWY").split(",").map((s) => s.trim().toUpperCase());
 const BOT_IDS = (process.env.SIM_BOTS ?? "").split(",").map((id) => id.trim()).filter(Boolean);
 const TICK_MS = Number(process.env.SIM_TICK_MS ?? 15_000);
 if (!Number.isFinite(TICK_MS) || TICK_MS < 500) throw new Error("SIM_TICK_MS must be at least 500 (half a second).");
