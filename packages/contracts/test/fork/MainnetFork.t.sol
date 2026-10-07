@@ -107,7 +107,8 @@ contract MainnetForkTest is Test, MarketLister {
             address token = vm.parseJsonAddress(markets, string.concat(p, ".token"));
             address feed = vm.parseJsonAddress(markets, string.concat(p, ".feed"));
 
-            assertEq(IERC20Metadata(token).symbol(), symbol, "token symbol matches the market");
+            // A feed-only market (BTC, ETH, LINK) has no tokenized asset: its token is the feed address.
+            if (token != feed) assertEq(IERC20Metadata(token).symbol(), symbol, "token symbol matches the market");
 
             ChainlinkPriceFeed adapter = new ChainlinkPriceFeed(feed);
             assertEq(adapter.decimals(), 8, symbol);

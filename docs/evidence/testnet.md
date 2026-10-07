@@ -95,3 +95,21 @@ Result: **pass**.
 - **Oracle:** the credit oracle (`CompositeSanityOracle`, a manual feed with a 24 h staleness limit) had no prices, so every deposit reverted "Oracle: Price not configured for asset". Nothing in the services refreshed it. The simulator now pushes the TSLA price and 1.00 for the loan token every 10 minutes (`SIM_CREDIT_MS`); first push read TSLA 351.01 on chain.
 - **Lifecycle, `script/CreditLifecycle.s.sol` on testnet:** approve, depositCollateral, borrow, approve, repay, withdrawCollateral, 6 transactions, none failed. Hashes: `0x8c9ac1bf48fcc109c72c376be961b0b7a0b38cd964c6df8396284c2620dbe14d`, `0xed9455f154b89da635a6862d23785a8b08f453c20d0a7dd162cfd697717b4a03`, `0x5e0d3ccc9a99990cd0db4d8b3f8ab9fc8884869dd4ee5217de1cc8bfb44ce0ee`, `0x4aba053b02fedc3a45afb3747ca2eafddd54747f34723b24ef422ff7a937572b`, `0x3e454c480485fd8f151a79bb2b59c0fba164e0849e2a4e115bb3bc6b92e4c99a`, `0x095622d70c6b409331b3d7d09a238070cfb51129677f7b63a335af6938a9b5ef`.
 - **Mainnet note for WP4:** the same credit oracle needs a feeder on mainnet; nothing in the services refreshes it there either.
+
+## WP3 / Phase 15 — checks that are not filmed (2026-10-08)
+
+**Pause and unpause on testnet: pass.** TSLA: `MarketRegistry.setActive(false)` tx `0x721a8f1fd0c3f49f0b4f61353d00a78be12ae199939c90b7643e6075b925ec57`, `isActive` read `false`; opening a perp then reverted `MarketPaused` (the web maps it to "This market is paused. Try again once trading resumes."); `setActive(true)` tx `0x6297fa100e5d1587527f3056bab06405bc01aabda61426a91b226d65c33bb969`; open `0x5358c73029442fd0ca490f03771b99bc10f30c709d27725bec6a47845868a2ed` and close `0x081320c2888dca8ffe6034a624963c1077560738222cd5fec7a18b151323842f` (TSLA #103) then succeeded.
+
+**Review step on the three money paths:** Phase 8 walk, re-run in sample mode at both widths on 2026-10-07 (`docs/evidence/phase-8/testnet/`). **Keyboard path end to end and 375 px pass:** Phase 13 above.
+
+**Mainnet fork suite (`ROBINHOOD_MAINNET_RPC_URL=https://rpc.mainnet.chain.robinhood.com forge test --match-path test/fork/MainnetFork.t.sol`): amber, 4 of 7 at the first run, 5 of 7 after one fix.** Without the env var the suite skips silently. Block 82,740,493:
+
+| Test | Result | Why |
+| --- | --- | --- |
+| `anOldFeedIsRefusedUnderTheDefaultAgeLimit`, `usdgIsTheSettlementTokenWith6Decimals`, `deployerCanListAMarketOnARealFeedAndReadItsPrice` | pass | |
+| `everyListedFeedAndTokenIsReadable` | **fixed, pass** | It read `symbol()` on every token; the BTC, ETH and LINK rows (Phase 11) use the feed as the token. Now skipped when token equals feed (`MainnetFork.t.sol`). Feed ages read in minutes: NVDA 308, AAPL 202, BTC 257, ETH 31, LINK 126, GLD 271. |
+| `launchListingListsEveryMarketAndEveryPriceReads` | **fail, `StaleOraclePrice()`** | Reads every market's price after listing; at 20:10 UTC the US equities are 3 to 5 hours old, past the default age. Time-of-day dependent: run during US market hours. |
+| `deployedStackIsOwnedByTheDeployer` | **fail, `150000 != 0`** | An ownership assertion that no longer matches live state; not touched by this work. Investigate in WP4. |
+| `usdgDepositAndWithdrawMoveExactAmounts` | **fail, `1000150000 != 1000000000`** | The vault received 1,000.15 USDG for a 1,000 deposit; looks like a deposit fee or a changed vault; not touched by this work. Investigate in WP4. |
+
+Carried to WP4: the three failing fork tests, and the fork suite must be 7 of 7 before mainnet opens.

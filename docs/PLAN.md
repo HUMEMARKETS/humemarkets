@@ -43,3 +43,4 @@ recorded the demo.
 
 - Crypto listing (Phase 11 mainnet half): `AddMainnetMarket.s.sol` needs a feed-only path (no `symbol()` check when token is the feed), and `MAX_PRICE_AGE` must follow each feed's heartbeat. See `docs/evidence/testnet.md`.
 - Testnet demo polish (WP3): the credit pair's caps display as 10^18 dollars; set demo-sized caps and seed the pair before filming.
+- Fork suite (`MainnetFork.t.sol`) is 5 of 7: `launchListing...` is stale only outside US market hours; `deployedStackIsOwnedByTheDeployer` (`150000 != 0`) and `usdgDepositAndWithdraw...` (1000.15 vs 1000 USDG) need investigation. It skips silently unless `ROBINHOOD_MAINNET_RPC_URL` is set.
