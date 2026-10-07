@@ -30,10 +30,15 @@ const navLink = (current: boolean) =>
 const menuLink = (current: boolean) =>
   cn("flex h-11 items-center px-3 text-sm font-medium", current ? "bg-accent text-accent-ink" : cn("text-text", menuItem));
 
+/// On a phone the menu is a full-width sheet. From `md` it is a card under the menu button: two columns,
+/// inset rows with the control radius, the same raised surface as the other menus.
 const sheetLink = (current: boolean) =>
-  cn("flex h-12 items-center px-4 text-base font-medium", current ? "bg-accent text-accent-ink" : cn("bg-raised text-muted", menuItem));
+  cn(
+    "flex h-12 items-center px-4 text-base font-medium md:mx-2 md:h-10 md:rounded-control md:px-3 md:text-sm",
+    current ? "bg-accent text-accent-ink" : cn("bg-raised text-muted", menuItem),
+  );
 
-const sheetHeading = "bg-ground px-4 pb-1 pt-4 text-[11px] font-medium uppercase tracking-[0.1em] text-muted";
+const sheetHeading = "bg-ground px-4 pb-1 pt-4 text-[11px] font-medium uppercase tracking-[0.1em] text-muted md:bg-transparent md:px-5 md:pt-3";
 
 /// A disclosure: a button that shows or hides a list of links. The links are plain links in the tab order,
 /// so Tab, Enter, Space and touch all work without roving focus. Escape closes it and returns focus to the button.
@@ -185,36 +190,50 @@ export function Header() {
         </div>
       </div>
       {open ? (
-        <nav id="mobile-nav" aria-label="Primary mobile" className="absolute inset-x-0 top-full max-h-[calc(100dvh-7.125rem)] overflow-y-auto bg-ground xl:hidden">
-          {NAV.map((entry) =>
-            "items" in entry ? (
-              <div key={entry.label} role="group" aria-label={entry.label} className="pb-3">
-                <p aria-hidden="true" className={sheetHeading}>{entry.label}</p>
-                {entry.items.map((item) => (
+        <nav
+          id="mobile-nav"
+          aria-label="Primary mobile"
+          className={cn(
+            "absolute inset-x-0 top-full max-h-[calc(100dvh-7.125rem)] overflow-y-auto bg-ground xl:hidden",
+            "md:inset-x-auto md:top-[calc(100%+0.5rem)] md:max-h-[calc(100dvh-8.5rem)] md:w-[26rem] md:rounded-panel md:border md:border-line md:bg-raised md:pb-2 md:shadow-lift",
+            landing ? "md:right-[clamp(40px,4.2vw,112px)]" : "md:right-6 lg:right-10",
+          )}
+        >
+          <div className="md:grid md:grid-cols-2 md:gap-x-1">
+            <div className="md:pt-2">
+              {NAV.map((entry) =>
+                "items" in entry ? (
+                  <div key={entry.label} role="group" aria-label={entry.label} className="pb-3 md:pb-1">
+                    <p aria-hidden="true" className={sheetHeading}>{entry.label}</p>
+                    {entry.items.map((item) => (
+                      <Link key={item.href} href={item.href} aria-current={isCurrent(pathname, item.href) ? "page" : undefined} className={sheetLink(isCurrent(pathname, item.href))}>
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <Link key={entry.href} href={entry.href} aria-current={isCurrent(pathname, entry.href) ? "page" : undefined} className={cn(sheetLink(isCurrent(pathname, entry.href)), "md:my-1")}>
+                    {entry.label}
+                  </Link>
+                ),
+              )}
+            </div>
+            <div className="md:border-l md:border-line md:pt-2">
+              <div role="group" aria-label="More" className="pb-3 md:pb-1">
+                <p aria-hidden="true" className={sheetHeading}>More</p>
+                {MORE_LINKS.map((item) => (
                   <Link key={item.href} href={item.href} aria-current={isCurrent(pathname, item.href) ? "page" : undefined} className={sheetLink(isCurrent(pathname, item.href))}>
                     {item.label}
                   </Link>
                 ))}
               </div>
-            ) : (
-              <Link key={entry.href} href={entry.href} aria-current={isCurrent(pathname, entry.href) ? "page" : undefined} className={sheetLink(isCurrent(pathname, entry.href))}>
-                {entry.label}
-              </Link>
-            ),
-          )}
-          <div role="group" aria-label="More" className="pb-3">
-            <p aria-hidden="true" className={sheetHeading}>More</p>
-            {MORE_LINKS.map((item) => (
-              <Link key={item.href} href={item.href} aria-current={isCurrent(pathname, item.href) ? "page" : undefined} className={sheetLink(isCurrent(pathname, item.href))}>
-                {item.label}
-              </Link>
-            ))}
-          </div>
-          <div className="flex gap-3 p-4">
-            <div className="min-w-0 flex-1">
-              <WalletButton className="h-12! rounded-control! text-[13px]! uppercase tracking-[0.04em]" block menuAbove />
             </div>
-            <ThemeToggle className="size-12!" />
+          </div>
+          <div className="flex gap-3 p-4 md:border-t md:border-line md:px-3 md:pb-1 md:pt-3">
+            <div className="min-w-0 flex-1">
+              <WalletButton className="h-12! rounded-control! text-[13px]! uppercase tracking-[0.04em] md:h-10!" block menuAbove />
+            </div>
+            <ThemeToggle className="size-12! md:size-10!" />
           </div>
         </nav>
       ) : null}
