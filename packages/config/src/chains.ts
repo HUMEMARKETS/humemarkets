@@ -31,7 +31,7 @@ export const robinhoodTestnet: Chain = {
 /// deployment, confirmed present on chain 4663 (`eth_getCode` returns bytecode).
 export const robinhoodMainnet: Chain = {
   id: ROBINHOOD_MAINNET_CHAIN_ID,
-  name: "Robinhood Chain",
+  name: "Robinhood Chain Mainnet",
   nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
   rpcUrls: { default: { http: [] } },
   blockExplorers: { default: { name: "Blockscout", url: "https://robinhoodchain.blockscout.com" } },

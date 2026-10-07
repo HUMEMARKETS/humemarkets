@@ -17,8 +17,7 @@ import { ConnectButton } from "./ConnectButton";
 
 type Action = "supply" | "borrow";
 
-/// The pair as the ticket needs it: the live pair once deployed, otherwise nothing (the sample then reviews
-/// against the example thresholds the calculator uses).
+/// The pair as the ticket needs it: the live pair once deployed, otherwise nothing.
 export interface CreditTicketPair {
   pair: Address;
   collateralToken: Address;
@@ -32,7 +31,6 @@ export interface CreditTicketPair {
   totalBorrowedDebt: bigint;
 }
 
-const SAMPLE_REFUSAL = "Sample mode has no lending account, so nothing is supplied or borrowed. Connect a wallet to do it for real.";
 
 /// Supply or borrow, through the review step (docs/UI_CONTRACT.md Section 7.3). Guided reviews with Back
 /// and Confirm; Pro collapses the same figures above a one-shot button. The review states the caps and the
@@ -53,7 +51,6 @@ export function CreditTicket({
   debtDecimals: number;
 }) {
   const mode = useAccountMode();
-  const sample = mode === "sample";
   const { address } = useAccount();
   const wallet = useWalletHume();
   const run = useTx();
@@ -90,11 +87,11 @@ export function CreditTicket({
     : undefined;
 
   // Why Confirm cannot sign, even with a sound review on screen.
-  const unsigned = sample ? SAMPLE_REFUSAL : !pair ? "Lending is not live on this network yet, so there is nothing to sign." : !wallet ? "Connect a wallet first." : undefined;
+  const unsigned = !pair ? "Lending is not live on this network yet, so there is nothing to sign." : !wallet ? "Connect a wallet first." : undefined;
   const problem = shut ?? review?.refusal;
 
   async function submit() {
-    if (sample || !pair || !wallet || !address || !review?.rows || shut) return;
+    if (!pair || !wallet || !address || !review?.rows || shut) return;
     setBusy(true);
     let ok: boolean;
     if (action === "supply") {

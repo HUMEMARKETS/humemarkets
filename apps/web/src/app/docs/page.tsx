@@ -5,7 +5,6 @@ import type { ReactNode } from 'react';
 import { ContractAddressBadge } from '@/components/ContractAddressBadge';
 import { DocsLiveParameters } from '@/components/DocsLiveParameters';
 import { Footer } from '@/components/Footer';
-import { SampleBanner } from '@/components/SampleBanner';
 import { TrustStrip } from '@/components/TrustStrip';
 import { env } from '@/lib/env';
 import { explorerAddressUrl } from '@/lib/explorer';
@@ -116,7 +115,6 @@ export default function Docs() {
 
                 <article className="min-w-0">
                     <header className="mb-16 max-w-[68ch] lg:mb-24">
-                        <SampleBanner className="mb-6" />
                         <h1 className="font-display text-[2.75rem] font-bold leading-[1.05] tracking-[-0.035em] text-text sm:text-[4rem]">
                             Documentation
                         </h1>

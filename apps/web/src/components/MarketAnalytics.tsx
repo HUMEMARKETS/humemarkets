@@ -189,8 +189,6 @@ function PositionsBody() {
 /// The strip under the chart: the wallet's positions, and the market's funding and open interest.
 export function MarketAnalytics() {
   const [tab, setTab] = useState<Tab>("positions");
-  // Funding and open interest are the market's real figures; only the positions tab is the sample account.
-  const sample = useAccountMode() === "sample" && tab === "positions";
   const { data } = usePositions();
   const count = data?.perps.filter((position) => position.open).length ?? 0;
   const tabList = TABS.map((item) => (item.id === "positions" && count > 0 ? { ...item, label: `${item.label} (${count})` } : item));
@@ -198,7 +196,6 @@ export function MarketAnalytics() {
   return (
     <Panel
       className="h-64 shrink-0"
-      sample={sample}
       title={<Tabs label="Market sections" tabs={tabList} value={tab} onChange={setTab} />}
     >
       <div role="tabpanel" className="min-h-0 flex-1 overflow-auto">

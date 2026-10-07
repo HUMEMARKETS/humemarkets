@@ -40,7 +40,6 @@ function lockedShare(available: bigint, locked: bigint): { available: number; lo
 /// PROJECT_BRIEF.md Section 28.
 export function PortfolioView() {
   const mode = useAccountMode();
-  const sample = mode === "sample";
   const { data: summary, isPending, error } = usePortfolioSummary();
   const { data: decimals = 6 } = useSettlementDecimals();
   const [tab, setTab] = useState<Tab>("all");
@@ -97,12 +96,6 @@ export function PortfolioView() {
             <Num tone={signTone(summary?.realizedPnl, decimals)}>{fmtSigned(summary?.realizedPnl, decimals)}</Num>
           </Stat>
         </dl>
-        {sample ? (
-          <p className="mt-4 text-xs leading-snug text-muted">
-            Sample account: simulated USDG and simulated positions, kept on this device. Prices are real. None of it is on chain, and none of it
-            carries over to a wallet.
-          </p>
-        ) : null}
         <p className="mt-4 text-xs text-muted">
           Unrealized PnL covers perpetual positions. Option positions are priced from the pricing service and shown per position.
         </p>
@@ -111,7 +104,6 @@ export function PortfolioView() {
       <Panel
         className="flex-1"
         title={<Tabs label="Portfolio sections" tabs={tabList} value={tab} onChange={setTab} />}
-        sample={sample}
       >
         <div role="tabpanel" className="flex-1 overflow-x-auto">
           {tab === "all" || tab === "perps" ? (

@@ -16,10 +16,8 @@ import { tradeBlocker } from "@/lib/market";
 import { LIMIT_EXPIRIES, limitDirectionNote, limitExpirySeconds, parseLimitPrice, type LimitExpiry } from "@/lib/limit";
 import { humeRead } from "@/lib/hume";
 import { perpOpenReview } from "@/lib/review";
-import { samplePreviewOpen } from "@/lib/sampleMarket";
 import { chain } from "@/lib/wagmi";
 import { useModeStore } from "@/stores/mode";
-import { useSampleStore } from "@/stores/sample";
 import { errorMessage } from "@/stores/tx";
 import { useTerminal } from "@/stores/terminal";
 import { ConnectButton } from "./ConnectButton";
@@ -37,11 +35,8 @@ import { VaultControls } from "./VaultControls";
 export function OrderPanel() {
   const symbol = useTerminal((state) => state.symbol);
   const { address, isConnected, chainId } = useAccount();
-  const mode = useAccountMode();
-  const sample = mode === "sample";
-  const sampleVersion = useSampleStore((state) => state.version);
-  /// Whether an order can be sent from here: the sample always can, a wallet only on the right network.
-  const ready = sample || (isConnected && chainId === chain.id);
+  /// Whether an order can be sent from here: a wallet, on the right network.
+  const ready = isConnected && chainId === chain.id;
   const { switchChain } = useSwitchChain();
   const wallet = useWalletHume();
   const run = useTx();
@@ -81,27 +76,22 @@ export function OrderPanel() {
   const validLimit = !isLimit || trigger !== undefined;
 
   const preview = useQuery({
-    queryKey: ["preview", symbol, side, orderType, isLimit ? debouncedLimit : "", debouncedCollateral, String(leverage), sample ? `sample-${sampleVersion}` : address],
+    queryKey: ["preview", symbol, side, orderType, isLimit ? debouncedLimit : "", debouncedCollateral, String(leverage), address],
     queryFn: () =>
-      sample
-        ? samplePreviewOpen(
-            { market: symbol, side, collateral: debouncedCollateral, leverage: Number(leverage), ...(isLimit && trigger !== undefined ? { limitPrice: toBaseUnits(trigger, 18) } : {}) },
-            useSampleStore.getState().account,
-          )
-        : humeRead.perps.previewOpen({
-            market: symbol,
-            side,
-            collateral: debouncedCollateral,
-            leverage: Number(leverage),
-            user: address,
-            ...(isLimit ? { orderType, limitPrice: trigger } : {}),
-          }),
+      humeRead.perps.previewOpen({
+        market: symbol,
+        side,
+        collateral: debouncedCollateral,
+        leverage: Number(leverage),
+        user: address,
+        ...(isLimit ? { orderType, limitPrice: trigger } : {}),
+      }),
     enabled: Boolean(symbol && leverage && validAmount && validLimit),
     refetchInterval: 4_000,
     placeholderData: (previous) => previous,
   });
   const p = validAmount && validLimit ? preview.data : undefined;
-  const cap = sample ? BigInt(env.sample.maxPositionUsd) * 10n ** BigInt(decimals) : market?.risk.maxPositionNotional;
+  const cap = market?.risk.maxPositionNotional;
   const review = p ? perpOpenReview(p, { symbol, decimals, isLimit, cap }) : undefined;
 
   // A paused market refuses every new position, whoever is asking, so it is read before the wallet
@@ -117,9 +107,7 @@ export function OrderPanel() {
       : p.violations[0]
         ? errorMessage(p.violations[0])
         : p.sufficientCollateral === false
-          ? sample
-            ? "Not enough sample USDG for this size. Add more from the Sample menu, or lower the size."
-            : "Not enough available collateral. Deposit first."
+          ? "Not enough available collateral. Deposit first."
           : review?.refusal;
   const waiting =
     paused || !ready
@@ -181,7 +169,7 @@ export function OrderPanel() {
       </Button>
       <p className="text-xs leading-snug text-muted">This market still shows prices, but it is not taking new orders right now.</p>
     </>
-  ) : !sample && !isConnected ? (
+  ) : !isConnected ? (
     <ConnectButton className="w-full" />
   ) : !ready ? (
     <Button variant="primary" className="w-full" onClick={() => switchChain({ chainId: chain.id })}>
@@ -211,13 +199,12 @@ export function OrderPanel() {
   // with the reason.
   if (guided && reviewing && review?.rows && !paused && ready && wallet) {
     return (
-      <Panel title="Review order" sample={sample} actions={<TicketModeToggle />} className="h-full overflow-y-auto">
+      <Panel title="Review order" actions={<TicketModeToggle />} className="h-full overflow-y-auto">
         <div className="flex flex-col gap-3 p-3">
           <ReviewStep
             title={`${actionLabel} ${symbol}-PERP`}
             rows={review.rows}
             worstCase={review.worstCase}
-            note={sample ? "Sample order: it fills at the real index price against your sample balance. Nothing is sent to a wallet." : undefined}
             blocked={problem ?? (preview.isPlaceholderData ? "Updating the figures…" : undefined)}
             busy={submitting}
             confirmLabel={`Confirm: ${actionLabel.toLowerCase()}`}
@@ -231,7 +218,7 @@ export function OrderPanel() {
   }
 
   return (
-    <Panel title="Order" sample={sample} actions={<TicketModeToggle />} className="h-full overflow-y-auto">
+    <Panel title="Order" actions={<TicketModeToggle />} className="h-full overflow-y-auto">
       <VaultControls />
 
       <div className="flex flex-col gap-3 p-3">
@@ -365,19 +352,9 @@ export function OrderPanel() {
           </p>
         ) : null}
 
-        {sample && market?.priceSource === "last-close" ? (
-          <p className="text-xs leading-snug text-muted">
-            The market is closed, so a sample order fills at the last close, {fmtPrice(market.indexPrice)}. A real order would be refused until the session opens.
-          </p>
-        ) : null}
-        {sample ? (
-          <p className="text-xs leading-snug text-muted">
-            Sample order: it fills at the real index price against your sample balance. Funding is shown but not charged. Nothing is sent to a wallet.
-          </p>
-        ) : null}
         {preview.error ? (
           <p className="text-down">
-            {sample ? "Could not price this order. The price service did not answer. Try again in a moment." : "Could not price this order. Check the connection and try again."}
+            Could not price this order. Check the connection and try again.
           </p>
         ) : null}
         {!guided && review?.rows ? <ReviewStep title="Review: every figure" rows={review.rows} worstCase={review.worstCase} className="border-t border-line pt-1" /> : null}

@@ -33,8 +33,8 @@ const FAQ = [
         a: 'No. The contracts are unaudited, so trade only what you can lose. Every contract is listed in full below so you can read it on the explorer.',
     },
     {
-        q: 'Can I try it without a wallet?',
-        a: 'Yes. Sample mode gives you simulated USDG and simulated positions on this device. Prices are real, none of it is on chain, and every screen that shows it is labelled SAMPLE DATA.',
+        q: 'Can I try it without risking money?',
+        a: 'Yes. Choose Robinhood Chain Testnet in the header. It uses test tokens with no value and mock prices; the header shows which network you are on. Mainnet uses real funds.',
     },
     {
         q: 'What happens when a market is paused?',
@@ -280,7 +280,7 @@ export default function FeaturesPage() {
             <section aria-label="Next step" className="flex flex-wrap items-center justify-between gap-6 border-t border-line py-12">
                 <div>
                     <p className="font-display text-[1.75rem] font-bold leading-tight tracking-[-0.03em] sm:text-[2.25rem]">Verify it. Then trade.</p>
-                    <p className="mt-2 text-muted">Start in sample mode. No wallet needed.</p>
+                    <p className="mt-2 text-muted">Pick testnet or mainnet in the header, then connect a wallet.</p>
                 </div>
                 <Link
                     href="/perpetuals"

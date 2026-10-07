@@ -1,6 +1,7 @@
-import { addressesForChain, chains, protocolTokens, resolveChainId, type ChainId, type ContractAddresses } from "@hume/config";
+import { addressesForChain, chains, protocolTokens, resolveChainId, ROBINHOOD_TESTNET_CHAIN_ID, type ChainId, type ContractAddresses } from "@hume/config";
 import type { Address } from "@hume/types";
 import { pickProtocolToken } from "./protocolToken";
+import { storedChainId } from "./network";
 
 /// Every value the terminal needs from the environment (PROJECT_BRIEF.md Section 4). Next only
 /// inlines `process.env.NEXT_PUBLIC_*` when written out literally, so each name appears in full
@@ -11,6 +12,14 @@ const raw = {
   rpcProxyUrl: process.env.NEXT_PUBLIC_RPC_PROXY_URL,
   explorerUrl: process.env.NEXT_PUBLIC_EXPLORER_URL,
   apiUrl: process.env.NEXT_PUBLIC_API_URL,
+  rpcUrlTestnet: process.env.NEXT_PUBLIC_RPC_URL_TESTNET,
+  rpcUrlMainnet: process.env.NEXT_PUBLIC_RPC_URL_MAINNET,
+  rpcProxyUrlTestnet: process.env.NEXT_PUBLIC_RPC_PROXY_URL_TESTNET,
+  rpcProxyUrlMainnet: process.env.NEXT_PUBLIC_RPC_PROXY_URL_MAINNET,
+  explorerUrlTestnet: process.env.NEXT_PUBLIC_EXPLORER_URL_TESTNET,
+  explorerUrlMainnet: process.env.NEXT_PUBLIC_EXPLORER_URL_MAINNET,
+  apiUrlTestnet: process.env.NEXT_PUBLIC_API_URL_TESTNET,
+  apiUrlMainnet: process.env.NEXT_PUBLIC_API_URL_MAINNET,
   marketRegistry: process.env.NEXT_PUBLIC_MARKET_REGISTRY,
   vault: process.env.NEXT_PUBLIC_HUME_VAULT,
   optionsEngine: process.env.NEXT_PUBLIC_OPTIONS_ENGINE,
@@ -35,14 +44,10 @@ const raw = {
   optionStrikeRows: process.env.NEXT_PUBLIC_OPTION_STRIKE_ROWS,
   optionExpiryDays: process.env.NEXT_PUBLIC_OPTION_EXPIRY_DAYS,
   optionExpiryHourUtc: process.env.NEXT_PUBLIC_OPTION_EXPIRY_HOUR_UTC,
-  sampleOptionIvBps: process.env.NEXT_PUBLIC_SAMPLE_OPTION_IV_BPS,
   creditPair: process.env.NEXT_PUBLIC_CREDIT_PAIR,
   creditSymbol: process.env.NEXT_PUBLIC_CREDIT_SYMBOL,
   creditExampleMaxLtvBps: process.env.NEXT_PUBLIC_CREDIT_EXAMPLE_MAX_LTV_BPS,
   creditExampleLiquidationLtvBps: process.env.NEXT_PUBLIC_CREDIT_EXAMPLE_LIQ_LTV_BPS,
-  sampleStartingUsd: process.env.NEXT_PUBLIC_SAMPLE_START_USD,
-  sampleMaxPositionUsd: process.env.NEXT_PUBLIC_SAMPLE_MAX_POSITION_USD,
-  sampleTopUpUsd: process.env.NEXT_PUBLIC_SAMPLE_TOP_UP_USD,
   featureCopyTrading: process.env.NEXT_PUBLIC_FEATURE_COPY_TRADING,
 };
 
@@ -63,7 +68,22 @@ function wholeNumberList(value: string | undefined, fallback: number[], min: num
   return parsed.length > 0 ? [...new Set(parsed)].sort((a, b) => a - b) : fallback;
 }
 
-const chainId: ChainId = resolveChainId(raw.chainId);
+/// The network the build was made for, and the one the person picked (kept in this browser). The
+/// single-network variables (`NEXT_PUBLIC_RPC_URL`, ...) and the contract address overrides describe the
+/// build's own network only; the `_TESTNET` and `_MAINNET` variables describe each network.
+const buildChainId: ChainId = resolveChainId(raw.chainId);
+const chainId: ChainId = storedChainId() ?? buildChainId;
+const isBuildChain = chainId === buildChainId;
+const testnet = chainId === ROBINHOOD_TESTNET_CHAIN_ID;
+/// A per-network value wins; the single-network one applies only on the build's own network.
+const forThisNetwork = (testnetValue: string | undefined, mainnetValue: string | undefined, single: string | undefined) =>
+  (testnet ? testnetValue : mainnetValue) || (isBuildChain ? single : undefined);
+const endpoints = {
+  rpcUrl: forThisNetwork(raw.rpcUrlTestnet, raw.rpcUrlMainnet, raw.rpcUrl),
+  rpcProxyUrl: forThisNetwork(raw.rpcProxyUrlTestnet, raw.rpcProxyUrlMainnet, raw.rpcProxyUrl),
+  explorerUrl: forThisNetwork(raw.explorerUrlTestnet, raw.explorerUrlMainnet, raw.explorerUrl),
+  apiUrl: forThisNetwork(raw.apiUrlTestnet, raw.apiUrlMainnet, raw.apiUrl),
+};
 
 /// The recorded deployment for `chainId`, with any contract address set in the environment
 /// replacing the recorded one for that contract only.
@@ -89,7 +109,7 @@ function resolveAddresses(): ContractAddresses {
   };
   const resolved = { ...addressesForChain(chainId) };
   for (const [key, value] of Object.entries(overrides)) {
-    if (value) resolved[key as keyof ContractAddresses] = value as Address;
+    if (value && isBuildChain) resolved[key as keyof ContractAddresses] = value as Address;
   }
   return resolved;
 }
@@ -117,17 +137,17 @@ export const env = {
   /// No default RPC is baked in: Robinhood's own default had an expired TLS certificate
   /// (packages/contracts CHANGELOG). When unset, a reserved `.invalid` host stands in so the app
   /// still builds and renders, and every read fails visibly instead of silently using another RPC.
-  rpcUrl: raw.rpcUrl || "http://rpc-not-configured.invalid",
-  rpcConfigured: Boolean(raw.rpcUrl || raw.rpcProxyUrl),
+  rpcUrl: endpoints.rpcUrl || "http://rpc-not-configured.invalid",
+  rpcConfigured: Boolean(endpoints.rpcUrl || endpoints.rpcProxyUrl),
   /// Where the app's own reads go. `services/api` serves `/v1/rpc`, a caching proxy, so many
   /// visitors share one upstream call instead of each spending the provider's quota. Unset reads
   /// straight from `rpcUrl`. The wallet still gets `rpcUrl` (see `chain` in wagmi.ts), because it
   /// broadcasts transactions itself and the proxy refuses writes.
-  readRpcUrl: raw.rpcProxyUrl || raw.rpcUrl || "http://rpc-not-configured.invalid",
+  readRpcUrl: endpoints.rpcProxyUrl || endpoints.rpcUrl || "http://rpc-not-configured.invalid",
   /// The environment wins; otherwise the explorer recorded for the chain in `@hume/config` (mainnet has one,
   /// testnet has none recorded), so contract links work without extra setup.
-  explorerUrl: raw.explorerUrl || chains[chainId].blockExplorers?.default.url,
-  apiUrl: raw.apiUrl ? raw.apiUrl.replace(/\/+$/, "") : undefined,
+  explorerUrl: endpoints.explorerUrl || chains[chainId].blockExplorers?.default.url,
+  apiUrl: endpoints.apiUrl ? endpoints.apiUrl.replace(/\/+$/, "") : undefined,
   addresses: resolveAddresses(),
   /// Absent until a token exists for this chain.
   protocolToken: resolveProtocolToken(),
@@ -138,14 +158,6 @@ export const env = {
   /// The trader profile and copy flow routes (`/traders/...`). Off unless set to `true`; while on before
   /// Phase 14 they are labelled shells with no data. The leaderboard's Copy action stays disabled either way.
   copyTrading: raw.featureCopyTrading === "true",
-  /// The sample account's own numbers, in whole dollars of sample USDG. They belong to the simulation
-  /// only: the real caps live on chain and are read from there. A sample cap is deliberately larger
-  /// than the launch caps, which are sized to a treasury of cents and would refuse every sample order.
-  sample: {
-    startingUsd: wholeNumber(raw.sampleStartingUsd, 10_000, 100, 10_000_000),
-    maxPositionUsd: wholeNumber(raw.sampleMaxPositionUsd, 50_000, 100, 100_000_000),
-    topUpUsd: wholeNumber(raw.sampleTopUpUsd, 10_000, 100, 10_000_000),
-  },
   /// The lending pair (Phase 9). The environment wins; otherwise the deployment record's `creditPairTslaUsdg`,
   /// which the contracts lane adds to `@hume/config` once the credit stack is broadcast. Read through a loose
   /// record so this builds before and after that key exists. `undefined` until then: the page says so.
@@ -157,7 +169,7 @@ export const env = {
     maxLtvBps: wholeNumber(raw.creditExampleMaxLtvBps, 6_000, 1, 9_999),
     liquidationLtvBps: wholeNumber(raw.creditExampleLiquidationLtvBps, 7_000, 1, 9_999),
   },
-  creditPair: validAddress(raw.creditPair) ?? validAddress((resolveAddresses() as unknown as Record<string, string | undefined>).creditPairTslaUsdg),
+  creditPair: (isBuildChain ? validAddress(raw.creditPair) : undefined) ?? validAddress((resolveAddresses() as unknown as Record<string, string | undefined>).creditPairTslaUsdg),
   /// Option chain layout. The contract lists no strikes (a series is created on first use), so the
   /// terminal proposes a ladder around spot and a few upcoming expiries; these set its shape.
   options: {
@@ -165,8 +177,5 @@ export const env = {
     strikeRows: wholeNumber(raw.optionStrikeRows, 5, 1, 20),
     expiryDays: wholeNumberList(raw.optionExpiryDays, [7, 14, 30], 1, 365),
     expiryHourUtc: wholeNumber(raw.optionExpiryHourUtc, 20, 0, 23),
-    /// The flat volatility sample mode prices options at. It mirrors the pricing service's `DEFAULT_IV_BPS`,
-    /// which is what that service quotes while it has too little price history to measure one.
-    sampleIvBps: wholeNumber(raw.sampleOptionIvBps, 5_000, 100, 50_000),
   },
 } as const;

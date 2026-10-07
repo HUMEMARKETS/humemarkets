@@ -1,13 +1,12 @@
 "use client";
 
-import { Button, SampleBadge, cn, textLink } from "@hume/ui";
+import { Button, cn, textLink } from "@hume/ui";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useSettlementDecimals } from "@/hooks/queries";
 import { useTriggerFills } from "@/hooks/useTriggerFills";
 import { fillTitle, summarize, type Fill, type FillKind } from "@/lib/fills";
 import { fmtPrice } from "@/lib/format";
-import { isSampleHash } from "@/lib/sampleEngine";
 import { isMuted, playFillSound, setMuted } from "@/lib/sound";
 import { useFillStore, type FillAlert } from "@/stores/fills";
 
@@ -176,12 +175,6 @@ function AlertCard({ alert }: { alert: FillAlert }) {
   return (
     <div className={cn("pointer-events-auto relative rounded-lg border bg-raised p-4", cardTone[kind])}>
       {kind === "TAKE_PROFIT" ? <Burst /> : null}
-      {alert.type === "fill" && isSampleHash(alert.fill.txHash) ? (
-        <div className="mb-2 flex items-center gap-2">
-          <SampleBadge />
-          <span className="text-xs text-muted">Simulated. Not a real position.</span>
-        </div>
-      ) : null}
       {alert.type === "fill" ? <FillBody fill={alert.fill} decimals={decimals} /> : <SummaryBody fills={alert.fills} decimals={decimals} />}
       <div className="mt-3 flex items-center justify-between gap-3">
         <Link href="/activity" className={cn("text-xs", textLink)} onClick={() => dismiss(alert.id)}>

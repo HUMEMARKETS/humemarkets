@@ -8,7 +8,7 @@ import { useConnectDialog } from "@/stores/connectDialog";
 import { useModeStore } from "@/stores/mode";
 
 /// One button for every place that needs a wallet. The first time, it opens the connect explainer:
-/// what a wallet does here, what does not carry over from the sample, the caps and the unaudited
+/// what a wallet does here, the caps and the unaudited
 /// notice. After that, with one wallet available it connects straight away; with several it opens a
 /// list; when connecting fails it says why.
 export function ConnectButton({

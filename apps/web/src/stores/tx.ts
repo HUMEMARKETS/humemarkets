@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { SampleNoPriceError, SampleRefusedError, SampleUnsupportedError } from "@/lib/sampleEngine";
 import { HumeContractError, UserRejectedError, type TxEvent, type TxStatus } from "@hume/sdk";
 import { revertReason } from "@/lib/revertReasons";
 
@@ -63,8 +62,5 @@ export const useTxStore = create<TxState>((set) => ({
 export function errorMessage(error: unknown): string {
   if (error instanceof UserRejectedError) return "You declined the request in your wallet. Nothing was sent.";
   if (error instanceof HumeContractError) return revertReason(error.errorName);
-  if (error instanceof SampleNoPriceError) return "There is no price for this market yet, so a sample order cannot fill. Try again once it has one.";
-  if (error instanceof SampleRefusedError) return error.message;
-  if (error instanceof SampleUnsupportedError) return "Sample mode does not simulate that. Everything else works the same as with a wallet.";
   return "The transaction did not go through. Nothing was lost. Try again, and tell us if it keeps happening.";
 }

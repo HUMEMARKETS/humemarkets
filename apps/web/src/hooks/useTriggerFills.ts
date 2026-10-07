@@ -38,7 +38,7 @@ export function useTriggerFills(): void {
   const push = useFillStore((state) => state.push);
 
   useEffect(() => {
-    // A connected wallet's history is not the sample's: while the sample is on, its own runtime raises its alerts.
+    // Alerts come from the connected wallet's own history.
     if (mode !== "connected" || !address || !env.apiUrl) return;
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;

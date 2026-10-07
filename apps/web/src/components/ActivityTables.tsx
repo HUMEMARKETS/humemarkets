@@ -1,11 +1,9 @@
 "use client";
 
-import { Num, SampleBadge, Skeleton, textLink } from "@hume/ui";
+import { Num, Skeleton, textLink } from "@hume/ui";
 import type { FundingPayment, HistoryEvent } from "@hume/sdk";
-import { useAccountMode } from "@/hooks/useAccountMode";
 import { EmptyRow } from "./EmptyRow";
 import { PnlCardLink } from "./PnlCardLink";
-import { isSampleHash } from "@/lib/sampleEngine";
 import { useFunding, useHistory, useSettlementDecimals } from "@/hooks/queries";
 import { env } from "@/lib/env";
 import { closeLabel, FillIndex } from "@/lib/fills";
@@ -26,14 +24,6 @@ function txLink(hash: string) {
 }
 
 function TxCell({ hash }: { hash: string }) {
-  // A sample entry has no transaction: it says so instead of showing a hash nobody can look up.
-  if (isSampleHash(hash)) {
-    return (
-      <td className={cell}>
-        <SampleBadge label="Sample" />
-      </td>
-    );
-  }
   const link = txLink(hash);
   return (
     <td className={cell}>
@@ -65,11 +55,9 @@ function RowsSkeleton() {
 export function FundingTable() {
   const { data, isPending, isError } = useFunding();
   const { data: decimals = 6 } = useSettlementDecimals();
-  const sample = useAccountMode() === "sample";
-  if (!env.apiUrl && !sample) return needsApi("Funding payments");
+  if (!env.apiUrl) return needsApi("Funding payments");
   if (isError) return <p className="p-3 text-down">The funding history is not available right now.</p>;
   if (isPending) return <RowsSkeleton />;
-  if (sample) return <p className="p-3 text-muted">Funding is shown on the ticket but never charged to a sample position, so there are no payments to list.</p>;
   if (data.length === 0) return <EmptyRow action={{ href: "/perpetuals", label: "Open a perpetual" }}>No funding payments yet. They appear once a position is open across a funding interval.</EmptyRow>;
 
   const total = data.reduce((sum: bigint, row: FundingPayment) => sum + row.amount, 0n);
@@ -149,14 +137,13 @@ function details(event: HistoryEvent, decimals: number): string {
 export function HistoryTable() {
   const { data, isPending, isError } = useHistory();
   const { data: decimals = 6 } = useSettlementDecimals();
-  const sample = useAccountMode() === "sample";
-  if (!env.apiUrl && !sample) return needsApi("Transaction history");
+  if (!env.apiUrl) return needsApi("Transaction history");
   if (isError) return <p className="p-3 text-down">The transaction history is not available right now.</p>;
   if (isPending) return <RowsSkeleton />;
   if (data.length === 0) {
     return (
-      <EmptyRow action={{ href: "/perpetuals", label: sample ? "Open a sample position" : "Open a perpetual" }}>
-        {sample ? "No sample activity yet. Open a sample position and it appears here." : "No activity yet for this wallet. Your trades appear here once you open a position."}
+      <EmptyRow action={{ href: "/perpetuals", label: "Open a perpetual" }}>
+        {"No activity yet for this wallet. Your trades appear here once you open a position."}
       </EmptyRow>
     );
   }

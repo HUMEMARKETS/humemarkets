@@ -43,8 +43,6 @@ const REFRESH_MS = 10_000;
 const MIN_QUOTE_SECONDS = 5n;
 const MAX_CONTRACTS = 1_000_000n;
 // Option prices on this screen are real, from the pricing service. Opening one is not simulated: it needs a
-// signed quote tied to a chain position, so a sample purchase would be a pretend one. Say so.
-const SAMPLE_REFUSAL = "Buying an option needs a connected wallet. The prices here are real, and perpetuals work in sample mode.";
 
 const codeOf = (selection: OptionSelection) =>
   `${selection.symbol}-${expiryCode(selection.expiry)}-${strikeText(selection.strike)}-${selection.type === "CALL" ? "C" : "P"}`;
@@ -63,7 +61,6 @@ function previewArgs(selection: OptionSelection, contracts: bigint, user?: `0x${
 export function OptionTicket() {
   const selection = useOptionOrder((state) => state.selection);
   const { address, isConnected, chainId } = useAccount();
-  const sample = useAccountMode() === "sample";
   const { switchChain } = useSwitchChain();
   const wallet = useWalletHume();
   const run = useTx();
@@ -101,7 +98,7 @@ export function OptionTicket() {
   const onRightChain = isConnected && chainId === chain.id;
   const problem = paused
     ? paused
-    : sample || !onRightChain || !p
+    : !onRightChain || !p
     ? undefined
     : !p.authorization
       ? "Options cannot be opened right now: the pricing service is not signing prices. Nothing is wrong with your funds. Try again later."
@@ -118,7 +115,7 @@ export function OptionTicket() {
       ? "Option prices are not available right now. Try again in a moment."
       : !valid
         ? "Enter a whole number of contracts."
-        : !onRightChain && !sample
+        : !onRightChain
           ? undefined
           : !settled || !p
             ? "Calculating…"
@@ -126,7 +123,7 @@ export function OptionTicket() {
   const blocker = problem ?? waiting;
 
   async function submit() {
-    if (sample || paused || !wallet || !selection || !p?.authorization || !address) return;
+    if (paused || !wallet || !selection || !p?.authorization || !address) return;
     setSubmitting(true);
     setNotice(undefined);
 
@@ -182,17 +179,6 @@ export function OptionTicket() {
       </Button>
       <p className="text-xs leading-snug text-muted">This market still shows prices, but it is not taking new orders right now.</p>
     </>
-  ) : sample ? (
-    guided ? (
-      reviewButton
-    ) : (
-      <>
-        <Button variant="secondary" className="w-full" disabled>
-          Options are not in sample mode
-        </Button>
-        <p className="text-xs leading-snug text-muted">{SAMPLE_REFUSAL}</p>
-      </>
-    )
   ) : !isConnected ? (
     <ConnectButton className="w-full" />
   ) : chainId !== chain.id ? (
@@ -212,17 +198,17 @@ export function OptionTicket() {
     </Button>
   );
 
-  if (guided && reviewing && review?.rows && selection && !paused && (sample || (onRightChain && wallet))) {
+  if (guided && reviewing && review?.rows && selection && !paused && (onRightChain && wallet)) {
     const label = `Buy ${selection.type === "CALL" ? "call" : "put"}`;
     return (
-      <Panel title="Review order" sample={sample} actions={<TicketModeToggle />} className="h-full overflow-y-auto">
+      <Panel title="Review order" actions={<TicketModeToggle />} className="h-full overflow-y-auto">
         <div className="flex flex-col gap-3 p-3">
           <ReviewStep
             title={`${label}: ${codeOf(selection)}`}
             rows={review.rows}
             worstCase={review.worstCase}
             note={notice}
-            blocked={sample ? SAMPLE_REFUSAL : (problem ?? (preview.isPlaceholderData ? "Updating the figures…" : undefined))}
+            blocked={problem ?? (preview.isPlaceholderData ? "Updating the figures…" : undefined)}
             busy={submitting}
             confirmLabel={`Confirm: ${label.toLowerCase()}`}
             confirmVariant={selection.type === "PUT" ? "down" : "up"}
@@ -235,7 +221,7 @@ export function OptionTicket() {
   }
 
   return (
-    <Panel title="Option order" sample={sample} actions={<TicketModeToggle />} className="h-full overflow-y-auto">
+    <Panel title="Option order" actions={<TicketModeToggle />} className="h-full overflow-y-auto">
       <VaultControls />
 
       <div className="flex flex-col gap-3 p-3">

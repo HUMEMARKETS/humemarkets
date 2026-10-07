@@ -7,16 +7,10 @@ import type { CandleInterval, Leaderboard, LeaderboardMetric, OpenInterestRange,
 import type { Address } from "@hume/types";
 import { useAccountMode } from "@/hooks/useAccountMode";
 import { humeRead } from "@/lib/hume";
-import { sampleBoard } from "@/lib/leaderboardFixture";
-import { priceSetWithFallback, type PriceSource } from "@/lib/samplePrices";
-import { toOpenOrders, toVaultBalances, type SampleAccount } from "@/lib/sampleEngine";
-import { sampleHistory, samplePositions, sampleSummary } from "@/lib/sampleViews";
-import { useSampleStore } from "@/stores/sample";
 import { symbolOf } from "@/lib/market";
 import { env } from "@/lib/env";
 import { readHistoryAfter } from "@/lib/history";
 import { seriesKey } from "@/lib/options";
-import { sampleOptionQuote } from "@/lib/sampleOptions";
 
 // Fans out per market (overviewQuery, listedExpiriesQuery) across every mounted component — a
 // rate-limited/free-tier RPC provider hits 429s well before this many requests a second, so this
@@ -46,33 +40,16 @@ export function usePerpMarketConfig(symbol: string) {
   return data?.find((market) => symbolOf(market.marketId) === symbol);
 }
 
-/// `PerpMarketInfo` plus where its prices came from, so a screen can say "last close" instead of
-/// presenting a carried-over price as live.
-export type PerpMarketView = PerpMarketInfo & { priceSource: PriceSource };
-
 /// Config, risk parameters, funding and the three live prices for one market.
-///
-/// In sample mode a shut equity session does not blank the market: `perps.get` reads the oracle, which
-/// reverts outside the session, so the sample falls back to the API's last close and says so. A real
-/// trade on a shut market is refused by the chain, so the connected path is unchanged.
-export const perpMarketQuery = (symbol: string, sample = false) => ({
-  queryKey: sample ? ["perp-market", symbol, "sample"] : ["perp-market", symbol],
-  queryFn: async (): Promise<PerpMarketView> => {
-    if (!sample) return { ...(await humeRead.perps.get(symbol)), priceSource: "live" };
-    const [market, risk, funding, prices] = await Promise.all([
-      humeRead.markets.get(symbol),
-      humeRead.risk.get(symbol),
-      humeRead.funding.get(symbol),
-      priceSetWithFallback(symbol),
-    ]);
-    return { market, risk, funding, indexPrice: prices.index.price, markPrice: prices.mark.price, lastPrice: prices.last.price, priceSource: prices.source };
-  },
+export const perpMarketQuery = (symbol: string) => ({
+  queryKey: ["perp-market", symbol],
+  queryFn: () => humeRead.perps.get(symbol),
   enabled: Boolean(symbol),
   refetchInterval: TICK_MS,
 });
 
 export function usePerpMarket(symbol: string) {
-  return useQuery(perpMarketQuery(symbol, useAccountMode() === "sample"));
+  return useQuery(perpMarketQuery(symbol));
 }
 
 export function useSettlementDecimals() {
@@ -83,24 +60,7 @@ export function useSettlementDecimals() {
   });
 }
 
-/// The sample account as a query. It has the shape of every chain read (`isPending`, `data`, `error`), so
-/// a component reads the sample and the chain through the same code. The key carries the store's
-/// version, so any change to the account refetches this at once; the previous value stays on screen
-/// meanwhile, so a balance never flashes a skeleton when a fill lands.
-function useSampleRead<T>(name: string, read: (account: SampleAccount) => T | Promise<T>, options: { enabled?: boolean; refetchInterval?: number } = {}) {
-  const account = useSampleStore((state) => state.account);
-  const version = useSampleStore((state) => state.version);
-  const sample = useAccountMode() === "sample";
-  return useQuery({
-    queryKey: ["sample", name, version],
-    queryFn: () => read(account as SampleAccount),
-    enabled: sample && Boolean(account) && (options.enabled ?? true),
-    refetchInterval: options.refetchInterval,
-    placeholderData: keepPreviousData,
-  });
-}
-
-/// A live read of the connected wallet, switched off in sample mode and while no wallet is connected.
+/// A live read of the connected wallet, switched off while no wallet is connected.
 function useWalletEnabled() {
   const { address } = useAccount();
   const mode = useAccountMode();
@@ -115,8 +75,7 @@ export function useVaultBalances() {
     enabled,
     refetchInterval: 8_000,
   });
-  const sample = useSampleRead("vault-balances", toVaultBalances);
-  return useAccountMode() === "sample" ? sample : live;
+  return live;
 }
 
 export function useWalletTokenBalance() {
@@ -127,9 +86,7 @@ export function useWalletTokenBalance() {
     enabled,
     refetchInterval: 8_000,
   });
-  // The sample has no wallet: its USDG is handed out into the vault directly.
-  const sample = useSampleRead("wallet-token-balance", () => 0n);
-  return useAccountMode() === "sample" ? sample : live;
+  return live;
 }
 
 export function usePositions() {
@@ -140,8 +97,7 @@ export function usePositions() {
     enabled,
     refetchInterval: 6_000,
   });
-  const sample = useSampleRead("positions", samplePositions);
-  return useAccountMode() === "sample" ? sample : live;
+  return live;
 }
 
 /// Every market on the registry, perps and options alike.
@@ -165,11 +121,10 @@ export function useMarketStats() {
 }
 
 /// What the Markets page needs per market from the chain. Each read is settled separately so one
-/// market with, say, no funding configured still shows its price. Sample mode prices a shut market at
-/// its last close rather than leaving every row blank.
-async function fetchMarketOverview(symbol: string, sample = false) {
+/// market with, say, no funding configured still shows its price.
+async function fetchMarketOverview(symbol: string) {
   const [prices, funding, openInterest] = await Promise.allSettled([
-    sample ? (priceSetWithFallback(symbol) as Promise<PriceSet>) : humeRead.prices.get(symbol),
+    humeRead.prices.get(symbol),
     humeRead.funding.get(symbol),
     humeRead.risk.openInterest(symbol),
   ]);
@@ -177,17 +132,16 @@ async function fetchMarketOverview(symbol: string, sample = false) {
   return { prices: value(prices), funding: value(funding), openInterest: value(openInterest) };
 }
 
-export const overviewQuery = (symbol: string, sample = false) => ({
-  queryKey: sample ? ["market-overview", symbol, "sample"] : ["market-overview", symbol],
-  queryFn: () => fetchMarketOverview(symbol, sample),
+export const overviewQuery = (symbol: string) => ({
+  queryKey: ["market-overview", symbol],
+  queryFn: () => fetchMarketOverview(symbol),
   refetchInterval: TICK_MS,
 });
 
 /// The overview for several markets at once, in the order given, so a table can sort by it. Each
 /// entry is `overviewQuery(symbol)`, so the cache is shared with anything else that reads it.
 export function useMarketOverviews(symbols: string[]) {
-  const sample = useAccountMode() === "sample";
-  return useQueries({ queries: symbols.map((symbol) => overviewQuery(symbol, sample)) });
+  return useQueries({ queries: symbols.map((symbol) => overviewQuery(symbol)) });
 }
 
 export function usePortfolioSummary() {
@@ -198,8 +152,7 @@ export function usePortfolioSummary() {
     enabled,
     refetchInterval: 6_000,
   });
-  const sample = useSampleRead("portfolio-summary", sampleSummary, { refetchInterval: 6_000 });
-  return useAccountMode() === "sample" ? sample : live;
+  return live;
 }
 
 export function useFunding() {
@@ -211,9 +164,7 @@ export function useFunding() {
     refetchInterval: 30_000,
     retry: false,
   });
-  // Funding is shown on the ticket but never charged to a sample position.
-  const sample = useSampleRead("funding", () => [] as Awaited<ReturnType<typeof humeRead.portfolio.funding>>);
-  return useAccountMode() === "sample" ? sample : live;
+  return live;
 }
 
 export function useHistory() {
@@ -225,8 +176,7 @@ export function useHistory() {
     refetchInterval: 30_000,
     retry: false,
   });
-  const sample = useSampleRead("history", sampleHistory);
-  return useAccountMode() === "sample" ? sample : live;
+  return live;
 }
 
 export const priceHistoryQuery = (symbol: string, range: "1h" | "6h" | "24h" | "7d") => ({
@@ -254,10 +204,9 @@ export function useOptionUnderlyings() {
 
 /// Index price, the spot the strike ladder is centred on.
 export function useIndexPrice(symbol: string) {
-  const sample = useAccountMode() === "sample";
   return useQuery({
-    queryKey: sample ? ["index-price", symbol, "sample"] : ["index-price", symbol],
-    queryFn: async () => (sample ? (await priceSetWithFallback(symbol)).index.price : (await humeRead.prices.get(symbol)).index.price),
+    queryKey: ["index-price", symbol],
+    queryFn: async () => (await humeRead.prices.get(symbol)).index.price,
     enabled: Boolean(symbol),
     refetchInterval: TICK_MS,
   });
@@ -277,42 +226,17 @@ export function useListedExpiries(symbol: string) {
 /// One display-only quote (premium, IV, Greeks) per strike and side for one expiry. These are
 /// unsigned analytics from the pricing service, never the price an order is charged. The order
 /// ticket asks for a signed quote separately.
-///
-/// Sample mode prices each quote here from the index price instead. The pricing service needs
-/// `services/api`, its own process and a live oracle, and a shut equity session makes the oracle
-/// revert, so asking it would leave the chain and the strategy builder empty. The index price is the
-/// same sample-aware read the perps screens use, so a shut session prices at its last close.
 export function useOptionChain(symbol: string, expiry: bigint | undefined, strikes: bigint[]) {
-  const sample = useAccountMode() === "sample";
-  const { data: spot } = useIndexPrice(symbol);
   const sides = ["CALL", "PUT"] as const;
   const results = useQueries({
     queries: strikes.flatMap((strike) =>
-      sides.map((type) =>
-        sample
-          ? {
-              queryKey: ["option-chain-quote", symbol, String(expiry), strike.toString(), type, "sample", String(spot)],
-              queryFn: async () =>
-                sampleOptionQuote({
-                  spot: Number(formatUnits(spot!, 18)),
-                  strike: Number(formatUnits(strike, 18)),
-                  type,
-                  expiry: expiry!,
-                  now: Date.now(),
-                  volatility: env.options.sampleIvBps / 10_000,
-                }),
-              enabled: Boolean(symbol && expiry && spot),
-              placeholderData: keepPreviousData,
-              retry: false,
-            }
-          : {
-              queryKey: ["option-chain-quote", symbol, String(expiry), strike.toString(), type],
-              queryFn: () => humeRead.options.quote({ underlying: symbol, type, strike, expiry: expiry!, contracts: 1 }),
-              enabled: Boolean(env.apiUrl && symbol && expiry),
-              refetchInterval: 15_000,
-              retry: false,
-            },
-      ),
+      sides.map((type) => ({
+        queryKey: ["option-chain-quote", symbol, String(expiry), strike.toString(), type],
+        queryFn: () => humeRead.options.quote({ underlying: symbol, type, strike, expiry: expiry!, contracts: 1 }),
+        enabled: Boolean(env.apiUrl && symbol && expiry),
+        refetchInterval: 15_000,
+        retry: false,
+      })),
     ),
   });
   return strikes.map((strike, index) => ({ strike, call: results[index * 2]!, put: results[index * 2 + 1]! }));
@@ -389,8 +313,7 @@ export function useOrders() {
     enabled: enabled && env.limitOrders,
     refetchInterval: 8_000,
   });
-  const sample = useSampleRead("orders", (account) => toOpenOrders(account, "0x0000000000000000000000000000000000000000"), { enabled: env.limitOrders });
-  return useAccountMode() === "sample" ? sample : live;
+  return live;
 }
 
 /// Whether the deployment has stop-loss and take-profit orders. A deployment made before `[1.3.0]`
@@ -402,9 +325,7 @@ export function useTriggerSupport() {
     enabled: env.limitOrders,
     staleTime: Number.POSITIVE_INFINITY,
   });
-  // Stop-loss and take-profit are not simulated, so sample mode reports a deployment without them and
-  // the controls stay out of sight rather than failing when pressed.
-  return useAccountMode() === "sample" ? { ...live, data: false } : live;
+  return live;
 }
 
 /// The connected wallet's stop-loss and take-profit orders, oldest first, read from the chain.
@@ -433,18 +354,11 @@ export function useCrossPositions() {
   });
 }
 
-/// The leaderboard. In sample mode it asks the API for its simulator board and, when the API has none
-/// (not deployed yet, or unreachable), falls back to the board in the repo, so the page is never blank. A
-/// real board never falls back: if it cannot be read the page says so.
+/// The leaderboard, as the indexer ranks it. If it cannot be read the page says so.
 export function useLeaderboard(metric: LeaderboardMetric) {
-  const sample = useAccountMode() === "sample";
   return useQuery({
-    queryKey: ["leaderboard", metric, sample ? "sample" : "live"],
-    queryFn: async (): Promise<Leaderboard> => {
-      if (!sample) return humeRead.leaderboard.board({ metric });
-      const board = await humeRead.leaderboard.board({ metric, sample: true }).catch(() => undefined);
-      return board && board.total > 0 ? board : sampleBoard(metric);
-    },
+    queryKey: ["leaderboard", metric],
+    queryFn: (): Promise<Leaderboard> => humeRead.leaderboard.board({ metric }),
     refetchInterval: 60_000,
     retry: false,
   });
@@ -461,7 +375,7 @@ export function useCreditMarket() {
   });
 }
 
-/// The connected wallet's position in the lending pair. Sample mode has no lending account, so it is off there.
+/// The connected wallet's position in the lending pair.
 export function useCreditPosition() {
   const { address, enabled } = useWalletEnabled();
   return useQuery({
@@ -473,7 +387,7 @@ export function useCreditPosition() {
 }
 
 /// The collateral's USD price for the health calculator: the pair's own oracle when there is a pair, otherwise
-/// the terminal's index price for the same symbol (the last close while its session is shut, in sample mode).
+/// the terminal's index price for the same symbol.
 export function useCreditCollateralPrice(oracle?: Address, collateralToken?: Address) {
   const fromTerminal = useIndexPrice(env.creditSymbol);
   const fromPair = useQuery({

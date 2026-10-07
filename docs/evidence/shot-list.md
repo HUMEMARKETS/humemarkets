@@ -1,7 +1,7 @@
 # Shot list: nine clips for the testnet demo
 
 Site: **https://humemarkets.vercel.app** (Vercel production follows the `testnet` branch). Desktop 1440 px, plus
-375 px for clips 2 and 6. This machine is X11, so record with `simplescreenrecorder` or
+375 px for clips 2 and 6. There is no sample mode: the header switches between **Robinhood Chain Testnet** and **Robinhood Chain Mainnet**, and every trade needs a wallet. This machine is X11, so record with `simplescreenrecorder` or
 `ffmpeg -f x11grab`. Keep the files out of git.
 
 **Say this at the start of every clip, and put it in every description:** "This is testnet, with mock prices and
@@ -34,7 +34,7 @@ No China clip and no copy-trading clip: both were cut, and filming them would sh
 
 | # | Clip | Open | Do | The clip must show |
 | --- | --- | --- | --- | --- |
-| 1 | **Sample mode** | A fresh browser profile with no wallet extension, `/` | Read the landing prices. Header **Trade → Perpetuals**. **Long**, collateral `100`, **Review order**, read the liquidation line, **Confirm**. **Portfolio → Close → Confirm close**. | The `SAMPLE DATA` banner and badges throughout; the liquidation price before confirming; the PNL after closing. |
+| 1 | **Network switch, no wallet** | A fresh browser profile with no wallet extension, `/` | Read the landing prices. Open **Markets**, then `/markets?group=crypto`. Open the network menu in the header: **Robinhood Chain Testnet** is selected; switch to **Robinhood Chain Mainnet** and back. Open **Trade → Perpetuals** and show that trading asks you to connect a wallet. | The header names the network; public data (markets, prices, the option chain) loads with no wallet; anything of yours says to connect. Mainnet is not live yet, so say so if you show it. |
 | 2 | **Perps** (also at 375 px) | `/perpetuals`, wallet connected on testnet | **Connect wallet**. Deposit mUSDC (approve, then deposit). **Long**, collateral `100`, leverage 3x, **Review order**, **Confirm**, sign. Let the price move. **Portfolio → Close**. | The review step with its liquidation price; the position's PNL moving against a moving price; the explorer link on the confirmed toast. |
 | 3 | **Options** | `/options` | Pick **NVDA**, an expiry, read bid, ask and Greeks (toggle **Greeks**). Pick a call row, **Review**, **Confirm**, sign. Open it in **Portfolio → Options**. | The chain with bid and ask and Greeks; the max-loss line in the review; the open option. Expiries are 7, 14 and 30 days out, so settlement at expiry cannot be filmed in one session: say so, or film it on the day it lapses. |
 | 4 | **Liquidation** | `/perpetuals`, your wallet | Open a **Long NVDA** at **10x** (collateral `100`). In a terminal: `pnpm --filter @hume/simulator nudge NVDA -6`. Watch the mark price fall for about 90 seconds. | The position disappearing, the "liquidated" alert on screen, and the entry in **Activity**. This is the clip that proves the risk engine works; it cannot be shown safely on mainnet. |

@@ -4,9 +4,7 @@ import { Button, cn, menuItem } from "@hume/ui";
 import Link from "next/link";
 import { useCallback, useRef, useState } from "react";
 import { useAccount, useDisconnect, useSwitchChain } from "wagmi";
-import { useAccountMode } from "@/hooks/useAccountMode";
 import { useDismiss } from "@/hooks/useDismiss";
-import { useModeStore } from "@/stores/mode";
 import { shortHash } from "@/lib/format";
 import { humeRead } from "@/lib/hume";
 import { chain } from "@/lib/wagmi";
@@ -30,8 +28,6 @@ function explorerAddressUrl(address: `0x${string}`): string | undefined {
 /// upward (`menuAbove`), because it sits at the bottom of the sheet.
 export function WalletButton({ className = bubble, block = false, menuAbove = false, variant = "primary" }: { className?: string; block?: boolean; menuAbove?: boolean; variant?: "primary" | "secondary" }) {
   const { address, isConnected, chainId } = useAccount();
-  const mode = useAccountMode();
-  const setPreference = useModeStore((state) => state.setPreference);
   const { disconnect } = useDisconnect();
   const { switchChain, isPending: switching } = useSwitchChain();
   const [open, setOpen] = useState(false);
@@ -41,15 +37,6 @@ export function WalletButton({ className = bubble, block = false, menuAbove = fa
   useDismiss(ref, open, close);
 
   if (!isConnected || !address) return <ConnectButton variant={variant} size="sm" className={className} block={block} menuAbove={menuAbove} />;
-
-  // A wallet is connected but the person is on the sample account: say what the button does.
-  if (mode === "sample") {
-    return (
-      <Button variant="primary" size="sm" className={cn(className, block && "w-full")} onClick={() => setPreference("live")}>
-        Use wallet
-      </Button>
-    );
-  }
 
   if (chainId !== chain.id) {
     return (

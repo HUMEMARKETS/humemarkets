@@ -10,8 +10,6 @@ import { useWalletHume } from "@/hooks/useHume";
 import { useTx } from "@/hooks/useTx";
 import { env } from "@/lib/env";
 import { fmtUsd } from "@/lib/format";
-import { topUpSample } from "@/lib/sampleClient";
-import { useSampleStore } from "@/stores/sample";
 
 type Mode = "deposit" | "withdraw" | undefined;
 
@@ -20,11 +18,8 @@ type Mode = "deposit" | "withdraw" | undefined;
 export function VaultControls() {
   const { address, isConnected: walletConnected } = useAccount();
   const accountMode = useAccountMode();
-  const sample = accountMode === "sample";
-  /// Whether there is an account to show: the sample always, a wallet only once connected.
-  const isConnected = sample || (accountMode === "connected" && walletConnected);
-  const resetSample = useSampleStore((state) => state.reset);
-  const [confirmReset, setConfirmReset] = useState(false);
+  /// Whether there is an account to show: only once a wallet is connected.
+  const isConnected = accountMode === "connected" && walletConnected;
   const wallet = useWalletHume();
   const run = useTx();
   const { data: decimals = 6 } = useSettlementDecimals();
@@ -84,34 +79,10 @@ export function VaultControls() {
         <div className="px-3 pb-3">
           <dl>
             <Row label="Locked margin">{fmtUsd(balances?.lockedMargin, decimals)}</Row>
-            {sample ? null : <Row label="Wallet balance">{fmtUsd(walletBalance, decimals)}</Row>}
+            <Row label="Wallet balance">{fmtUsd(walletBalance, decimals)}</Row>
           </dl>
 
-          {sample ? (
-            <div className="mt-3 flex flex-col gap-2">
-              <p className="text-xs leading-snug text-muted">Sample USDG is simulated and lives on this device only. It cannot be withdrawn and does not carry over to a wallet.</p>
-              <div className="flex gap-2">
-                <Button variant="primary" size="sm" className="flex-1" onClick={() => void topUpSample()}>
-                  Add {env.sample.topUpUsd.toLocaleString("en-US")} sample USDG
-                </Button>
-                {confirmReset ? (
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      resetSample();
-                      setConfirmReset(false);
-                    }}
-                  >
-                    Confirm reset
-                  </Button>
-                ) : (
-                  <Button size="sm" onClick={() => setConfirmReset(true)}>
-                    Reset sample account
-                  </Button>
-                )}
-              </div>
-            </div>
-          ) : mode ? (
+          {mode ? (
             <div className="mt-3 flex flex-col gap-2">
               <TextField
                 label={mode === "deposit" ? "Deposit amount" : "Withdraw amount"}

@@ -12,7 +12,7 @@ import { chip, cn, interactive, menuItem } from "@hume/ui";
 import { ArrowIcon } from "./ArrowIcon";
 import { Logo } from "./Logo";
 import { MenuIcon } from "./MenuIcon";
-import { ModeMenu } from "./ModeMenu";
+import { NetworkMenu } from "./NetworkMenu";
 import { ThemeToggle } from "./ThemeToggle";
 import { WalletButton } from "./WalletButton";
 import { XIcon } from "./XIcon";
@@ -153,7 +153,7 @@ export function Header() {
               </Link>
             </nav>
           ) : null}
-          <ModeMenu />
+          <NetworkMenu />
           {/* Below xl the bar has no room beside the logo; the toggle moves into the menu sheet. */}
           <ThemeToggle className="max-xl:hidden" />
           <a

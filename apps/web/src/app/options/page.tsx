@@ -1,4 +1,3 @@
-import { SampleBanner } from "@/components/SampleBanner";
 import { OptionChain } from "@/components/OptionChain";
 import { OptionPositions } from "@/components/OptionPositions";
 import { OptionTradeSheet } from "@/components/OptionTradeSheet";
@@ -9,7 +8,6 @@ import { OptionTradeSheet } from "@/components/OptionTradeSheet";
 export default function OptionsTerminal() {
   return (
     <div className="flex flex-col lg:h-full">
-      <SampleBanner className="mx-1.5 mt-1.5" />
       <div className="grid grid-cols-1 gap-1.5 p-1.5 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex min-h-0 flex-col gap-1.5 lg:overflow-y-auto">
           <OptionChain />

@@ -13,7 +13,6 @@ import { fmt, fmtBps, fmtPrice, fmtSigned, fmtUsd, signTone } from "@/lib/format
 import { humeRead } from "@/lib/hume";
 import { perpLabel, symbolOf, tradeBlocker } from "@/lib/market";
 import { perpCloseReview } from "@/lib/review";
-import { replayLiquidation } from "@/lib/sampleClient";
 import { useFillStore } from "@/stores/fills";
 import { AdjustPosition } from "./AdjustPosition";
 import { PnlCardLink } from "./PnlCardLink";
@@ -28,9 +27,6 @@ function PositionRow({ position, decimals }: { position: PerpPosition; decimals:
   const { data: market } = usePerpMarket(symbol);
   const wallet = useWalletHume();
   const run = useTx();
-  const sample = useAccountMode() === "sample";
-  const pushFill = useFillStore((state) => state.push);
-  const [replaying, setReplaying] = useState(false);
 
   const mark = market?.markPrice;
   const pnl = mark === undefined ? undefined : margin.unrealizedPnl(position.isLong, position.entryPrice, mark, position.size);
@@ -47,7 +43,7 @@ function PositionRow({ position, decimals }: { position: PerpPosition; decimals:
   const [closing, setClosing] = useState(false);
   const [busy, setBusy] = useState(false);
   const paused = tradeBlocker(usePerpMarketConfig(symbol)?.active);
-  // The close fee is the market's taker fee, read from FeeManager for the sample as well, as its engine does.
+  // The close fee is the market's taker fee, read from FeeManager.
   const { data: fees } = useQuery({ queryKey: ["fees", symbol], queryFn: () => humeRead.fees.get(symbol), enabled: closing, staleTime: 60_000 });
   const review =
     closing && mark !== undefined && fees
@@ -99,24 +95,6 @@ function PositionRow({ position, decimals }: { position: PerpPosition; decimals:
                 </Button>
               </>
             ) : null}
-            {sample ? (
-              <>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  disabled={replaying}
-                  title="A real liquidation needs a large price move. This replays the rule on this position with the price at its liquidation level, so you can see what happens."
-                  onClick={() => {
-                    setReplaying(true);
-                    void replayLiquidation(position.positionId)
-                      .then((fill) => pushFill([fill], false))
-                      .finally(() => setReplaying(false));
-                  }}
-                >
-                  Test liquidation
-                </Button>
-              </>
-            ) : null}
             <Button size="sm" disabled={!wallet} aria-expanded={closing} onClick={() => setClosing((open) => !open)}>
               Close
             </Button>
@@ -132,7 +110,6 @@ function PositionRow({ position, decimals }: { position: PerpPosition; decimals:
                 className="max-w-md"
                 rows={review.rows}
                 worstCase={review.worstCase}
-                note={sample ? "Sample close: it fills at the real index price, with no slippage. Nothing is sent to a wallet." : undefined}
                 busy={busy}
                 confirmLabel="Confirm close"
                 onBack={() => setClosing(false)}

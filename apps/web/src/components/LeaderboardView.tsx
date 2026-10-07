@@ -10,8 +10,7 @@ import { useAccountMode } from "@/hooks/useAccountMode";
 import { useOnline } from "@/hooks/useOnline";
 import { env } from "@/lib/env";
 import { fmtSigned, fmtUsd, shortHash, signTone } from "@/lib/format";
-import { fmtSignedBps, rankEntries, SAMPLE_SELF, sampleSelfEntry } from "@/lib/leaderboard";
-import { useSampleStore } from "@/stores/sample";
+import { fmtSignedBps } from "@/lib/leaderboard";
 import { PanelState } from "./PanelState";
 
 const metrics: Array<{ value: LeaderboardMetric; label: string }> = [
@@ -73,7 +72,7 @@ function Table({ entries, decimals, metric, self }: { entries: LeaderboardEntry[
         </thead>
         <tbody>
           {entries.map((entry) => {
-            const mine = entry.wallet === self || entry.wallet === SAMPLE_SELF;
+            const mine = entry.wallet === self;
             return (
               <tr key={entry.wallet} aria-current={mine ? "true" : undefined} className={cn("border-t border-line", mine && "bg-accent-soft")}>
                 <td className={cellLeft}>{entry.rank}</td>
@@ -84,9 +83,9 @@ function Table({ entries, decimals, metric, self }: { entries: LeaderboardEntry[
                         {shortHash(entry.wallet)}
                       </Link>
                     ) : (
-                      <span title={entry.wallet}>{entry.wallet === SAMPLE_SELF ? "You" : shortHash(entry.wallet)}</span>
+                      <span title={entry.wallet}>{shortHash(entry.wallet)}</span>
                     )}
-                    {mine ? <span className="text-xs text-accent-hover">{entry.wallet === SAMPLE_SELF ? "your sample account" : "you"}</span> : null}
+                    {mine ? <span className="text-xs text-accent-hover">you</span> : null}
                   </span>
                 </td>
                 <td className={cn(cell, metric === "pnl" && "font-medium")}>
@@ -120,20 +119,11 @@ function Table({ entries, decimals, metric, self }: { entries: LeaderboardEntry[
 /// (unauthorized: the board needs no wallet; paused market: it ranks traders, not markets).
 export function LeaderboardView() {
   const [metric, setMetric] = useState<LeaderboardMetric>("pnl");
-  const mode = useAccountMode();
-  const sample = mode === "sample";
   const { address } = useAccount();
   const online = useOnline();
   const board = useLeaderboard(metric);
-  const summary = usePortfolioSummary();
-  const account = useSampleStore((state) => state.account);
 
-  const entries = useMemo(() => {
-    if (!board.data) return [];
-    // In sample mode the visitor appears on the board, ranked by the same rule as everyone else.
-    const self = sample && account ? sampleSelfEntry(account, summary.data?.unrealizedPerpPnl ?? 0n) : undefined;
-    return self ? rankEntries([...board.data.entries, self], metric) : board.data.entries;
-  }, [board.data, sample, account, summary.data?.unrealizedPerpPnl, metric]);
+  const entries = board.data?.entries ?? [];
 
   const retry = (
     <Button size="sm" onClick={() => void board.refetch()}>
@@ -148,7 +138,7 @@ export function LeaderboardView() {
         <p className="text-xs text-muted">All time{board.data?.updatedAt ? ` · updated ${new Date(board.data.updatedAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })}` : ""}</p>
       </div>
 
-      <Panel className="flex-1" title={`Top traders by ${metrics.find((m) => m.value === metric)?.label}`} sample={sample || board.data?.sample}>
+      <Panel className="flex-1" title={`Top traders by ${metrics.find((m) => m.value === metric)?.label}`} sample={board.data?.sample}>
         {!online && !board.data ? (
           <Notice action={retry}>You are offline, so the leaderboard cannot load. It will refresh by itself when you reconnect.</Notice>
         ) : board.isPending ? (
@@ -171,9 +161,7 @@ export function LeaderboardView() {
       </Panel>
 
       <p className="max-w-prose text-xs leading-snug text-muted">
-        {sample
-          ? "Sample board: the other twelve traders are simulated. Place a sample trade and you appear here, ranked by the same rule. None of it is real, and nothing here carries over to a wallet."
-          : "Ranked by total PNL (realised plus unrealised), ROI on capital deployed, or volume. Ties break on volume, then wallet. A wallet can hide itself from the board."}
+        {"Ranked by total PNL (realised plus unrealised), ROI on capital deployed, or volume. Ties break on volume, then wallet. A wallet can hide itself from the board."}
       </p>
       <p className="max-w-prose text-xs leading-snug text-muted">
         In development: max drawdown shows “–” until the indexer records it, and a minimum number of trades to be ranked is not applied yet, so one trade is enough today. Copy trading is not available yet. It opens once leaders have a track record, and no date is promised.

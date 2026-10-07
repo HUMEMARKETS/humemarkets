@@ -1,7 +1,6 @@
 "use client";
 
 import { useConnect } from "wagmi";
-import { useModeStore } from "@/stores/mode";
 
 /// Wallets the page can offer. Browsers that announce their wallets (EIP-6963) give one connector
 /// per wallet, so the generic "Injected" connector is left out when any of those exist.
@@ -15,23 +14,20 @@ export function useWalletChoices() {
 /// browser, so it gets its own sentence and a way forward.
 export function connectMessage(error: Error): string {
   if (error.name === "ProviderNotFoundError") {
-    return "No browser wallet found. Install MetaMask or another EVM wallet, then reload this page. You can keep using the sample account meanwhile.";
+    return "No browser wallet found. Install MetaMask or another EVM wallet, then reload this page.";
   }
   if (/reject|denied|declin|cancel/i.test(error.message)) return "You declined the request in your wallet. Nothing was connected.";
-  return "Could not connect to your wallet. Try again, or keep using the sample account.";
+  return "Could not connect to your wallet. Try again.";
 }
 
-/// `useConnect`, plus the one thing every connect must do: once a wallet is connected, the interface
-/// reads it instead of the sample account.
+/// `useConnect`, with a `connectWith` that takes the success and failure callbacks.
 export function useWalletConnect() {
   const connection = useConnect();
-  const setPreference = useModeStore((state) => state.setPreference);
   const connectWith = (connector: Parameters<typeof connection.connect>[0]["connector"], onDone?: () => void, onFail?: () => void) =>
     connection.connect(
       { connector },
       {
         onSuccess: () => {
-          setPreference("live");
           onDone?.();
         },
         onError: onFail,

@@ -152,7 +152,6 @@ export function OptionChain() {
     if (selection && selection.symbol !== symbol) select(undefined);
   }, [symbol, selection, select]);
 
-  const sample = useAccountMode() === "sample";
   const { data: spot } = useIndexPrice(symbol);
   const { data: listed } = useListedExpiries(symbol);
 
@@ -229,7 +228,7 @@ export function OptionChain() {
       <div className="min-h-0 flex-1 overflow-auto">
         {marketsError ? (
           <p className="p-3 text-down">Could not read markets from the chain. Check NEXT_PUBLIC_RPC_URL.</p>
-        ) : !env.apiUrl && !sample ? (
+        ) : !env.apiUrl ? (
           <p className="p-3 text-muted">Option prices come from the pricing service. Set NEXT_PUBLIC_API_URL and start services/api and services/pricing to load the chain.</p>
         ) : symbols.length === 0 && !loadingMarkets ? (
           <p className="p-3 text-muted">No market on the registry has options enabled yet.</p>

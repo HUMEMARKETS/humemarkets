@@ -26,14 +26,6 @@ export function MarketHeader() {
       <div className="flex items-center justify-between gap-3 xl:block">
         <div className="flex items-baseline gap-2">
           <h1 className="font-display text-title font-semibold">{symbol ? `${symbol}-PERP` : "–"}</h1>
-          {data?.priceSource === "last-close" ? (
-            <span
-              className="rounded-sm border border-line px-1 text-xs text-muted"
-              title="The equity session is shut, so there is no live price. This is the last close. A sample order fills here; a real order would be refused."
-            >
-              Closed · last close
-            </span>
-          ) : null}
           {paused ? (
             <span className="rounded-sm border border-down px-1 text-xs text-down" title={paused}>
               Paused

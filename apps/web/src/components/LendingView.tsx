@@ -80,8 +80,7 @@ export function LtvBar({ ltv, maxLtv, liquidationLtv }: { ltv: bigint; maxLtv: b
 }
 
 /// A worked example the visitor can move. It needs no wallet and touches nothing: it is the same arithmetic as
-/// the contract's `getPosition`, over a price from the terminal or the pair's own oracle. In sample mode it is
-/// the lending page's sample, and says so.
+/// the contract's `getPosition`, over a price from the terminal or the pair's own oracle.
 function HealthCalculator({ maxLtv, liquidationLtv, price, priceFromPair, example, bonus, symbol }: { maxLtv: bigint; liquidationLtv: bigint; price?: bigint; priceFromPair: boolean; example: boolean; bonus?: bigint; symbol: string }) {
   const [amount, setAmount] = useState("1");
   const [share, setShare] = useState(40);
@@ -92,7 +91,7 @@ function HealthCalculator({ maxLtv, liquidationLtv, price, priceFromPair, exampl
   const shareLtv = BigInt(share) * 100n;
 
   return (
-    <Panel className="lg:col-start-2 lg:row-span-2 lg:row-start-1" title={<Term term="healthFactor">How a health factor works</Term>} sample={useAccountMode() === "sample"}>
+    <Panel className="lg:col-start-2 lg:row-span-2 lg:row-start-1" title={<Term term="healthFactor">How a health factor works</Term>}>
       <div className="flex flex-col gap-4 p-4">
         <p className="max-w-prose text-sm leading-snug text-muted">
           Lending here means you lock {symbol} as collateral and borrow USDG against it. How much you may borrow, and how close you are to losing the
@@ -126,7 +125,7 @@ function HealthCalculator({ maxLtv, liquidationLtv, price, priceFromPair, exampl
 
 /// The lending page's content. Seven states: loading (skeletons), empty (no pair deployed, or no position),
 /// populated, error, offline, not-connected, and paused (the pair renders, prices, and refuses new loans with a
-/// sentence). Sample: the calculator carries the `SAMPLE DATA` mark; sample mode has no lending account.
+/// sentence).
 export function LendingView() {
   const mode = useAccountMode();
   const online = useOnline();
@@ -182,10 +181,8 @@ export function LendingView() {
         )}
       </Panel>
 
-      <Panel title="Your position" sample={mode === "sample"} actions={<TicketModeToggle />} className="flex-1">
-        {mode === "sample" ? (
-          <Notice>Sample mode has no lending account, so there is no sample position to show. Use the calculator below to see how a loan behaves, then connect a wallet for a real one.</Notice>
-        ) : mode === "disconnected" ? (
+      <Panel title="Your position" actions={<TicketModeToggle />} className="flex-1">
+        {mode === "disconnected" ? (
           <Notice action={<ConnectButton />}>Connect a wallet to see what you have supplied, what you owe, and how close you are to liquidation.</Notice>
         ) : !deployed ? (
           <Notice>There is nothing to show until the pair is live on this network.</Notice>

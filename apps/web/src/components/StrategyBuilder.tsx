@@ -84,7 +84,6 @@ export function StrategyBuilder() {
   const now = useNow();
   const { data: underlyings } = useOptionUnderlyings();
   const symbols = useMemo(() => underlyings?.map((market) => symbolOf(market.marketId)) ?? [], [underlyings]);
-  const sample = useAccountMode() === "sample";
   const { data: index } = useIndexPrice(symbol);
   const { data: listed } = useListedExpiries(symbol);
   // A paused underlying still prices here; the builder says it cannot be traded, as the ticket would.
@@ -221,7 +220,7 @@ export function StrategyBuilder() {
           {paused ? <p role="status" className="leading-snug text-down">{paused}</p> : null}
           <p className="text-sm text-muted">{STRATEGY_SUMMARY[kind]}</p>
 
-          {!env.apiUrl && !sample ? (
+          {!env.apiUrl ? (
             <p className="text-down">NEXT_PUBLIC_API_URL is not set, so no option quotes can load.</p>
           ) : analysis.error ? (
             <p className="text-down">{analysis.error}.</p>

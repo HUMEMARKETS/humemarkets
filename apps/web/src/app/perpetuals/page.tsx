@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import { SampleBanner } from "@/components/SampleBanner";
 import { MarketHeader } from "@/components/MarketHeader";
 import { MarketAnalytics } from "@/components/MarketAnalytics";
 import { MarketFromUrl, MarketList } from "@/components/MarketList";
@@ -14,7 +13,6 @@ import { TradeSheet } from "@/components/TradeSheet";
 export default function PerpetualsTerminal() {
   return (
     <div className="flex flex-col lg:h-full">
-      <SampleBanner className="mx-1.5 mt-1.5" />
       <div className="grid grid-cols-1 gap-1.5 p-1.5 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[220px_minmax(0,1fr)_340px]">
         <Suspense fallback={null}>
           <MarketFromUrl />

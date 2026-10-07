@@ -352,7 +352,7 @@ function InDevelopment({ title, body }: { title: string; body: string }) {
 
 function Social() {
     const board = useLeaderboard('pnl');
-    const sample = useAccountMode() === 'sample' || Boolean(board.data?.sample);
+    const sample = Boolean(board.data?.sample);
     const rows = board.data?.entries.slice(0, 3) ?? [];
     const decimals = board.data?.settlementDecimals ?? 0;
     return (

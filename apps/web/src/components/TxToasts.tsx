@@ -1,10 +1,9 @@
 "use client";
 
-import { Button, SampleBadge, cn, textLink } from "@hume/ui";
+import { Button, cn, textLink } from "@hume/ui";
 import { useEffect } from "react";
 import type { TxStatus } from "@hume/sdk";
 import { humeRead } from "@/lib/hume";
-import { isSampleHash } from "@/lib/sampleEngine";
 import { shortHash } from "@/lib/format";
 import { useTxStore, type TxRecord } from "@/stores/tx";
 
@@ -32,9 +31,7 @@ function Toast({ record }: { record: TxRecord }) {
   const failed = record.status === "failed";
   const done = record.status === "confirmed";
   const activeIndex = steps.findIndex((step) => step.status === record.status);
-  // A sample "hash" is a counter, not a transaction: no explorer link, and the toast says so.
-  const sample = record.hash !== undefined && isSampleHash(record.hash);
-  const link = explorerLink(sample ? undefined : record.hash);
+  const link = explorerLink(record.hash);
 
   // A confirmed transaction has said what it needed to; failures stay until dismissed.
   useEffect(() => {
@@ -74,12 +71,7 @@ function Toast({ record }: { record: TxRecord }) {
 
       {done && record.summary ? <p className="mt-2 tabular-nums text-muted">{record.summary}</p> : null}
 
-      {sample ? (
-        <p className="mt-2 flex items-center gap-2 text-xs text-muted">
-          <SampleBadge />
-          Simulated. Nothing was sent to a wallet or a chain.
-        </p>
-      ) : record.hash ? (
+      {record.hash ? (
         <p className="mt-2 flex items-center justify-between text-xs text-muted">
           <span className="tabular-nums">{shortHash(record.hash)}</span>
           {link ? (
@@ -89,7 +81,7 @@ function Toast({ record }: { record: TxRecord }) {
           ) : null}
         </p>
       ) : null}
-      {done && !sample && record.blockNumber !== undefined ? (
+      {done && record.blockNumber !== undefined ? (
         <p className="mt-1 text-xs tabular-nums text-muted">Block {record.blockNumber.toString()}</p>
       ) : null}
       {done && record.positionId !== undefined ? (

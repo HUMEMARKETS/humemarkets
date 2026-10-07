@@ -41,7 +41,7 @@ index below: `sed -n '1486,1586p' docs/DEVELOPMENT_PHASES.md`.
 - **Testnet and mainnet never share a database.** Railway runs compute _and_ Postgres, in two
   environments, `mainnet` and `testnet`, each with its own Postgres. One `DATABASE_URL` per
   environment serves runtime and migrations.
-- **Sample data is always labelled.** No exceptions, no dismissable notices.
+- **No sample mode (removed 2026-10-08).** The header switches Robinhood Chain Testnet and Robinhood Chain Mainnet; every account action needs a wallet. Simulated traders on testnet are labelled by the API's `sample` flag.
 - **A paused market is a shipped market.** It renders, it prices, it refuses trades.
 - **Ask only when the answer changes what gets built.** Otherwise state the assumption and keep
   moving. Ask before anything that spends mainnet money or flips Vercel/Railway to mainnet.

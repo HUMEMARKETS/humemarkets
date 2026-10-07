@@ -29,7 +29,7 @@ export function ActivityView() {
   }
 
   return (
-    <Panel className="flex-1" title={<Tabs label="Activity sections" tabs={tabs} value={tab} onChange={setTab} />} sample={mode === "sample"}>
+    <Panel className="flex-1" title={<Tabs label="Activity sections" tabs={tabs} value={tab} onChange={setTab} />}>
       <div role="tabpanel" className="flex-1 overflow-x-auto">
         {tab === "history" ? <HistoryTable /> : <FundingTable />}
       </div>

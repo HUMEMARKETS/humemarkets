@@ -58,7 +58,7 @@ export const SECTIONS: LandingSection[] = [
         nav: 'Vision',
         eyebrow: '06 / Vision',
         title: 'Open to anyone. Checkable by everyone.',
-        lede: 'The world’s equities as markets anyone can trade, on contracts anyone can read. Start in sample mode, no wallet needed.',
+        lede: 'The world’s equities as markets anyone can trade, on contracts anyone can read. Pick Robinhood Chain Testnet or Mainnet, then connect a wallet.',
     },
 ];
 

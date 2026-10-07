@@ -22,6 +22,11 @@ export NEXT_PUBLIC_PERP_ORDER_MANAGER=$(a perpOrderManager) NEXT_PUBLIC_LIQUIDAT
 export NEXT_PUBLIC_FUNDING_MANAGER=$(a fundingManager) NEXT_PUBLIC_PRICE_VALIDATOR=$(a priceValidator)
 export NEXT_PUBLIC_BUYBACK_MODULE=$(a buybackModule) NEXT_PUBLIC_CREDIT_PAIR=$(a creditPairTslaUsdg)
 export NEXT_PUBLIC_CREDIT_SYMBOL=TSLA
+# The header's Testnet / Mainnet switch needs each network's endpoints; mainnet reads go straight to its public RPC.
+export NEXT_PUBLIC_API_URL_TESTNET="$NEXT_PUBLIC_API_URL" NEXT_PUBLIC_API_URL_MAINNET="${NEXT_PUBLIC_API_URL_MAINNET:-https://api-mainnet-e81a.up.railway.app}"
+export NEXT_PUBLIC_RPC_URL_TESTNET="$NEXT_PUBLIC_RPC_URL" NEXT_PUBLIC_RPC_URL_MAINNET=https://rpc.mainnet.chain.robinhood.com
+export NEXT_PUBLIC_RPC_PROXY_URL_TESTNET="$NEXT_PUBLIC_RPC_PROXY_URL" NEXT_PUBLIC_RPC_PROXY_URL_MAINNET=
+export NEXT_PUBLIC_EXPLORER_URL_TESTNET="$NEXT_PUBLIC_EXPLORER_URL" NEXT_PUBLIC_EXPLORER_URL_MAINNET=https://robinhoodchain.blockscout.com
 export NEXT_PUBLIC_PROTOCOL_TOKEN_ADDRESS= NEXT_PUBLIC_PROTOCOL_TOKEN_SYMBOL= NEXT_PUBLIC_PROTOCOL_TOKEN_LIVE=
 
 exec pnpm --filter @hume/web "${1:?build, start or dev}"

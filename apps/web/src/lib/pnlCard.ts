@@ -3,7 +3,6 @@ import type { PnlCardProps } from "@hume/ui";
 import { margin } from "@hume/sdk";
 import { fmtPrice, fmtSigned, fmtUsd } from "./format";
 import { fmtSignedBps } from "./leaderboard";
-import type { SamplePosition } from "./sampleEngine";
 
 /// The pieces a card is built from, in the units the API and the chain use. Both the real card (from
 /// `GET /v1/pnl-card`) and the sample card (from the sample account) reduce to this, so one formatter
@@ -63,26 +62,5 @@ export function cardPartsFromApi(card: PnlCard): CardParts {
     decimals: card.settlementDecimals,
     at: card.status === "open" ? card.openedAt : (card.closedAt ?? card.openedAt),
     sample: card.sample,
-  };
-}
-
-/// A sample position as a card: total PNL is what the account booked (price PNL less fees) plus, while open,
-/// the unrealised PNL at the current price. The ROI is that over the margin the position posted.
-export function cardPartsFromSample(position: SamplePosition, symbol: string, mark: bigint | undefined, decimals: number): CardParts {
-  const unrealised = position.open && mark !== undefined ? margin.unrealizedPnl(position.isLong, position.entryPrice, mark, position.size) : 0n;
-  const total = position.realizedPnl + unrealised;
-  return {
-    symbol,
-    isLong: position.isLong,
-    leverage: Number(position.leverage),
-    status: position.open ? "open" : position.closeKind === "LIQUIDATION" ? "liquidated" : "closed",
-    totalPnl: total,
-    roiBps: position.collateral === 0n ? 0n : (total * 10_000n) / position.collateral,
-    entryPrice: position.entryPrice,
-    exitPrice: position.open ? mark : position.closePrice,
-    size: position.size,
-    decimals,
-    at: new Date(position.open ? position.openedAt : (position.closedAt ?? position.openedAt)).toISOString(),
-    sample: true,
   };
 }
