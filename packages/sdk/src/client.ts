@@ -2,6 +2,7 @@ import { type Account, type Address, createWalletClient, publicActions, type Tra
 import { chains, resolveAddresses, type ChainId, type ContractAddresses } from "@hume/config";
 import { createDecimalsReader, createErc20, type Erc20Namespace } from "./erc20.js";
 import { createCredit, type CreditNamespace } from "./credit.js";
+import { createPons, type PonsNamespace } from "./pons.js";
 import { createExplorer, type ExplorerNamespace } from "./explorer.js";
 import { createFees, type FeesNamespace } from "./fees.js";
 import { createSubaccounts, type SubaccountsNamespace } from "./accounts.js";
@@ -94,6 +95,7 @@ export class Hume {
   readonly structured: StructuredNamespace;
   readonly leaderboard: LeaderboardNamespace;
   readonly credit: CreditNamespace;
+  readonly pons: PonsNamespace;
 
   constructor(config: HumeConfig) {
     this.chainId = config.chainId;
@@ -137,6 +139,7 @@ export class Hume {
     });
     this.leaderboard = createLeaderboard(config.apiUrl);
     this.credit = createCredit(client);
+    this.pons = createPons(client);
     this.explorer = createExplorer(config.explorerUrl);
     this.stream = createStream(config.apiUrl, config.webSocket);
     this.institutional = createInstitutional(config.apiUrl);

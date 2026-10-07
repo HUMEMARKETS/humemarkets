@@ -426,3 +426,38 @@ export const quotedQuery = () => ({
 export function useQuotedMarkets() {
   return useQuery(quotedQuery());
 }
+
+export interface PonsRow {
+  address: Address;
+  name: string;
+  symbol: string;
+  decimals: number;
+  totalSupply: string;
+  logo: string | null;
+  description: string | null;
+  website: string | null;
+  twitter: string | null;
+  telegram: string | null;
+  sqrtPriceX96: string | null;
+  liquidity: string | null;
+  priceEth: number | null;
+  priceUsd: number | null;
+  marketCapUsd: number | null;
+}
+
+/// Graduated Pons tokens with metadata and pool price, from `services/api` (`/v1/pons/tokens`).
+export const ponsQuery = () => ({
+  queryKey: ["pons", env.apiUrl],
+  queryFn: async (): Promise<PonsRow[]> => {
+    const response = await fetch(`${env.apiUrl}/v1/pons/tokens`);
+    if (!response.ok) throw new Error("pons unavailable");
+    return response.json();
+  },
+  enabled: Boolean(env.apiUrl),
+  refetchInterval: 15_000,
+  retry: false,
+});
+
+export function usePonsTokens() {
+  return useQuery(ponsQuery());
+}

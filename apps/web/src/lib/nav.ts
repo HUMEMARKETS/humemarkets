@@ -12,6 +12,7 @@ export const NAV: NavEntry[] = [
       { label: "Perpetuals", href: "/perpetuals" },
       { label: "Options", href: "/options" },
       { label: "Strategies", href: "/strategies" },
+      { label: "Pons", href: "/pons" },
     ],
   },
   { label: "Capital", items: [{ label: "Lending", href: "/lending" }] },

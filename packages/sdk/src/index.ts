@@ -173,3 +173,4 @@ export type {
 } from "./leaderboard.js";
 export { CREDIT_STATUS } from "./credit.js";
 export type { CreditNamespace, CreditStatus } from "./credit.js";
+export type { PonsNamespace } from "./pons.js";

@@ -32,6 +32,7 @@ const contracts = {
   SubaccountFactory: "subaccountFactoryAbi",
   Subaccount: "subaccountAbi",
   RFQManager: "rfqManagerAbi",
+  HumePonsRouter: "ponsRouterAbi",
 };
 
 /// Contracts whose custom errors can surface through the contracts above (e.g. PriceValidator

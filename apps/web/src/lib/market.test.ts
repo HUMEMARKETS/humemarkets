@@ -25,7 +25,7 @@ test("group tabs list only groups with markets, in order, and each tab shows its
     { symbol: "USO", group: "commodities" as const },
     { symbol: "XYZ", group: undefined },
   ];
-  assert.deepEqual(groupTabs(rows).map((tab) => tab.label), ["All", "US", "China & Asia", "Commodities", "ETF"]);
+  assert.deepEqual(groupTabs(rows).map((tab) => tab.label), ["All", "US", "China & Greater China", "Commodities", "ETF"]);
   assert.deepEqual(inGroup(rows, "all").map((row) => row.symbol), ["NVDA", "SPY", "BABA", "USO", "XYZ"]);
   assert.deepEqual(inGroup(rows, "china").map((row) => row.symbol), ["BABA"]);
   assert.deepEqual(inGroup(rows, "etf").map((row) => row.symbol), ["SPY"]);
