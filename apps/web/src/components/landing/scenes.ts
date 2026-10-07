@@ -101,32 +101,6 @@ function bag() {
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
 const facing = (direction: THREE.Vector3) => new THREE.Quaternion().setFromUnitVectors(Z_AXIS, direction.clone().normalize());
 
-/// The HUME mark, a Möbius band, as a lattice of voxels. The band sweeps in around the loop as it
-/// assembles. `accent` picks which voxels take the text tone.
-function mobiusVoxels(detail: number, accent: (row: number, rows: number) => boolean) {
-    const radius = 2.3;
-    const width = 0.85;
-    const around = Math.round(170 * detail);
-    const step = (2 * Math.PI * radius) / around;
-    const rows = Math.max(6, Math.round((2 * width) / step));
-    const random = seeded(17);
-    const specs: VoxelSpec[] = [];
-    for (let a = 0; a < around; a += 1) {
-        const u = (2 * Math.PI * a) / around;
-        for (let b = 0; b <= rows; b += 1) {
-            const v = -width + (2 * width * b) / rows;
-            specs.push({
-                x: (radius + v * Math.cos(u / 2)) * Math.cos(u),
-                y: v * Math.sin(u / 2),
-                z: (radius + v * Math.cos(u / 2)) * Math.sin(u),
-                tone: accent(b, rows) ? 'text' : 'muted',
-                delay: (a / around) * 1.1 + random() * 0.15,
-            });
-        }
-    }
-    return { specs, size: step * 0.82 };
-}
-
 /// The HUME mark as a surface, after the wireframe study in `UI_REFERENCES/hume-3d-illustration.jpeg`: a
 /// flattened tube whose cross-section turns half a turn on the way round, so its crease runs into itself.
 /// `swell` scales the cross-section, for points that float just off the skin.
@@ -140,27 +114,13 @@ function mobiusTube(u: number, v: number, out: THREE.Vector3, swell = 1) {
     return out.set(r * Math.cos(around), p * Math.sin(turn) + q * Math.cos(turn), r * Math.sin(around));
 }
 
-const pillText = (market: MarketConfig) => `${symbolOf(market.marketId)} · ${market.active ? `${market.maxLeverage}x` : 'paused'}`;
-
-/// Up to `limit` registry markets as "NVDA · 5x" pills.
-function marketLabels(markets: readonly MarketConfig[], limit: number) {
-    return markets
-        .filter((market) => market.active)
-        .slice(0, limit)
-        .map((market) => label(pillText(market)));
-}
-
-/// Start: the wireframe mark with dust drifting along its skin, turning inside three tilted rings, with
-/// particles in orbit and live market labels riding around it. The band tilts toward the pointer, ripples
-/// under it, and the dust drifts to it.
-function hero(palette: Palette, detail: number) {
-    const own = bag();
-    const group = new THREE.Group();
+/// The HUME mark as Start and Vision draw it: the shaded wire band, with dust drifting along its skin. It
+/// tilts toward the pointer from `rest`, ripples under it, and the dust drifts to it.
+function wireMark(own: ReturnType<typeof bag>, palette: Palette, detail: number, rest: THREE.Euler) {
     const tilt = new THREE.Group();
-    tilt.rotation.set(0.32, 0, 0.3);
+    tilt.rotation.copy(rest);
     const spin = new THREE.Group();
     tilt.add(spin);
-    group.add(tilt);
     const band = own.add(
         wireSurface(mobiusTube, Math.round(110 * detail), Math.max(14, Math.round(22 * detail)), palette, 'text', {
             line: { face: 0.2, edge: 0.95, spec: 0.9 },
@@ -169,8 +129,8 @@ function hero(palette: Palette, detail: number) {
         }),
     );
     spin.add(band.object);
-    // Dust on the band: each mote keeps its place across the tube and its height off the skin, and drifts
-    // along the loop, so it follows the twist.
+    // Each mote keeps its place across the tube and its height off the skin, and drifts along the loop, so
+    // it follows the twist.
     const dustCount = Math.round(360 * detail);
     const dust = own.add(particles(dustCount, palette, 'text', 0.04));
     spin.add(dust.points);
@@ -183,16 +143,47 @@ function hero(palette: Palette, detail: number) {
     }));
     const mote = new THREE.Vector3();
     const near = new THREE.Vector3();
-    const rings = [3.1, 3.45, 3.8].map((radius, index) => {
-        const ring = own.add(orbitRing(radius, palette, index === 1 ? 'text' : 'muted', index === 1 ? 0.35 : 0.3));
-        ring.mesh.rotation.set(Math.PI / 2 + (index - 1) * 0.2, 0.7 * index, 0);
-        group.add(ring.mesh);
-        return ring.mesh;
-    });
+    return {
+        object: tilt,
+        begin: band.begin,
+        update(time: number, now: number, pointer: Pointer, focus: number) {
+            band.tick(now);
+            const reach = pointer.hover * focus;
+            tilt.rotation.set(rest.x - pointer.y * 0.2 * focus, rest.y + pointer.x * 0.3 * focus, rest.z);
+            band.point(pointer.view, time * 3, reach);
+            spin.rotation.y = time * 0.12;
+            spin.worldToLocal(near.copy(pointer.world));
+            motes.forEach((m, index) => {
+                mobiusTube((m.u + time * m.speed) % 1, m.v, mote, m.swell);
+                if (reach > 0.01) mote.lerp(near, reach * 0.35 * Math.exp(-mote.distanceToSquared(near) * 0.8));
+                mote.toArray(dust.positions, 3 * index);
+            });
+            dust.commit();
+        },
+    };
+}
+
+const pillText = (market: MarketConfig) => `${symbolOf(market.marketId)} · ${market.active ? `${market.maxLeverage}x` : 'paused'}`;
+
+/// Up to `limit` registry markets as "NVDA · 5x" pills.
+function marketLabels(markets: readonly MarketConfig[], limit: number) {
+    return markets
+        .filter((market) => market.active)
+        .slice(0, limit)
+        .map((market) => label(pillText(market)));
+}
+
+/// Start: the wireframe mark (`wireMark`), with particles in orbit and live market labels riding around it.
+function hero(palette: Palette, detail: number) {
+    const own = bag();
+    const group = new THREE.Group();
+    const mark = wireMark(own, palette, detail, new THREE.Euler(0.32, 0, 0.3));
+    group.add(mark.object);
     const count = Math.round(90 * detail);
     const dots = own.add(particles(count, palette));
     group.add(dots.points);
-    group.scale.setScalar(0.74);
+    // Larger on a wide screen, where the band has the right of the page to itself.
+    group.scale.setScalar(detail < 1 ? 0.74 : 0.9);
     const labels = new THREE.Group();
     labels.rotation.x = 0.18;
     group.add(labels);
@@ -211,20 +202,13 @@ function hero(palette: Palette, detail: number) {
     };
     const station: Station = {
         group,
-        begin: band.begin,
+        begin: mark.begin,
         setFade(amount) {
             own.setFade(amount);
             for (const tag of tags) tag.fade(amount);
         },
         update(time, now, pointer, focus) {
-            band.tick(now);
-            const reach = pointer.hover * focus;
-            tilt.rotation.set(0.32 - pointer.y * 0.2 * focus, pointer.x * 0.3 * focus, 0.3);
-            band.point(pointer.view, time * 3, reach);
-            spin.rotation.y = time * 0.12;
-            rings.forEach((ring, index) => {
-                ring.rotation.z = time * (0.08 + 0.03 * index) * (index % 2 ? -1 : 1);
-            });
+            mark.update(time, now, pointer, focus);
             for (let index = 0; index < count; index += 1) {
                 const t = time * (0.18 + (index % 7) * 0.02) + 2.399 * index;
                 const radius = 3.9 + (index % 5) * 0.25;
@@ -233,13 +217,6 @@ function hero(palette: Palette, detail: number) {
                 dots.positions[3 * index + 2] = Math.sin(t) * radius * 0.5;
             }
             dots.commit();
-            spin.worldToLocal(near.copy(pointer.world));
-            motes.forEach((m, index) => {
-                mobiusTube((m.u + time * m.speed) % 1, m.v, mote, m.swell);
-                if (reach > 0.01) mote.lerp(near, reach * 0.35 * Math.exp(-mote.distanceToSquared(near) * 0.8));
-                mote.toArray(dust.positions, 3 * index);
-            });
-            dust.commit();
             labels.rotation.y = time * 0.06;
         },
         recolor() {
@@ -732,19 +709,13 @@ function contractBlocks(palette: Palette, deployed: readonly boolean[]): Station
     };
 }
 
-/// Vision: the mark again, with every third row in the text tone, inside a ring of ticks that faces the camera.
-/// The band leans after the pointer; a click sends a pulse once around the ring.
+/// Vision: the Start mark again (`wireMark`), inside a ring of ticks that faces the camera. A click sends a
+/// pulse once around the ring.
 function resolved(palette: Palette, detail: number): Station {
     const own = bag();
     const group = new THREE.Group();
-    const tilt = new THREE.Group();
-    tilt.rotation.set(0.95, 0, 0.18);
-    const spin = new THREE.Group();
-    tilt.add(spin);
-    group.add(tilt);
-    const mark = mobiusVoxels(detail, (row) => row % 3 === 0);
-    const band = own.add(voxelField(mark.specs, palette, { size: mark.size }));
-    spin.add(band.mesh);
+    const mark = wireMark(own, palette, detail, new THREE.Euler(0.6, 0, 0.18));
+    group.add(mark.object);
     const tickSpecs: VoxelSpec[] = Array.from({ length: 120 }, (_, index) => {
         const angle = (2 * Math.PI * index) / 120;
         const long = index % 10 === 0;
@@ -767,12 +738,11 @@ function resolved(palette: Palette, detail: number): Station {
         group,
         setFade: own.setFade,
         begin(now) {
-            band.begin(now);
+            mark.begin(now);
             ring.begin(now);
         },
         update(time, now, pointer, focus) {
-            band.tick(now);
-            tilt.rotation.set(0.95 - pointer.y * 0.25 * focus, pointer.x * 0.35 * focus, 0.18);
+            mark.update(time, now, pointer, focus);
             // The pulse's head goes once round the ring in 1.2 s; each tick swells as the head passes it.
             const head = pulsed < 0 ? -1 : (now - pulsed) / 1.2;
             if (head > 1.15) pulsed = -1;
@@ -781,7 +751,6 @@ function resolved(palette: Palette, detail: number): Station {
                 spec.sy = heights[index]! * (behind >= 0 && behind < 0.15 ? 1 + 1.6 * Math.exp(-behind * 30) : 1);
             });
             ring.tick(now);
-            spin.rotation.y = time * 0.14;
             ring.mesh.rotation.z = time * 0.03;
         },
         poke(now) {

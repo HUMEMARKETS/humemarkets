@@ -149,11 +149,24 @@ export function LandingCanvas({ world, theme, markets, deployed, onFailed }: Pro
             renderer.setSize(width, height, false);
             const buffer = renderer.getDrawingBufferSize(new THREE.Vector2());
             floor.setSize(buffer.x, buffer.y);
-            const wide = width / height >= 1.1;
+            // Landscape, as CSS `orientation` sees it, so the camera and the copy agree on the layout.
+            const wide = width > height;
             camera.aspect = width / height;
             camera.fov = wide ? 38 : 52;
-            // Wide: the station sits right of the copy column. Phone: in the top third, above the copy.
-            camera.setViewOffset(width, height, wide ? -width * 0.24 : 0, wide ? 0 : height * 0.17, width, height);
+            // Landscape: the station sits right of the copy column; from a 1024 px tablet to a 1440 px desktop it
+            // grows and moves in from the right edge, so it never covers the copy. Portrait: in the top of the
+            // screen, above the copy, and smaller on a tablet, where the copy column is wider.
+            const grow = THREE.MathUtils.clamp((width - 1024) / 416, 0, 1);
+            const tablet = width >= 768;
+            camera.zoom = wide ? 0.5 + 0.5 * grow : tablet ? 0.62 : 1;
+            camera.setViewOffset(
+                width,
+                height,
+                wide ? -width * (0.37 - 0.13 * grow) : 0,
+                wide ? 0 : height * (tablet ? 0.27 : 0.17),
+                width,
+                height,
+            );
         }
         resize();
         const observer = new ResizeObserver(resize);

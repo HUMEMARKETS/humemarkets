@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 
-/// What the landing page shows instead of the WebGL world: with reduced motion, with "Immersive motion"
-/// off, or without WebGL. One still line drawing per section, in the page tokens, so it follows the theme.
+/// What the landing page shows instead of the WebGL world: with reduced motion, or without WebGL. One still line drawing per section, in the page tokens, so it follows the theme.
 /// It swaps with the active section and never animates.
 const DRAWINGS: ReactNode[] = [
     // Start: the loop mark, open.

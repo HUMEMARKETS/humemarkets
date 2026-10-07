@@ -21,7 +21,6 @@ const LandingCanvas = dynamic(
     { ssr: false },
 );
 
-const MOTION_KEY = 'hume.landing.motion';
 const DEPLOYED = CONTRACTS.map((contract) => Boolean(contract.address));
 const NO_MARKETS: MarketConfig[] = [];
 
@@ -56,26 +55,10 @@ export function LandingStage() {
     const [failed, setFailed] = useState(false);
     const [panel, setPanel] = useState(false);
 
+    // Reduced motion turns the world off: the still drawings show and every step is an instant jump.
     useEffect(() => {
-        let stored: string | null = null;
-        try {
-            stored = window.localStorage.getItem(MOTION_KEY);
-        } catch {
-            stored = null;
-        }
-        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        setMotion(stored === null ? !reduced : stored === 'on');
+        setMotion(!window.matchMedia('(prefers-reduced-motion: reduce)').matches);
     }, []);
-
-    const toggleMotion = () => {
-        const next = !motion;
-        setMotion(next);
-        try {
-            window.localStorage.setItem(MOTION_KEY, next ? 'on' : 'off');
-        } catch {
-            // Storage can be blocked; the toggle still works for this visit.
-        }
-    };
 
     // One loop drives everything that moves: the rail, the copy and the camera all read `shown`.
     useEffect(() => {
@@ -310,9 +293,9 @@ export function LandingStage() {
                                 sectionEls.current[index] = element;
                             }}
                             aria-labelledby={`${section.id}-title`}
-                            className="relative flex min-h-full snap-start snap-always items-end md:items-center"
+                            className="relative flex min-h-full snap-start snap-always items-end md:items-center md:portrait:items-end"
                         >
-                            <div className={cn(LANDING_FRAME, 'pb-12 pt-[40dvh] md:py-32 md:pl-[calc(clamp(40px,4.2vw,112px)+11rem)]')}>
+                            <div className={cn(LANDING_FRAME, 'pb-12 pt-[40dvh] md:py-32 md:pl-[calc(clamp(40px,4.2vw,112px)+11rem)] md:portrait:pb-16 md:portrait:pt-[46dvh]')}>
                                 <div
                                     ref={(element) => {
                                         copyEls.current[index] = element;
@@ -361,7 +344,7 @@ export function LandingStage() {
                 })}
             </div>
 
-            <LandingRail active={active} paint={railPaint} onSelect={goTo} motion={motion} onToggleMotion={toggleMotion} />
+            <LandingRail active={active} paint={railPaint} onSelect={goTo} motion={motion} />
             <ContractsPanel open={panel} onClose={closePanel} />
         </div>
     );
