@@ -85,3 +85,13 @@ Result: **pass**. Nothing is behind it.
 - Leaderboard: every row has a disabled "Copy" button (`title` "Copy trading is not available yet"), the column header carries an "In development" badge, and the note under the table reads "Copy trading is not available yet. It opens once leaders have a track record, and no date is promised." Verified in a browser at 1440 px: 10 disabled buttons, note present (`docs/evidence/phase-14/leaderboard-1440.png`). On phones the Copy column is hidden and the note stays.
 - Flag: `NEXT_PUBLIC_FEATURE_COPY_TRADING` is unset, so `env.copyTrading` is false; `/traders/<wallet>` renders the 404 page (Next streams a 200 status around it).
 - No tables, endpoints, subaccounts or executor were added. The Phase 18 design is in `docs/COPY_TRADING.md`.
+
+## WP3 — lending live on testnet (2026-10-08)
+
+Result: **pass**.
+
+- **Bug fixed:** `LendingView` assumed the loan token has 6 decimals (USDG, mainnet). Testnet's mUSDC has 18, so every borrow figure was off by 10^12 ("$1,000,000,000,000,000,000" caps). It now reads the settlement token's decimals. The page reads "Collateral supplied 0.0000 of 1,000,000.0000 TSLA" and "Borrowed $0.000 of $1,000,000.000" (`docs/evidence/phase-12/lending-after-fix-1440.png`).
+- **Seeded:** 100,000 mUSDC minted to the pair (it pays borrows from its own balance), tx `0x7ab202bc938b790a690a78a3d97b5376bf05d9414a6d519b05ff26483e3098e3`; 100 mock TSLA minted to the deployer, tx `0x77415b7d41f9cf16e7cb6a03e305207f6406b3b33d8d52eed5c2aea341e344ef`.
+- **Oracle:** the credit oracle (`CompositeSanityOracle`, a manual feed with a 24 h staleness limit) had no prices, so every deposit reverted "Oracle: Price not configured for asset". Nothing in the services refreshed it. The simulator now pushes the TSLA price and 1.00 for the loan token every 10 minutes (`SIM_CREDIT_MS`); first push read TSLA 351.01 on chain.
+- **Lifecycle, `script/CreditLifecycle.s.sol` on testnet:** approve, depositCollateral, borrow, approve, repay, withdrawCollateral, 6 transactions, none failed. Hashes: `0x8c9ac1bf48fcc109c72c376be961b0b7a0b38cd964c6df8396284c2620dbe14d`, `0xed9455f154b89da635a6862d23785a8b08f453c20d0a7dd162cfd697717b4a03`, `0x5e0d3ccc9a99990cd0db4d8b3f8ab9fc8884869dd4ee5217de1cc8bfb44ce0ee`, `0x4aba053b02fedc3a45afb3747ca2eafddd54747f34723b24ef422ff7a937572b`, `0x3e454c480485fd8f151a79bb2b59c0fba164e0849e2a4e115bb3bc6b92e4c99a`, `0x095622d70c6b409331b3d7d09a238070cfb51129677f7b63a335af6938a9b5ef`.
+- **Mainnet note for WP4:** the same credit oracle needs a feeder on mainnet; nothing in the services refreshes it there either.

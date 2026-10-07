@@ -5,7 +5,7 @@ import { toBaseUnits } from "@hume/sdk";
 import type { Address } from "@hume/types";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { useCreditCollateralPrice, useCreditMarket, useCreditPosition } from "@/hooks/queries";
+import { useCreditCollateralPrice, useCreditMarket, useCreditPosition, useSettlementDecimals } from "@/hooks/queries";
 import { useAccountMode } from "@/hooks/useAccountMode";
 import { useOnline } from "@/hooks/useOnline";
 import { env } from "@/lib/env";
@@ -142,7 +142,8 @@ export function LendingView() {
     staleTime: Infinity,
   });
   const price = useCreditCollateralPrice(m?.oracle, m?.collateralToken);
-  const debtDecimals = 6;
+  // The loan is the settlement token (USDG, 6 decimals, on mainnet; mUSDC, 18, on testnet): read, never assumed.
+  const { data: debtDecimals = 6 } = useSettlementDecimals();
   const cDecimals = collateralDecimals.data ?? 18;
 
   const maxLtv = m?.maxLtvBps ?? BigInt(env.creditExample.maxLtvBps);

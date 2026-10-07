@@ -9,7 +9,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chains, requireEnv, resolveAddresses, resolveChainId } from "@hume/config";
 import { Hume } from "@hume/sdk";
-import { createPublicClient, createWalletClient, formatEther, http, isAddress, parseEther, type Address, type Hex, type PublicClient } from "viem";
+import { createPublicClient, createWalletClient, formatEther, http, isAddress, parseAbi, parseEther, type Address, type Hex, type PublicClient } from "viem";
 import { privateKeyToAccount, type PrivateKeyAccount } from "viem/accounts";
 import { createBot, type Bot } from "./bot.js";
 import { appendNudge } from "./control.js";
@@ -205,11 +205,34 @@ async function start() {
 
   if (TICK_MS < 5_000) log(`warning: a price step of ${TICK_MS / 1000}s sends up to ${marketIds.length} transactions a step. A free RPC plan rate-limits that (you will see "HTTP request failed"); use SIM_TICK_MS=5000 or more, or a paid key in SIM_RPC_URL.`);
   log(`simulator: ${marketIds.map((m) => m.symbol).join(", ")}; ${bots.length} traders, 1 liquidator; prices every ${TICK_MS / 1000}s. Ctrl+C to stop.`);
+  // The lending oracle is a manual feed with a 24 hour staleness limit and nothing else refreshes it, so
+  // the price driver does: the credit symbol's price for the collateral, one dollar for the loan.
+  const creditOracle = addresses.creditOracle;
+  const creditPair = addresses.creditPairTslaUsdg;
+  const creditSymbol = process.env.SIM_CREDIT_SYMBOL ?? "TSLA";
+  const creditAbi = parseAbi(["function collateralToken() view returns (address)", "function debtToken() view returns (address)", "function setPrice(address asset, uint256 price)"]);
+  const creditJob = creditOracle && creditPair ? async () => {
+    const market = driver.markets().find((m) => m.symbol === creditSymbol);
+    if (!market) return;
+    const wallet = walletFor(owner);
+    const [collateral, debt] = await Promise.all([
+      publicClient.readContract({ address: creditPair, abi: creditAbi, functionName: "collateralToken" }),
+      publicClient.readContract({ address: creditPair, abi: creditAbi, functionName: "debtToken" }),
+    ]);
+    const wad = BigInt(Math.round(market.price * 1e8)) * 10n ** 10n;
+    for (const [asset, price] of [[collateral, wad], [debt, 10n ** 18n]] as const) {
+      const hash = await wallet.writeContract({ address: creditOracle, abi: creditAbi, functionName: "setPrice", args: [asset, price], chain: null, account: wallet.account! });
+      await publicClient.waitForTransactionReceipt({ hash });
+    }
+    log(`credit oracle: ${creditSymbol} ${market.price.toFixed(2)}, loan token 1.00`);
+  } : undefined;
+
   await Promise.all([
     every(TICK_MS, 0, async () => {
       await driver.tick();
       record();
     }),
+    ...(creditJob ? [every(Number(process.env.SIM_CREDIT_MS ?? 600_000), 8_000, creditJob)] : []),
     every(10_000, 3_000, () => liquidator.tick()),
     ...bots.map((bot, index) => every(3_000, 5_000 + index * 1_500, (now) => bot.tick(now))),
   ]);
