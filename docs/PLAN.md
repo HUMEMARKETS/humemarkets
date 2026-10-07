@@ -14,7 +14,7 @@ Mainnet follows. One wallet per chain, three git branches, push to `main`, deplo
 | 2 | Product features on testnet: crypto set (4 markets, mock feeds), plain-language failure states, mobile and keyboard pass, copy-trading entry point | 11, 12, 13, 14 | **done 2026-10-08** (Phase 11 mainnet half deferred to WP4); gate green |
 | 3 | Testnet live and demo-ready: Railway `testnet` env, Vercel on testnet, pool funded, simulator running, Tier A walkthrough, shot list for the video | T (amber items), 15 | **Live 2026-10-08**: site, API, 25 markets, pool, lending, pause drill, shot list (`docs/evidence/shot-list.md`). Open: Railway keys (keeper, quotes), faucet gas, operator films 9 clips |
 | 4 | Mainnet: delete testnet env, fund USDG, list the crypto set, caps, launch gate, open | L, 16 (reduced), 17, 18 | operator-approved; **blocked on USDG funding and an open date** |
-| 5 | All eight features testable on testnet: China market, Pons market (buy Pons tokens), copy trading, plus a walkthrough of leaderboard and PnL card | 18 items 1b, 5, 7, 8 | each feature has a pass line in `docs/evidence/testnet.md`; gate green; deployed to `testnet` |
+| 5 | All eight features testable on testnet: China market, Pons market (buy Pons tokens), copy trading, plus a walkthrough of leaderboard and PnL card | 18 items 1b, 5, 7, 8 | each feature has a pass line in `docs/evidence/testnet.md`; gate green; deployed to `testnet`. **Built and deployed 2026-10-08**: China pass, Pons pass on testnet (mainnet amber), copy trading pass (one amber), leaderboard and PNL card pass |
 
 ## Order and parallelism
 

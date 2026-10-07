@@ -128,7 +128,8 @@ Railway testnet keys set (`KEEPER_PRIVATE_KEY` on keeper, `QUOTER_PRIVATE_KEY` o
 
 - **Listed** with mock tokens and feeds owned by the deployer (`packages/contracts/script/add-markets.sh`): BABA token `0x44658C6fC8dA04FBc187448c9f769c110dB5e32E`, TSM `0x5921a71EA6A9DD6a25687AA1789D9a2294deA594`, EWY `0x994d8bEd4e61eE1F8892b092abF08f72c80818B8`. `/v1/markets` lists 28 markets; the oracle router prices BABA at $150.
 - **Quoted tier:** UMC, FUTU, EWT and SIMO are rows in `robinhood_mainnet.markets.json` with tier `quoted` (no feed). `/v1/quoted` serves their price from Robinhood's public quote endpoint with source and age; the Markets page shows them under the China tab with a "Quoted" badge and no trade control. They never reach `PriceValidator`.
-- Group label is "China & Greater China".
+- **A China perp trades:** BABA long opened `0xd0eda37f2faad424c37cb52e0330e765ed3d3cfda61df64e7da49fb6937565d3` (#130) and closed `0x44e2fa6ad04b72aa458d759872894a625548faf211ad87a2abb88c429fd2555b`.
+- Group label is "China & Greater China". Screenshots: `docs/evidence/wp5/markets-group-china-{375,1440}.png`.
 - Not done: the simulator drives the three new feeds only when `scripts/demo.sh up` runs (11 feeds now).
 
 ### 5b Pons market: pass on testnet, amber on mainnet
@@ -158,4 +159,19 @@ Live acceptance (`pnpm --filter @hume/keeper copy:e2e`, a fresh leader and follo
 Departure from `docs/COPY_TRADING.md`: the caps are enforced by the executor, not written into the subaccount, so a bug in the executor could break a cap (never take money out). Revoking the delegate or stopping the follow stops it at once. On-chain caps need a new subaccount contract and stay in Phase 18.
 
 API tests: `services/api/src/copy.test.ts` (signature, window, replay, subaccount ownership; 8 of 8 against PostgreSQL). Executor tests: `services/keeper/src/copy.test.ts` (8 of 8 against PostgreSQL).
+
+### The eight features on testnet, 2026-10-08
+
+| Feature | Result | Evidence |
+| --- | --- | --- |
+| Perps | pass | `pnpm --filter @hume/sdk smoke:testnet`; BABA perp #130; copy e2e perps |
+| Options | pass | smoke test: option #1 bought on a signed quote and sold back |
+| China market | pass | 5a; the mock feeds go stale an hour after the simulator stops, and the Index price then reads "–" |
+| Market Pons | pass on testnet, amber on mainnet | 5b |
+| Leaderboard and PNL card | pass | `/v1/leaderboard` ranks the e2e wallets; `/v1/pnl-card/<wallet>/126` returns the closed position; screenshots `docs/evidence/wp5/leaderboard-*`, `pnl-*` |
+| Copy trading | pass, "within 2 blocks" amber | 5c; the web flow is live behind `NEXT_PUBLIC_FEATURE_COPY_TRADING=true`, but a wallet walk-through (create, fund, authorise, sign, stop) was not filmed or scripted in a browser |
+| Lending | pass | WP3 lending section |
+| Borrowing | pass | WP3 lending section |
+
+Known gaps: the keeper cron runs every 5 minutes (the plan's minimum), so copies on Railway lag up to 5 minutes; run the keeper locally for a filmed copy. The e2e leader and follower wallets appear on the leaderboard as ordinary traders (they are not in `SAMPLE_WALLETS`). Pons market caps read "–" while the ETH feed is stale.
 
