@@ -37,11 +37,8 @@
             "Read(./.env.mainnet)",
             "Read(./.env.testnet)",
             "Read(./packages/contracts/.env)",
-            "Bash(git add:*)",
-            "Bash(git commit:*)",
-            "Bash(git push:*)",
-            "Bash(git tag:*)",
-            "Bash(gh pr create:*)"
+            "Bash(git push --force*)",
+            "Bash(git push -f*)"
         ]
     }
 }
