@@ -121,3 +121,41 @@ The faucet cannot fund the deployer again, so the demo runs on its 0.0033 ETH. `
 Fixes that made it start: `SIM_BOTS` (run and fund only chosen bots, floor `SIM_GAS_FLOOR_ETH`), the funder no longer tries to top itself up, and the simulator reads market limits with `risk.get` instead of `perps.get`, which reverted on a stale mock feed and stopped it from restarting after an idle hour.
 
 Railway testnet keys set (`KEEPER_PRIVATE_KEY` on keeper, `QUOTER_PRIVATE_KEY` on pricing). `pnpm --filter @hume/sdk smoke:testnet` against the live API passes end to end: perp #109 opened and closed, option #1 bought on a signed quote and sold back, withdrawal. The first quote right after a pricing redeploy returned 504 until the service finished starting.
+
+## WP5 — China, Pons and copy trading on testnet (2026-10-08)
+
+### 5a China market: pass
+
+- **Listed** with mock tokens and feeds owned by the deployer (`packages/contracts/script/add-markets.sh`): BABA token `0x44658C6fC8dA04FBc187448c9f769c110dB5e32E`, TSM `0x5921a71EA6A9DD6a25687AA1789D9a2294deA594`, EWY `0x994d8bEd4e61eE1F8892b092abF08f72c80818B8`. `/v1/markets` lists 28 markets; the oracle router prices BABA at $150.
+- **Quoted tier:** UMC, FUTU, EWT and SIMO are rows in `robinhood_mainnet.markets.json` with tier `quoted` (no feed). `/v1/quoted` serves their price from Robinhood's public quote endpoint with source and age; the Markets page shows them under the China tab with a "Quoted" badge and no trade control. They never reach `PriceValidator`.
+- Group label is "China & Greater China".
+- Not done: the simulator drives the three new feeds only when `scripts/demo.sh up` runs (11 feeds now).
+
+### 5b Pons market: pass on testnet, amber on mainnet
+
+Pons here means spot: a user buys and sells a Pons token (not HUME) from the Hume site. Pons tokens trade in Uniswap v4 pools (native ETH against the token). Testnet has the v4 `PoolManager` (`0x8366…0951`) but no Pons, so `DeployPonsTestnet.s.sol` deployed a mock factory `0x6b0bf164575160d43125e97785BBb3Cce21f94Bf`, three mock tokens (PFROG `0x6eDf8935461C5823cb6d9dC4a974a71CdB51F67A`, PMOON `0x653287CD8d0b1326E0800025695420aE2d9fa6C8`, PCAT `0xEa61a4A33c87bC50055FcAA10668b7BA3d9fE7a4`), a real v4 pool for each (0.0002 ETH of liquidity each), and the production router `HumePonsRouter` `0x36Db1af59A6B2be59420dA9D2D93ba1179B39969`.
+
+- Live round trip with the router: buy 0.00002 ETH of PFROG for 18.165 PFROG `0xee898a64547101984dc0cbe7ce1828f9f0aa6e0c42183a7b6b16c0a5fe2850eb`, approve `0xd2d089ae00c1864b9a6aa5713fe29c888870843216eb837d0ce2371460e4d43a`, sell it back `0x5adbcf6ab06c5c5595b18cc4dfdb675351e794fd52a8f5c552de4e6000c43fda`.
+- `forge test --match-path test/fork/PonsFork.t.sol`: 4 of 4 on a testnet fork, and **1 of 1 on a mainnet fork: a 0.001 ETH buy and the sell of the result through the live Pons hook and the real ZZZ pool** (`PonsMainnetForkTest`). The router builds the pool key from the factory; the key hashes to the live pool id.
+- API `/v1/pons/tokens` reads `LaunchSwept` logs (chunks of 9M blocks, the RPC limit is 10M), each token's `getTokenInfo()`, and the pool price and liquidity from the `PoolManager` (`extsload`). Web `/pons` lists the tokens and buys or sells through the review step with a 3% price tolerance as the router's minimum output.
+- **Amber:** the mainnet listing (282 tokens) was not run end to end from this machine, because the public mainnet RPC blocks Node's fetch (Cloudflare), so the discovery loop was checked on testnet only. The mainnet router is not deployed (WP4). The Pons pools on testnet are thin by design (deployer gas).
+
+### 5c Copy trading: pass, one criterion amber
+
+Built on `Subaccount`: the follower makes a copy subaccount, funds it with a budget and makes Hume's executor (the keeper wallet) a delegate. A delegate can call the engines only, so it can open and close and cannot withdraw. The follow (caps, signed with EIP-191) is stored by the API in `copy_follows`; the executor in `services/keeper` mirrors the leader's new perps and records every skip with a plain reason in `copy_executions`. Positions the leader already holds at the follow are never copied.
+
+Live acceptance (`pnpm --filter @hume/keeper copy:e2e`, a fresh leader and follower, deployer as executor):
+
+| Check | Result |
+| --- | --- |
+| Leader long mirrored proportionally | **pass**: leader #126 100 x2 of 1,000 became follower #127 50.01 x2 of 500, tx `0x01c72a993336aa71a1964998991ae7b2f4818eb52bae215dc05952fa9d07ef64` |
+| Leader close mirrored | **pass**: tx `0xcefa1306d8346a16bcdaee00dc542a0c60b887660e3ebda68c73b8f86bf5a1b7` |
+| Follower over cap records a skip, opens nothing | **pass**: "The leader used 5x, over your 3x limit." |
+| Unfollow stops mirroring at once | **pass** |
+| Executor key cannot withdraw | **pass**: `NotOwner` |
+| Mirrored within 2 blocks | **amber**: the executor polls. It mirrored 52 blocks (about 9 s) after the leader's open when run back to back. On Railway the keeper is a 5 minute cron (the plan's minimum), so a copy can lag up to 5 minutes there |
+
+Departure from `docs/COPY_TRADING.md`: the caps are enforced by the executor, not written into the subaccount, so a bug in the executor could break a cap (never take money out). Revoking the delegate or stopping the follow stops it at once. On-chain caps need a new subaccount contract and stay in Phase 18.
+
+API tests: `services/api/src/copy.test.ts` (signature, window, replay, subaccount ownership; 8 of 8 against PostgreSQL). Executor tests: `services/keeper/src/copy.test.ts` (8 of 8 against PostgreSQL).
+

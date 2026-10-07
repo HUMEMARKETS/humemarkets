@@ -1,9 +1,9 @@
 # Copy trading: the design for Phase 18
 
-Status: **not built.** Today the leaderboard shows a disabled "Copy" button per row and says copy trading
-opens once leaders have a track record, with no date promised. The flag `NEXT_PUBLIC_FEATURE_COPY_TRADING`
-is off and the `/traders/[wallet]` routes return 404 until it is on. There are no tables, endpoints,
-subaccounts or executor behind it.
+Status: **built on testnet 2026-10-08** (WP5, `docs/evidence/testnet.md`). Tables `copy_follows` and `copy_executions`,
+the `/v1/copy/*` endpoints, the executor in `services/keeper` and the web flow behind
+`NEXT_PUBLIC_FEATURE_COPY_TRADING` exist. The caps are enforced by the executor, not on chain (step 3 below is not
+built as written). Mainnet is not enabled.
 
 ## Why it waits
 
