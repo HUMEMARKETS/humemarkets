@@ -12,7 +12,7 @@ Mainnet follows. One wallet per chain, three git branches, push to `main`, deplo
 | 0 | Workflow reset: 3 branches, no Actions, Claude-free commits, Railway/Vercel follow `testnet`/`mainnet` | — | `git branch -r` shows main, testnet, mainnet; Railway `testnet` services track `testnet`; Vercel production branch is `testnet` |
 | 1 | One wallet on testnet: every mock feed owned by the deployer, keeper/simulator use the deployer key | T0 follow-up | 21 of 21 feeds `owner()` is the deployer (**done 2026-10-08**, `docs/evidence/testnet.md`) |
 | 2 | Product features on testnet: crypto set (4 markets, mock feeds), plain-language failure states, mobile and keyboard pass, copy-trading entry point | 11, 12, 13, 14 | **done 2026-10-08** (Phase 11 mainnet half deferred to WP4); gate green |
-| 3 | Testnet live and demo-ready: Railway `testnet` env, Vercel on testnet, pool funded, simulator running, Tier A walkthrough, shot list for the video | T (amber items), 15 | operator can open the Vercel URL, trade, get liquidated on camera; `docs/evidence/testnet.md` complete |
+| 3 | Testnet live and demo-ready: Railway `testnet` env, Vercel on testnet, pool funded, simulator running, Tier A walkthrough, shot list for the video | T (amber items), 15 | **Live 2026-10-08**: site, API, 25 markets, pool, lending, pause drill, shot list (`docs/evidence/shot-list.md`). Open: Railway keys (keeper, quotes), faucet gas, operator films 9 clips |
 | 4 | Mainnet: delete testnet env, fund USDG, list the crypto set, caps, launch gate, open | L, 16 (reduced), 17, 18 | operator-approved; **blocked on USDG funding and an open date** |
 
 ## Order and parallelism
