@@ -13,6 +13,9 @@ import { serializeArgs } from "./serialize.js";
 import { runTraderStats, type LiveReader } from "./traderStatsJob.js";
 
 const POLL_INTERVAL_MS = Number(process.env.INDEXER_POLL_INTERVAL_MS ?? 5000);
+/// Free-plan mode: run one pass (tick, price sample, trader stats) and exit, so a Railway cron service
+/// (`*/5 * * * *`) pays only for the seconds a pass takes. Unset keeps the always-on loop.
+const RUN_ONCE = process.env.INDEXER_RUN_ONCE === "true";
 /// getLogs range width per call. The default of 10 fits the Alchemy free tier, which caps
 /// eth_getLogs at 10 blocks. Robinhood's official testnet RPC (https://rpc.testnet.chain.robinhood.com)
 /// only rejects a query that matches more than 10000 logs, so set this to about 2000 there.
@@ -193,7 +196,7 @@ async function main() {
   } catch (error) {
     console.error("indexer: could not sync markets from the registry", error);
   }
-  for (;;) {
+  do {
     try {
       await tick();
     } catch (error) {
@@ -209,7 +212,11 @@ async function main() {
     } catch (error) {
       console.error("indexer: trader stats failed", error);
     }
-    await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+    if (!RUN_ONCE) await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+  } while (!RUN_ONCE);
+  if (RUN_ONCE) {
+    await getSql().end();
+    process.exit(0);
   }
 }
 

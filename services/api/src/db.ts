@@ -9,7 +9,9 @@ let cached: ReturnType<typeof postgres> | undefined;
 
 export function getSql() {
   if (!cached) {
-    cached = postgres(requireEnv("DATABASE_URL"), { transform: postgres.camel });
+    // `idle_timeout` closes idle connections after 20 s. An open pooled connection keeps the service
+    // from sleeping under Railway Serverless (free-plan mode, docs/evidence/phase-T.md).
+    cached = postgres(requireEnv("DATABASE_URL"), { transform: postgres.camel, idle_timeout: 20 });
   }
   return cached;
 }
