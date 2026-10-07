@@ -18,14 +18,13 @@ interface Props {
     paint: MutableRefObject<((progress: number) => void) | null>;
     onSelect: (index: number) => void;
     motion: boolean;
-    onToggleMotion: () => void;
 }
 
 /// The section rail, after robinid.vercel.app. On a wide screen: a vertical list on the left, with a line
 /// that fills with the scroll and a marker that slides to the active item. At phone width: a strip under the
 /// header with the current section's name and the same fill. The active item is marked by ink weight
 /// and the marker, never by a new colour.
-export function LandingRail({ active, paint, onSelect, motion, onToggleMotion }: Props) {
+export function LandingRail({ active, paint, onSelect, motion }: Props) {
     const fill = useRef<HTMLSpanElement>(null);
 
     useEffect(() => {
@@ -84,15 +83,6 @@ export function LandingRail({ active, paint, onSelect, motion, onToggleMotion }:
                             </li>
                         ))}
                     </ol>
-                    <button
-                        type="button"
-                        aria-pressed={motion}
-                        onClick={onToggleMotion}
-                        className="mt-8 flex items-center gap-2 text-xs text-muted transition-colors duration-150 hover:text-text"
-                    >
-                        <span aria-hidden="true" className={cn('size-1.5 rounded-pill', motion ? 'bg-text' : 'border border-faint')} />
-                        Immersive motion
-                    </button>
                 </div>
             </nav>
 
