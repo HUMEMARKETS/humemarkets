@@ -9,26 +9,19 @@ simulated traders." The bots are not users and their volume is not real volume. 
 
 No China clip and no copy-trading clip: both were cut, and filming them would show something that does not exist.
 
-## Prepare once (about 15 minutes, then let it run for an hour before filming)
+## Prepare once
 
-1. Fund the deployer `0x75962B2A0750293E01E8205b31717329Fae78147` from https://faucet.testnet.chain.robinhood.com
-   (about 0.02 ETH; the bots and the price driver pay gas from it). Fund your recording wallet the same way.
-2. Mint collateral to your recording wallet: `bash scripts/mint-testnet.sh 0xYourWallet` (100,000 mUSDC and 100 TSLA).
-3. In your wallet add network **Robinhood Chain Testnet**, chain id 46630, RPC `https://rpc.testnet.chain.robinhood.com`.
-4. Start the simulator from the repo root. It moves all 24 mock feeds, runs ten bot traders and a liquidator, and keeps the
-   lending oracle fresh. Set your wallet so the liquidator may liquidate it on camera (clip 4):
-   ```bash
-   set -a; . ./.env.testnet; set +a
-   export CHAIN_ID=46630 RPC_URL=https://rpc.testnet.chain.robinhood.com SIM_RPC_URL=https://rpc.testnet.chain.robinhood.com HUME_ADDRESSES=
-   export SIM_LIQUIDATE_WALLETS=0xYourWallet
-   pnpm --filter @hume/simulator bootstrap 4
-   pnpm --filter @hume/simulator start
-   ```
-   Charts fill from price ticks once a minute, so a market started five minutes ago films badly. Start this an hour early.
-   `pnpm --filter @hume/simulator backfill 72 replace` draws 72 hours at once but needs `SIM_DATABASE_URL`; those candles are
-   simulated, so say so on camera if you use it.
-5. Check before you start: https://api-testnet-8703.up.railway.app/v1/markets returns 25 markets, and the footer of the site
-   reads "Robinhood Chain Testnet".
+1. In your wallet add network **Robinhood Chain Testnet**, chain id 46630, RPC `https://rpc.testnet.chain.robinhood.com`.
+2. Run `bash scripts/demo.sh up 0xYourWallet`. It sends your wallet 0.001 ETH for gas (about 160 transactions), mints it 100,000
+   mUSDC and 100 mock TSLA, tops up the five bots and the liquidator, and starts the simulator in the background. The simulator moves
+   8 mock feeds once a minute (NVDA, TSLA, AAPL, META, SPY, BTC, ETH, GLD), runs the bots (scalper-1, trend-1, reverter-1,
+   degen-long, degen-short) and keeps the lending oracle fresh. It costs about 0.0001 ETH an hour. Your wallet is also on the
+   liquidator's watch list, for clip 4.
+3. **Start it an hour before filming.** Charts fill from price ticks, and a market that started five minutes ago films badly.
+4. `bash scripts/demo.sh status` shows the deployer balance and the last log lines; `bash scripts/demo.sh down` stops it. Mock feeds
+   go stale after an hour, so with the simulator stopped markets refuse trades until it runs again.
+5. Check before you start: https://api-testnet-8703.up.railway.app/v1/markets returns 25 markets, and the header of
+   https://humemarkets.vercel.app reads "Robinhood Chain Testnet". Only the 8 driven markets move; film those.
 
 ## The nine clips
 

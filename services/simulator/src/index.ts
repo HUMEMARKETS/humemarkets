@@ -26,6 +26,7 @@ import { deriveAccount, loadSeed } from "./wallets.js";
 
 const STATE_DIR = fileURLToPath(new URL("../../../.simulator", import.meta.url));
 const SYMBOLS = (process.env.SIM_MARKETS ?? "NVDA,TSLA,AAPL,META,HOOD,AMZN,PLTR,NFLX,AMD,MSFT,GOOGL,COIN,MSTR,SPY,QQQ,AVGO,JPM,DIS,UBER,SHOP,BTC,ETH,LINK,GLD").split(",").map((s) => s.trim().toUpperCase());
+const BOT_IDS = (process.env.SIM_BOTS ?? "").split(",").map((id) => id.trim()).filter(Boolean);
 const TICK_MS = Number(process.env.SIM_TICK_MS ?? 15_000);
 if (!Number.isFinite(TICK_MS) || TICK_MS < 500) throw new Error("SIM_TICK_MS must be at least 500 (half a second).");
 /// Window of the "recent move" that trend and reverter bots react to: about five minutes of steps.
@@ -57,7 +58,8 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 function accounts() {
   const seed = loadSeed(STATE_DIR);
   return {
-    traders: ROSTER.map((persona, index) => ({ persona, account: deriveAccount(seed, index) })),
+    // SIM_BOTS=scalper-1,trend-1 runs only those bots. Addresses come from the roster index, so they do not change.
+    traders: ROSTER.map((persona, index) => ({ persona, account: deriveAccount(seed, index) })).filter(({ persona }) => BOT_IDS.length === 0 || BOT_IDS.includes(persona.id)),
     liquidator: deriveAccount(seed, LIQUIDATOR.index),
   };
 }
@@ -85,14 +87,18 @@ async function bootstrap(hours: number) {
   const perTrade = gasPrice * 600_000n;
   const perPush = gasPrice * 80_000n;
   const gasFor = (txPerHour: number, cost: bigint) => (BigInt(Math.ceil(txPerHour * hours)) * cost * 3n) / 2n;
-  const floor = parseEther("0.0003");
+  // A bot wallet is topped up to at least this much. A small SIM_BOTS set can run on a smaller floor.
+  const floor = parseEther(process.env.SIM_GAS_FLOOR_ETH ?? (BOT_IDS.length > 0 ? "0.0001" : "0.0003"));
   const pushesPerHour = SYMBOLS.length * (3_600_000 / TICK_MS);
 
   const plan = [
     ...traders.map(({ persona, account }) => ({ name: persona.id, address: account.address, target: gasFor(persona.txPerHour, perTrade) })),
     { name: LIQUIDATOR.id, address: liquidator.address, target: gasFor(LIQUIDATOR.txPerHour, perTrade) },
     { name: "price driver (keeper wallet)", address: owner.address, target: gasFor(pushesPerHour, perPush) },
-  ].map((row) => ({ ...row, target: row.target < floor ? floor : row.target }));
+  ]
+    // The price driver is the funder when one wallet does everything: it cannot top itself up.
+    .filter((row) => row.address.toLowerCase() !== funder.address.toLowerCase())
+    .map((row) => ({ ...row, target: row.target < floor ? floor : row.target }));
 
   const rows = await Promise.all(plan.map(async (row) => ({ ...row, balance: await publicClient.getBalance({ address: row.address }) })));
   const missing = rows.map((row) => ({ ...row, top: row.target > row.balance ? row.target - row.balance : 0n }));
@@ -142,8 +148,9 @@ async function start() {
 
   const risk = new Map<string, { maxLeverage: number; maxNotional: number }>();
   for (const { symbol } of marketIds) {
-    const info = await reader.perps.get(symbol);
-    risk.set(symbol, { maxLeverage: Number(info.risk.maxLeverage), maxNotional: dollars(info.risk.maxPositionNotional, decimals) });
+    // `risk.get` does not read the oracle, so a market whose mock feed went stale still lets the driver start and refresh it.
+    const limits = await reader.risk.get(symbol);
+    risk.set(symbol, { maxLeverage: Number(limits.maxLeverage), maxNotional: dollars(limits.maxPositionNotional, decimals) });
   }
 
   const driver = await createPriceDriver({ publicClient, walletClient: walletFor(owner), router: addresses.oracleRouter, marketIds, stateDir: STATE_DIR, rng, volatility: VOLATILITY, tickMs: TICK_MS, log });

@@ -113,3 +113,11 @@ Result: **pass**.
 | `usdgDepositAndWithdrawMoveExactAmounts` | **fail, `1000150000 != 1000000000`** | The vault received 1,000.15 USDG for a 1,000 deposit; looks like a deposit fee or a changed vault; not touched by this work. Investigate in WP4. |
 
 Carried to WP4: the three failing fork tests, and the fork suite must be 7 of 7 before mainnet opens.
+
+## Demo run on a small gas budget (2026-10-08)
+
+The faucet cannot fund the deployer again, so the demo runs on its 0.0033 ETH. `bash scripts/demo.sh up 0xWallet` funds the recording wallet (0.001 ETH, 100,000 mUSDC, 100 mock TSLA), tops up five bots and the liquidator, and starts the simulator in the background with `SIM_TICK_MS=60000`, 8 markets and `SIM_BOTS`. Measured: 8 feeds at 60 s cost about 0.0001 ETH an hour (3,117,573 to 3,114,938 gwei-scaled units over two minutes), so the balance covers a day. Bots trade (positions #104 onward).
+
+Fixes that made it start: `SIM_BOTS` (run and fund only chosen bots, floor `SIM_GAS_FLOOR_ETH`), the funder no longer tries to top itself up, and the simulator reads market limits with `risk.get` instead of `perps.get`, which reverted on a stale mock feed and stopped it from restarting after an idle hour.
+
+Railway testnet keys set (`KEEPER_PRIVATE_KEY` on keeper, `QUOTER_PRIVATE_KEY` on pricing). `pnpm --filter @hume/sdk smoke:testnet` against the live API passes end to end: perp #109 opened and closed, option #1 bought on a signed quote and sold back, withdrawal. The first quote right after a pricing redeploy returned 504 until the service finished starting.

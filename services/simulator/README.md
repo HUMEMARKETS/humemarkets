@@ -102,6 +102,7 @@ pnpm --filter @hume/simulator status   # each wallet's gas, vault balance and op
 
 | Variable | Default | Meaning |
 |---|---|---|
+| `SIM_BOTS` | all ten | Comma-separated bot ids to run (`scalper-1,trend-1,degen-long`). `bootstrap` funds only these, to `SIM_GAS_FLOOR_ETH` (default 0.0001 ETH with `SIM_BOTS`, 0.0003 without) |
 | `SIM_MARKETS` | all 24 testnet markets (`NVDA,TSLA,...,SHOP,BTC,ETH,LINK,GLD`) | Markets to move and trade |
 | `SIM_RPC_URL` | `RPC_URL` | RPC endpoint for the simulator only. Give it its own key, so it does not use up the rate limit the hosted services share |
 | `SIM_TICK_MS` | `15000` | Time between price steps, at least 500. `1000` gives a price line every second (see below) |
