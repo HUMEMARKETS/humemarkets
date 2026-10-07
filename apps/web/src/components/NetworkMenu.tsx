@@ -27,7 +27,9 @@ export function NetworkMenu({ menuAbove = false }: { menuAbove?: boolean }) {
         className="flex h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-control border border-line bg-raised px-2.5 text-[10px] sm:px-3 sm:text-[11px] font-medium uppercase tracking-[0.1em] text-text transition-colors duration-150 hover:border-accent hover:bg-accent-soft hover:text-accent-hover max-xl:h-10"
       >
         <span aria-hidden="true" className="size-1.5 rounded-full bg-up" />
-        {networkName(env.chainId)}
+        {/* The full name needs more than a phone's bar has beside the logo, X and menu buttons. */}
+        <span className="max-sm:hidden">{networkName(env.chainId)}</span>
+        <span className="sm:hidden">{networkName(env.chainId).replace("Robinhood Chain ", "")}</span>
         <svg aria-hidden="true" viewBox="0 0 10 6" className="h-1.5 w-2.5 fill-none stroke-current" strokeWidth="1.5">
           <path d="M1 1l4 4 4-4" />
         </svg>

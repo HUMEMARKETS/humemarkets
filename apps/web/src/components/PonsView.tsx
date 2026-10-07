@@ -30,6 +30,9 @@ function fmtSmallUsd(value: number | null): string {
   return `$${value.toFixed(Math.min(12, Math.ceil(-Math.log10(value)) + 2))}`;
 }
 
+/// The dollar price when the ETH price is known, the ETH price when it is not (a stale feed must not blank the list).
+const priceText = (token: PonsRow) => (token.priceUsd !== null ? fmtSmallUsd(token.priceUsd) : token.priceEth !== null ? `${token.priceEth.toPrecision(3)} ETH` : "–");
+
 const amountText = (value: bigint, decimals: number, digits: number) =>
   Number(formatUnits(value, decimals)).toLocaleString("en-US", { maximumFractionDigits: digits });
 
@@ -95,7 +98,7 @@ function PonsTicket({ token, router }: { token: PonsRow; router?: Address }) {
           estimate: amountText(estimate.out, outDecimals, side === "buy" ? 4 : 8),
           minimum: amountText(minimum, outDecimals, side === "buy" ? 4 : 8),
           impactPct: estimate.impactPct,
-          priceLine: `${token.priceEth?.toPrecision(3)} ETH (${fmtSmallUsd(token.priceUsd)})`,
+          priceLine: token.priceUsd !== null ? `${token.priceEth?.toPrecision(3)} ETH (${fmtSmallUsd(token.priceUsd)})` : `${token.priceEth?.toPrecision(3)} ETH`,
         })
       : undefined;
   const unsigned = !router ? "Buying and selling Pons tokens is not open on this network yet." : !wallet ? "Connect a wallet first." : undefined;
@@ -141,7 +144,7 @@ function PonsTicket({ token, router }: { token: PonsRow; router?: Address }) {
             {token.name} <span className="text-muted">{token.symbol}</span>
           </p>
           <p className="text-xs text-muted">
-            {fmtSmallUsd(token.priceUsd)} · {held.data !== undefined ? `you hold ${amountText(held.data, token.decimals, 4)}` : "connect to see your balance"}
+            {priceText(token)} · {held.data !== undefined ? `you hold ${amountText(held.data, token.decimals, 4)}` : "connect to see your balance"}
           </p>
         </div>
       </div>
@@ -243,7 +246,7 @@ export function PonsView() {
                       </span>
                     </span>
                   </th>
-                  <td className="px-3 py-2.5 text-right tabular-nums">{fmtSmallUsd(token.priceUsd)}</td>
+                  <td className="px-3 py-2.5 text-right tabular-nums">{priceText(token)}</td>
                   <td className="px-3 py-2.5 text-right tabular-nums max-sm:hidden">{token.marketCapUsd === null ? "–" : `$${compact.format(token.marketCapUsd)}`}</td>
                   <td className="px-3 py-2.5 text-right">
                     <Button variant="secondary" onClick={() => setPicked(token.address)} aria-pressed={token.address === picked}>
