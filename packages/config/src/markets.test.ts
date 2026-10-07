@@ -46,9 +46,9 @@ test("the checked-in literal matches deployments/robinhood_mainnet.markets.json"
   );
 });
 
-test("all 32 mainnet markets are tradeable, and every one has a feed", () => {
+test("all 36 mainnet markets are tradeable, and every one has a feed", () => {
   const all = marketsForChain(ROBINHOOD_MAINNET_CHAIN_ID);
-  assert.equal(all.length, 32);
+  assert.equal(all.length, 36);
   for (const market of all) {
     assert.equal(market.tier, "tradeable", market.symbol);
     assert.ok(market.feed, `${market.symbol} has no feed`);
@@ -62,16 +62,17 @@ test("marketsForGroup returns each group's set, the groups partition the list, a
   assert.deepEqual(symbols("etf"), ["SPY", "QQQ"]);
   assert.equal(symbols("us-equities").length, 25);
   assert.deepEqual(symbols("us-equities").slice(0, 3), ["NVDA", "AAPL", "TSLA"]);
-  // crypto arrives in Phase 11 and pons later still. Empty is a real answer for a group that exists; it
-  // is an unknown group that must throw (next test).
-  for (const group of ["crypto", "pons"] as const) assert.deepEqual(symbols(group), []);
+  assert.deepEqual(symbols("crypto"), ["BTC", "ETH", "LINK", "GLD"]);
+  // pons arrives later. Empty is a real answer for a group that exists; it is an unknown group that
+  // must throw (next test).
+  assert.deepEqual(symbols("pons"), []);
   // Every market is in exactly one group, and every group in the data is a known one.
   const total = MARKET_GROUPS.reduce((sum, group) => sum + symbols(group).length, 0);
   assert.equal(total, marketsForChain(ROBINHOOD_MAINNET_CHAIN_ID).length);
 });
 
 test("marketsForTier returns the tier's set, and the tiers partition the list", () => {
-  assert.equal(marketsForTier(ROBINHOOD_MAINNET_CHAIN_ID, "tradeable").length, 32);
+  assert.equal(marketsForTier(ROBINHOOD_MAINNET_CHAIN_ID, "tradeable").length, 36);
   assert.deepEqual(marketsForTier(ROBINHOOD_MAINNET_CHAIN_ID, "quoted"), []);
   assert.deepEqual(marketsForTier(ROBINHOOD_MAINNET_CHAIN_ID, "listed"), []);
   const total = LISTING_TIERS.reduce((sum, tier) => sum + marketsForTier(ROBINHOOD_MAINNET_CHAIN_ID, tier).length, 0);

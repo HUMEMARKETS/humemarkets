@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState, type ReactNode } from "react";
 import type { MarketStats } from "@hume/sdk";
-import type { MarketConfig, MarketGroup } from "@hume/types";
+import { isMarketGroup, type MarketConfig, type MarketGroup } from "@hume/types";
 import { useAllMarkets, useMarketOverviews, useMarketStats, useSettlementDecimals } from "@/hooks/queries";
 import { env } from "@/lib/env";
 import { fmtBps, fmtPrice, fmtUsdOrDash } from "@/lib/format";
@@ -158,9 +158,11 @@ export function MarketsTable() {
   const { data: stats, isError: statsUnavailable } = useMarketStats();
   const { data: decimals = 6 } = useSettlementDecimals();
   // `?q=` arrives from the landing page's market search.
-  const [filter, setFilter] = useState(useSearchParams().get("q") ?? "");
+  const params = useSearchParams();
+  const [filter, setFilter] = useState(params.get("q") ?? "");
   const [sort, setSort] = useState<{ key: SortKey; direction: "asc" | "desc" }>({ key: "asset", direction: "asc" });
-  const [group, setGroup] = useState<GroupTab>("all");
+  const groupParam = params.get("group") ?? "";
+  const [group, setGroup] = useState<GroupTab>(isMarketGroup(groupParam) ? groupParam : "all");
 
   const symbols = useMemo(() => (markets ?? []).map((market) => symbolOf(market.marketId)), [markets]);
   const overviews = useMarketOverviews(symbols);

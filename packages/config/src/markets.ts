@@ -73,11 +73,11 @@ export function validateMarkets(listings: readonly MarketListing[]): readonly Ma
 /// arrangement as the addresses above it: regenerate with `pnpm --filter @hume/config sync:markets`
 /// after editing that file, and `markets.test.ts` fails if the two ever drift.
 ///
-/// All 32 are `tradeable`. The 32 are not a shortlist — `REFERENCE.md` Section 2 Finding 1 measured
+/// All 36 are `tradeable`. The 32 equities are not a shortlist — `REFERENCE.md` Section 2 Finding 1 measured
 /// that only 33 of the 194 tokenized assets on this chain have a Chainlink feed at all, and GLD is the
 /// one unused. Groups are display only: `china` (BABA, TSM, EWY), `commodities` (SLV, USO) and `etf`
 /// (SPY, QQQ) regroup markets that already trade, and the rest are `us-equities`. The `crypto` group
-/// arrives in Phase 11, where a perp needs only a feed (Finding 5).
+/// (BTC, ETH, LINK, GLD) is feed-only: a perp needs only a feed (Finding 5), and these stay fresh at any hour.
 const robinhoodMainnetMarkets: readonly MarketListing[] = [
   { symbol: "NVDA", name: "NVIDIA • Robinhood Token", token: "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC", feed: "0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
   { symbol: "AAPL", name: "Apple • Robinhood Token", token: "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9", feed: "0x6B22A786bAa607d76728168703a39Ea9C99f2cD0", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
@@ -111,6 +111,10 @@ const robinhoodMainnetMarkets: readonly MarketListing[] = [
   { symbol: "SPCX", name: "Space Exploration Technologies Corp. Class A Common Stock • Robinhood Token", token: "0x4a0E65A3EcceC6dBe60AE065F2e7bb85Fae35eEa", feed: "0xB265810950ba6c5C0Ff821c9963014a56fD8Bffb", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable" },
   { symbol: "TSM", name: "Taiwan Semiconductor Manufacturing • Robinhood Token", token: "0x58FfE4a942d3885bAa22D7520691F611EF09e7AA", feed: "0x874cF94aa8eC88Fd9560094dD065f2fB3E41Fc2F", maxLeverage: 5, maintenanceBps: 750, group: "china", tier: "tradeable" },
   { symbol: "USO", name: "United States Oil Fund • Robinhood Token", token: "0xa30FA36Db767ad9eD3f7a60fC79526fB4d56D344", feed: "0x75a9c76Ef439e2C7c2E5a34Ab105EcFe3766431c", maxLeverage: 5, maintenanceBps: 750, group: "commodities", tier: "tradeable" },
+  { symbol: "BTC", name: "Bitcoin", token: "0xa2c5184bF03d373Dc9dE4876eb4Bce595B460251", feed: "0xa2c5184bF03d373Dc9dE4876eb4Bce595B460251", maxLeverage: 5, maintenanceBps: 750, group: "crypto", tier: "tradeable" },
+  { symbol: "ETH", name: "Ether", token: "0x78F3556b67E17Df817D51Ef5a990cDaF09E8d3A9", feed: "0x78F3556b67E17Df817D51Ef5a990cDaF09E8d3A9", maxLeverage: 5, maintenanceBps: 750, group: "crypto", tier: "tradeable" },
+  { symbol: "LINK", name: "Chainlink", token: "0xe86e3422Aa9B5e8ee9f3E41a63975bC387A8bce9", feed: "0xe86e3422Aa9B5e8ee9f3E41a63975bC387A8bce9", maxLeverage: 5, maintenanceBps: 750, group: "crypto", tier: "tradeable" },
+  { symbol: "GLD", name: "SPDR Gold Trust • Robinhood Token", token: "0xC9a981FEE1F9DEc688bb123ccDeCc63D0deBFC4e", feed: "0x470A51258068043bd43dC0a56245625C9fE86eB0", maxLeverage: 5, maintenanceBps: 750, group: "crypto", tier: "tradeable" },
 ];
 
 /// No market list is recorded for testnet: `deployments/robinhood_testnet.markets.json` does not

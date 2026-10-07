@@ -11,3 +11,34 @@ Check: `OracleRouter.primarySource(id)` then `owner()` for every id from `Market
 First tx `0xc83436bc69102302a8fd9f323255480b1f1cc09bcc4e4dedb2eeefb69533d42c`, last tx `0x6caa53f43618f0b146589b6db1991a371a8100ccaefabd4a0f90cd5cbcebab69`. Full list: `jq -r '.receipts[].transactionHash' packages/contracts/broadcast/RepointFeeds.s.sol/46630/run-latest.json` (the broadcast folder is gitignored).
 
 New feed addresses, by market: NVDA `0xcA95464d9042B55846ea9f66b743C84Fa9Ac1C2F`, AAPL `0xC618824D6BeED249343737A46A97bB3DFee51734`, TSLA `0x89bB18Fd3F2C97F93bf9d626ddb0fD84a75Ed6CC`, META `0xB3EF5ea7808fe07B2ac7245a634920FA1F0df981`, HOOD `0x23021d2F0a58ce52CE08604b8f1E041007Cb75Ff`, AMZN `0x738Dae3db7B601113659c159860551BAFfC12313`, PLTR `0x9b90f26565885443D475d2425B6B8BEfe5E8194C`, NFLX `0xDcCFd5Ca25ff8f9187dC747a65F2bD3cA8B11A42`, AMD `0x5F444d37ddeD37Cb0A3DFCB19da474e78a99eE12`, MSFT `0x5438D8a3811D00AC51A588Ba6BC752B69669e97B`, GOOGL `0x79f850fA7026f7Da457606DAC7a74f9648F28b52`, COIN `0x583d6AE5A685fEdA062154144ECf50CB7364DaA7`, MSTR `0x6f3b0B2C4075347b40641163e93d28E6861e42A0`, SPY `0x1Ff9759E5BA2E2Dcc4206C2e7Aae84143f09A3f1`, QQQ `0x3B73d200D175b7665F11Db9C2b1Ecc8F70340a33`, AVGO `0x9B7dF3578643Ce80760548A319586bE685749d6F`, JPM `0xdfE118fCC975ba5DE041BC66da0e89f152fe75F0`, DIS `0xE9B27CB42FF640588A2241A099D767C4dEAd6080`, UBER `0xf733c0ea2E79a6a83908521B569e8DE99fFA54Fd`, SHOP `0xAa1E03e3C9373B45E0e450410768e4fe3623F5f2`, E2E `0xADEbCde1CEe326C0f772A62c29723b3b60e7F250`.
+
+## WP2 / Phase 11 — crypto set on testnet (2026-10-08)
+
+Result: **testnet pass, mainnet amber** (dry run deferred to Phase L, reasons below).
+
+`packages/contracts/script/add-markets.sh` listed BTC, ETH, LINK and GLD (5x, 7.5% maintenance, deployer-owned mock feeds, prices from the live mainnet feeds, whole dollars). The four rows are in `deployments/robinhood_mainnet.markets.json` with `group: crypto`, which testnet borrows through `groupForSymbol`. `/markets?group=crypto` now opens the Crypto tab.
+
+| Market | Mock token | Mock feed | Start | After simulator, 75 s |
+| --- | --- | --- | --- | --- |
+| BTC | `0x89e70eA807FA168470E3840B9B2d64AcEC4A48be` | `0x16A4F3b8EF0dfAFBCD6F7c4350EbA6754a7075d7` | 83,345 | 83,306.02 |
+| ETH | `0x39594a0358C51c01426ea82cCc23d085204960F1` | `0x3E16e3D4A36D42D6C69C3ded4CB42B89f56014C7` | 2,555 | 2,554.84 |
+| LINK | `0x756AaEE893f377fc5303c2f887c399FFfaA3bC6C` | `0x4f240FCdBadb25F98B9988B3403534FcD3180f38` | 13 | 13.01 |
+| GLD | `0xFfF233bf8245D360C536d5172eA6fd64A4addE06` | `0x9ea9EF7616a2F874920eE957a34E86bfD43F84F1` | 376 | 376.05 |
+
+Prices read from `GET /v1/prices/:symbol` (`indexPrice`). The simulator's default `SIM_MARKETS` now includes the four.
+
+Pool and trade (`pnpm --filter @hume/sdk perp:testnet`, script `packages/sdk/scripts/testnet-perp.ts`):
+
+| Step | Tx |
+| --- | --- |
+| mint 100,000 mUSDC | `0xc0e42c6cd281d28abc25216682ced966770837c17435b022217b7206c538b473` |
+| `fundPool` 100,000 (pool was empty, hence `InsufficientPoolReserves` in Phase T) | `0x8c7fdd908d7c5bb97886059dac3a1ee22882c7cbbab30c288f16bd0750c5dbf8` |
+| mint 1,000 | `0xea5f8f30bb185e84bf986eb11513504479fb15490783b610a2f2fc8ddaeea45a` |
+| open BTC long #98, 100 collateral, 2x | `0x523920ad475ddb62570066c5d199ce04dcbfba87eb3c8b6e1d1f605e00a02ea5` |
+| close BTC #98 | `0x532edd465afed8fbf80953e1065d4ae4a42dc8812227307b2a6c2ca3cf3871ec` |
+
+The API listed 23 of 25 markets right after (LINK and GLD wait for the next `*/5` indexer pass).
+
+Mainnet, read-only, feed ages at 2026-10-07 ~19:46 UTC (`latestRoundData`, 8 decimals): BTC $83,345.38 aged 3.3 h, ETH $2,554.62 aged 1.1 h, LINK $13.37 aged 1.1 h, GLD $376.28 aged 3.5 h. Acceptance wanted GLD and LINK under 10 minutes: **not met at this reading**. Feeds update on 0.5% deviation or heartbeat, so a "tight constant" `MAX_PRICE_AGE` would make BTC and ETH reads revert for hours.
+
+Open for Phase L: (1) `AddMainnetMarket.s.sol` calls `symbol()` and `decimals()` on `TOKEN`, so it reverts for BTC, ETH and LINK, which have no tokenized asset (token = feed address); it needs a feed-only path. (2) Pick `MAX_PRICE_AGE` per feed from its heartbeat, not a global tight value. (3) GLD token is `0xC9a981FEE1F9DEc688bb123ccDeCc63D0deBFC4e` (from api.robinhood.com/rhj/assets).

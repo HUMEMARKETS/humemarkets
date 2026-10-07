@@ -38,3 +38,7 @@ recorded the demo.
   sit in Railway's environment to sign. Phase 16 shrinks to "grant the roles to the deployer and run
   one pause drill". A leaked Railway variable then means full control of the vault. This is the
   operator's decision (2026-10-08); revisit before real money grows.
+
+## Findings carried to WP4 (mainnet)
+
+- Crypto listing (Phase 11 mainnet half): `AddMainnetMarket.s.sol` needs a feed-only path (no `symbol()` check when token is the feed), and `MAX_PRICE_AGE` must follow each feed's heartbeat. See `docs/evidence/testnet.md`.

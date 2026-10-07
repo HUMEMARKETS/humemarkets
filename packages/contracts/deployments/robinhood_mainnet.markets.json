@@ -321,6 +321,46 @@
       "maintenanceBps": 750,
       "group": "commodities",
       "tier": "tradeable"
+    },
+    {
+      "symbol": "BTC",
+      "name": "Bitcoin",
+      "token": "0xa2c5184bF03d373Dc9dE4876eb4Bce595B460251",
+      "feed": "0xa2c5184bF03d373Dc9dE4876eb4Bce595B460251",
+      "maxLeverage": 5,
+      "maintenanceBps": 750,
+      "group": "crypto",
+      "tier": "tradeable"
+    },
+    {
+      "symbol": "ETH",
+      "name": "Ether",
+      "token": "0x78F3556b67E17Df817D51Ef5a990cDaF09E8d3A9",
+      "feed": "0x78F3556b67E17Df817D51Ef5a990cDaF09E8d3A9",
+      "maxLeverage": 5,
+      "maintenanceBps": 750,
+      "group": "crypto",
+      "tier": "tradeable"
+    },
+    {
+      "symbol": "LINK",
+      "name": "Chainlink",
+      "token": "0xe86e3422Aa9B5e8ee9f3E41a63975bC387A8bce9",
+      "feed": "0xe86e3422Aa9B5e8ee9f3E41a63975bC387A8bce9",
+      "maxLeverage": 5,
+      "maintenanceBps": 750,
+      "group": "crypto",
+      "tier": "tradeable"
+    },
+    {
+      "symbol": "GLD",
+      "name": "SPDR Gold Trust \u2022 Robinhood Token",
+      "token": "0xC9a981FEE1F9DEc688bb123ccDeCc63D0deBFC4e",
+      "feed": "0x470A51258068043bd43dC0a56245625C9fE86eB0",
+      "maxLeverage": 5,
+      "maintenanceBps": 750,
+      "group": "crypto",
+      "tier": "tradeable"
     }
   ]
 }

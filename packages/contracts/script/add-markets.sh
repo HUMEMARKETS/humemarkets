@@ -2,9 +2,9 @@
 # Adds the extra testnet markets with script/AddMarket.s.sol, one forge run per symbol.
 # Skips a symbol that is already listed, so it is safe to run again after a failure.
 #
-# Needs, in the environment: PRIVATE_KEY (the deployer, funded with testnet ETH), RPC_URL and
-# PRICE_FEED_OWNER (the keeper's address; a feed's owner cannot be changed later, and a feed the
-# keeper does not own goes stale after an hour and breaks every price read for that market).
+# Needs, in the environment: PRIVATE_KEY (the deployer, funded with testnet ETH) and RPC_URL. Each
+# mock feed is owned by the deployer, the only wallet (a feed's owner cannot be changed later, and a
+# feed nobody refreshes goes stale after an hour and breaks every price read for that market).
 # Run from packages/contracts:  bash script/add-markets.sh
 #
 # The prices and risk numbers are placeholders, not market data (see CHANGELOG [Unreleased]).
@@ -12,7 +12,6 @@ set -euo pipefail
 
 : "${PRIVATE_KEY:?set PRIVATE_KEY to the deployer key}"
 : "${RPC_URL:?set RPC_URL, for example https://rpc.testnet.chain.robinhood.com}"
-: "${PRICE_FEED_OWNER:?set PRICE_FEED_OWNER to the keeper address}"
 export NETWORK_NAME="${NETWORK_NAME:-robinhood_testnet}"
 
 REGISTRY=$(python3 -c "import json;print(json.load(open('deployments/${NETWORK_NAME}.json'))['marketRegistry'])")
@@ -31,6 +30,10 @@ MARKETS=(
   "DIS|Walt Disney (tokenized, mock)|120|5|750|250000|3000000"
   "UBER|Uber (tokenized, mock)|90|5|750|250000|3000000"
   "SHOP|Shopify (tokenized, mock)|150|5|750|250000|3000000"
+  "BTC|Bitcoin (mock)|83345|5|750|250000|3000000"
+  "ETH|Ether (mock)|2555|5|750|250000|3000000"
+  "LINK|Chainlink (mock)|13|5|750|250000|3000000"
+  "GLD|SPDR Gold Trust (tokenized, mock)|376|5|750|250000|3000000"
 )
 
 for row in "${MARKETS[@]}"; do

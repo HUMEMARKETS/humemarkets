@@ -13,7 +13,8 @@
     "generate:abis": "node scripts/generate-abis.mjs",
     "prepublishOnly": "pnpm build && pnpm test",
     "smoke:testnet": "tsx scripts/testnet-smoke.ts",
-    "lifecycle:testnet": "tsx scripts/testnet-lifecycle.ts"
+    "lifecycle:testnet": "tsx scripts/testnet-lifecycle.ts",
+    "perp:testnet": "tsx scripts/testnet-perp.ts"
   },
   "dependencies": {
     "viem": "^2.21.0"
