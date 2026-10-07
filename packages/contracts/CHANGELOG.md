@@ -5,6 +5,38 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Redeployed to testnet under operator-held keys (2026-10-07, Phase T0)
+
+The previous testnet deployment is **abandoned**: its admin (`0xC804c6c50CE6F5B5dFB035378A3F84145914697F`) and the owner of its mock price feeds (`0xa22e9da21Ae258f733EE932f767c46CB6508eD69`) are keys the operator does not hold, so prices could not move and the pause could not be rehearsed. A fresh stack was deployed with `DeployAll.s.sol` under two new testnet-only keys: deployer `0x75962B2A0750293E01E8205b31717329Fae78147` (admin, quoter and maker) and keeper `0x80F8c14b40f51B3C2dBf33ca1e094F3c39Ead8B5` (owns every mock price feed). The settlement token is unchanged (`0x70b0FDa35dEb7BA710C601Ed9c45b9F992027112`, mUSDC, 18 decimals, public mint).
+
+The 20 markets of the old registry were recreated at the same prices (rounded to whole dollars), plus a paused `E2E` market so the paused refusal can be proven in a browser. The credit stack was deployed with a TSLA/USDG pair, unpaused and unseeded. New addresses: `packages/contracts/deployments/robinhood_testnet.json`. Credit limits for testnet: `deployments/robinhood_testnet.limits.json`. Evidence: `docs/evidence/phase-T0.md`.
+
+Abandoned deployment (do not use):
+
+| Contract | Address |
+| --- | --- |
+| buybackModule | `0xccF3B81e6cc3A0B29B4b9BF2240979C2DD5f470e` |
+| collateralManager | `0x26F4E54735b608520441d481927E01bC5dD64F97` |
+| crossMargin | `0xE328D674734D69c47c1e0b1dC78CB78e5c42d29A` |
+| feeManager | `0x91f32451000F9c506eBdFC9f20DcBd17fAF806CB` |
+| fundingManager | `0x51d889e99751046112C3e9B548E653aa04A3a5b9` |
+| insuranceFund | `0xE25f898a55090BC91b9C5ed119Da11D211181e31` |
+| liquidationEngine | `0x725d8b6d2d8522D8F218B1f6B1482D403fB80b07` |
+| marketRegistry | `0xb87fd9Caa50e13F9Be66e8B20E2E7ff6881978ea` |
+| optionMarket | `0x61Ad7EcC224088dC6d3c7e78D83aB5bf71dba8Ee` |
+| optionPositionManager | `0x42ee6631c48FAb50Cf6065Ad22D286cBf96E537d` |
+| optionsEngine | `0xceb57470bac989Db605f73C608fCAd4A6420C576` |
+| oracleRouter | `0xEC69d88bd7087599a42Bb66b5CF5E37103AE7a44` |
+| perpOrderManager | `0xd6FD86e71FDE619516601729C441D3d015fF5247` |
+| perpPositionManager | `0xC3805D46fF734B65DfBd1117770D058188778315` |
+| perpsEngine | `0x8d80Ab71A773B516E3b5CEb51de99717c0F1C5a1` |
+| priceValidator | `0x9192bA91C97293d93fbaa63c746Abe8085365E9d` |
+| rfqManager | `0x98DfBF62399819A508ECFD0E4b605F015970A19e` |
+| riskManager | `0x2058eBA4B711282bAb82179F241dB04DdECc5FB3` |
+| settlementToken | `0x70b0FDa35dEb7BA710C601Ed9c45b9F992027112` |
+| subaccountFactory | `0x0E4Df209df0A09898f0Ee8cb7E45EF5952C1e289` |
+| vault | `0x4d33A0A4B2b8d18Aadb1aEa325C46A4147b8f5cB` |
+
 ### Added — session-aware oracle staleness, and the launch caps as data (2026-10-04)
 
 A flat staleness limit cannot work on this chain. Every Chainlink feed here updates on a 0.5% deviation or a 24-hour heartbeat and goes quiet while its underlying is shut, so a one-hour limit closes the venue every evening and a 25-hour limit lets a day-old price settle. Measured on 2026-10-04 (a Sunday) all 32 equity feeds read 35.7 to 46.0 hours old, and over 180 rounds of history per feed, 9 of the 32 printed nothing at all during a whole 420-minute session — SPY's median in-session silence is 358 minutes. So no single age can tell a quiet market from a dead feed.

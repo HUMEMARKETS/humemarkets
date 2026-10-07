@@ -1,0 +1,14 @@
+{
+  "chainId": 46630,
+  "note": "Testnet limits, read by script/DeployCreditStack.s.sol. The settlement token (mUSDC) has 18 decimals and a public mint, so these caps are generous and carry no real money. Mainnet limits live in robinhood_mainnet.limits.json.",
+  "settlementTokenDecimals": 18,
+  "credit": {
+    "maxLtvBps": 6000,
+    "liquidationLtvBps": 7000,
+    "maxLeverageBps": 25000,
+    "supplyCap": 1000000000000000000000000,
+    "borrowCap": 1000000000000000000000000,
+    "oracleStalenessSeconds": 86400,
+    "note": "supplyCap is in TSLA base units (18 decimals): 1e24 = 1,000,000 TSLA. borrowCap is in mUSDC base units (18 decimals): 1e24 = 1,000,000 mUSDC. Staleness is 24 hours because the simulator and the manual feeder move prices at any hour."
+  }
+}
