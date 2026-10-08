@@ -15,7 +15,6 @@ import { MONO, SPACED_CAPS } from '@/lib/frame';
 import { cn } from '@hume/ui';
 
 export const metadata: Metadata = {
-    title: 'Features · HUME',
     description:
         'Perpetuals, options and a shared vault for tokenized stocks on Robinhood Chain: how each works, what it costs, and how to check it yourself.',
 };

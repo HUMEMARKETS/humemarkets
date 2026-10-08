@@ -1,9 +1,10 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
+import { SITE_TITLE } from "@/lib/site";
 import { THEME_GROUND, THEME_MUTED, THEME_TEXT } from "@/lib/theme-colors";
 
-export const alt = "HUME — Global markets, onchain.";
+export const alt = SITE_TITLE;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -29,7 +30,7 @@ export default async function OpengraphImage() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={markSrc} width={216} height={115} alt="" style={{ marginBottom: 44 }} />
         <div style={{ fontSize: 96, letterSpacing: -2, fontWeight: 700 }}>HUME</div>
-        <div style={{ fontSize: 34, color: THEME_MUTED, marginTop: 28 }}>Global markets, onchain.</div>
+        <div style={{ fontSize: 34, color: THEME_MUTED, marginTop: 28 }}>Markets are beliefs in motion</div>
       </div>
     ),
     size,

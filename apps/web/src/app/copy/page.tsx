@@ -1,11 +1,9 @@
 import { Panel } from "@hume/ui";
-import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { AppPage } from "@/components/AppPage";
 import { CopyFollows } from "@/components/CopyFollows";
 import { env } from "@/lib/env";
 
-export const metadata: Metadata = { title: "Copy trading · HUME" };
 
 export default function Page() {
   if (!env.copyTrading) notFound();

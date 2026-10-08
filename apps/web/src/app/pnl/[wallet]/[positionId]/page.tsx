@@ -11,10 +11,10 @@ type Props = { params: Promise<{ wallet: string; positionId: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { wallet, positionId } = await params;
   const result = await loadPnlCard(wallet, positionId);
-  if (result.kind !== "ok") return { title: "PNL card · HUME" };
+  if (result.kind !== "ok") return {};
   const p = cardProps(cardPartsFromApi(result.card));
-  const title = `${p.symbol} ${p.side} ${p.pnl} (${p.roi}) · HUME`;
-  return { title, openGraph: { title }, twitter: { card: "summary_large_image", title } };
+  const description = `${p.symbol} ${p.side} ${p.pnl} (${p.roi})`;
+  return { description, openGraph: { description }, twitter: { card: "summary_large_image", description } };
 }
 
 function Notice({ title, children, retryHref }: { title: string; children: string; retryHref?: string }) {

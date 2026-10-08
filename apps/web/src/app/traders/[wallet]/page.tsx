@@ -1,5 +1,4 @@
 import { chip, cn } from "@hume/ui";
-import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppPage } from "@/components/AppPage";
@@ -7,7 +6,6 @@ import { TraderProfile } from "@/components/TraderProfile";
 import { env } from "@/lib/env";
 import { MONO } from "@/lib/frame";
 
-export const metadata: Metadata = { title: "Trader · HUME" };
 
 type Props = { params: Promise<{ wallet: string }> };
 

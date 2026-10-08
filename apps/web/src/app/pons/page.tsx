@@ -1,7 +1,5 @@
-import type { Metadata } from "next";
 import { AppPage } from "@/components/AppPage";
 import { PonsView } from "@/components/PonsView";
-export const metadata: Metadata = { title: "Pons · HUME" };
 
 export default function Page() {
   return (

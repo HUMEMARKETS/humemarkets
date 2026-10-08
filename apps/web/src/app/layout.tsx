@@ -4,6 +4,7 @@ import { preconnect } from "react-dom";
 import type { ReactNode } from "react";
 import { AppShell } from "@/components/AppShell";
 import { env } from "@/lib/env";
+import { SITE_DESCRIPTION, SITE_TITLE } from "@/lib/site";
 import { X_HANDLE } from "@/lib/social";
 import { THEME_SCRIPT } from "@/lib/theme-script";
 import { THEME_GROUND } from "@/lib/theme-colors";
@@ -22,11 +23,11 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "HUME — Markets are beliefs in motion",
-  description: "Global markets, onchain.",
+  title: { absolute: SITE_TITLE },
+  description: SITE_DESCRIPTION,
   openGraph: {
-    title: "HUME — Markets are beliefs in motion",
-    description: "Global markets, onchain.",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
     siteName: "HUME",
     type: "website",
   },
@@ -34,8 +35,8 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     site: X_HANDLE,
     creator: X_HANDLE,
-    title: "HUME — Markets are beliefs in motion",
-    description: "Global markets, onchain.",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
   },
 };
 

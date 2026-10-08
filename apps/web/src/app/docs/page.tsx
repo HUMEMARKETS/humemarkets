@@ -12,7 +12,6 @@ import { MONO, PAGE_FRAME } from '@/lib/frame';
 import { cn, listLink } from '@hume/ui';
 
 export const metadata: Metadata = {
-    title: 'Docs · HUME',
     description:
         'How HUME perpetuals, options, margin, liquidation and settlement work on Robinhood Chain mainnet, checked against the deployed contracts.',
 };

@@ -1,7 +1,5 @@
-import type { Metadata } from "next";
 import { AppPage } from "@/components/AppPage";
 import { LeaderboardView } from "@/components/LeaderboardView";
-export const metadata: Metadata = { title: "Leaderboard · HUME" };
 
 export default function Page() {
   return (

@@ -1,7 +1,5 @@
-import type { Metadata } from "next";
 import { AppPage } from "@/components/AppPage";
 import { LendingView } from "@/components/LendingView";
-export const metadata: Metadata = { title: "Lending · HUME" };
 
 export default function Page() {
   return (
