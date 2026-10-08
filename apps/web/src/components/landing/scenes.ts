@@ -167,7 +167,7 @@ function mobiusRibbon(u: number, v: number, out: THREE.Vector3, swell = 1) {
 
 /// The HUME mark as Start and Vision draw it: the shaded wire band, with dust drifting along its skin. It
 /// tilts toward the pointer from `rest`, ripples under it, and the dust drifts to it. `shape` is the band's
-/// surface: Start draws the logo's ribbon, Vision the flattened tube.
+/// surface: the logo's ribbon for Start and Vision; the flattened tube is the default.
 function wireMark(
     own: ReturnType<typeof bag>,
     palette: Palette,
@@ -793,7 +793,9 @@ function contractBlocks(palette: Palette, deployed: readonly boolean[]): Station
 function resolved(palette: Palette, detail: number): Station {
     const own = bag();
     const group = new THREE.Group();
-    const mark = wireMark(own, palette, detail, new THREE.Euler(0.6, 0, 0.18));
+    const mark = wireMark(own, palette, detail, HUME_REST, mobiusRibbon);
+    // This station is fitted smaller than Start's; the mark keeps the size it has there.
+    mark.object.scale.setScalar(1.1);
     group.add(mark.object);
     const tickSpecs: VoxelSpec[] = Array.from({ length: 120 }, (_, index) => {
         const angle = (2 * Math.PI * index) / 120;
