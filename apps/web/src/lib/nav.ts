@@ -31,3 +31,8 @@ export const MORE_LINKS: NavLink[] = [
 ];
 
 export const isCurrent = (pathname: string, href: string) => pathname === href || pathname.startsWith(`${href}/`);
+
+/// The pages that read as the front door rather than the app: the landing page, Features and Docs. They share one
+/// header (landing frame, 96 px, the landing links) and no markets ticker, so moving between them changes nothing
+/// in the bar. Every other page is the app and keeps the primary nav and the ticker.
+export const isFrontDoor = (pathname: string) => pathname === "/" || isCurrent(pathname, "/features") || isCurrent(pathname, "/docs");

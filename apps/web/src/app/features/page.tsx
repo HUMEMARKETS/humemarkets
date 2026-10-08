@@ -11,7 +11,7 @@ import { TrustStrip } from '@/components/TrustStrip';
 import { CONTRACTS } from '@/lib/contracts';
 import { env } from '@/lib/env';
 import { explorerAddressUrl } from '@/lib/explorer';
-import { MONO, SPACED_CAPS } from '@/lib/frame';
+import { LANDING_GUTTER, MONO, SPACED_CAPS } from '@/lib/frame';
 import { cn } from '@hume/ui';
 
 export const metadata: Metadata = {
@@ -162,7 +162,7 @@ function Block({ id, eyebrow, title, children }: { id?: string; eyebrow: string;
 
 export default function FeaturesPage() {
     return (
-        <AppPage title="Features" description="What HUME does, what it costs, and how to check it yourself.">
+        <AppPage title="Features" gutter={LANDING_GUTTER} description="What HUME does, what it costs, and how to check it yourself.">
             <TrustStrip className="mb-12" />
 
             {MODULES.map((section, index) => (
