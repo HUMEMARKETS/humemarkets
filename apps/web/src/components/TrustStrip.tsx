@@ -4,7 +4,7 @@ import { chains } from "@hume/config";
 import { Skeleton, cn } from "@hume/ui";
 import Link from "next/link";
 import { usePerpMarkets } from "@/hooks/queries";
-import { ALL_CONTRACTS } from "@/lib/contracts";
+import { LISTED_CONTRACTS } from "@/lib/contracts";
 import { env } from "@/lib/env";
 import { MONO } from "@/lib/frame";
 import { REGISTRY_ERROR } from "@/lib/market";
@@ -30,7 +30,7 @@ export function TrustStrip({ className, stacked = false }: { className?: string;
         <dt className={label}>Contracts</dt>
         <dd className={value}>
           <Link href="/features#contracts" className="underline decoration-line underline-offset-4 transition-colors duration-150 hover:text-accent-hover">
-            {`${ALL_CONTRACTS.length} listed`}
+            {`${LISTED_CONTRACTS.length} listed`}
           </Link>
         </dd>
       </div>

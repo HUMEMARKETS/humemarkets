@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@hume/ui";
-import { ALL_CONTRACTS, type ContractRow } from "@/lib/contracts";
+import { LISTED_CONTRACTS, type ContractRow } from "@/lib/contracts";
 import { env } from "@/lib/env";
 import { explorerAddressUrl } from "@/lib/explorer";
 import { MONO, SPACED_CAPS } from "@/lib/frame";
@@ -12,9 +12,9 @@ const GROUPS: ReadonlyArray<{ id: ContractRow["group"]; title: string }> = [
     { id: "Pons", title: "Pons" },
 ];
 
-/// Every contract of the chosen network, with its address and an explorer link, each proxy followed by the
-/// implementation behind it. It reads the network in this browser, so it follows the header's choice and is never
-/// the build network's list on another network. A contract that is not deployed here is not listed.
+/// Every contract of the chosen network at its proxy address, with an explorer link. It reads the network in this
+/// browser, so it follows the header's choice and is never the build network's list on another network. A contract
+/// that is not deployed here is not listed.
 export function ContractsTable() {
     return (
         <div className="overflow-x-auto rounded-panel border border-line/70 bg-surface">
@@ -34,7 +34,7 @@ export function ContractsTable() {
                     </tr>
                 </thead>
                 {GROUPS.map((group) => {
-                    const rows = ALL_CONTRACTS.filter((row) => row.group === group.id);
+                    const rows = LISTED_CONTRACTS.filter((row) => row.group === group.id);
                     if (rows.length === 0) return null;
                     return (
                         <tbody key={group.id} className="divide-y divide-line border-t border-line">
@@ -47,7 +47,7 @@ export function ContractsTable() {
                                 const url = explorerAddressUrl(env.explorerUrl, row.address);
                                 return (
                                     <tr key={`${row.label}-${row.address}`}>
-                                        <th scope="row" className={cn("whitespace-nowrap px-4 py-3 text-left", row.implementation ? "pl-8 font-normal text-muted" : "font-medium")}>
+                                        <th scope="row" className="whitespace-nowrap px-4 py-3 text-left font-medium">
                                             {row.label}
                                         </th>
                                         <td className="px-4 py-3 text-muted">{row.description}</td>

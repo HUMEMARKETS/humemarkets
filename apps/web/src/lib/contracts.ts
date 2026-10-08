@@ -42,6 +42,8 @@ export interface ContractRow {
   group: "Core" | "Lending" | "Pons";
   /// An implementation is the code behind the proxy above it.
   implementation?: true;
+  /// The empty contract the proxies point at while they are deployed: recorded, never used by a reader.
+  placeholder?: true;
 }
 
 const recorded = implementationRecords[env.chainId];
@@ -52,9 +54,9 @@ const recorded = implementationRecords[env.chainId];
 /// explorer. A contract that is not deployed on this network is left out, not listed as missing.
 export const ALL_CONTRACTS: readonly ContractRow[] = (() => {
   const rows: ContractRow[] = [];
-  const add = (label: string, description: string, address: Address | undefined, group: ContractRow["group"], key?: keyof ContractAddresses) => {
+  const add = (label: string, description: string, address: Address | undefined, group: ContractRow["group"], key?: keyof ContractAddresses, placeholder?: true) => {
     if (!address) return;
-    rows.push({ label, description, address, group });
+    rows.push({ label, description, address, group, ...(placeholder && { placeholder }) });
     const implementation = key ? recorded?.implementations[key] : undefined;
     if (implementation) rows.push({ label: `${label} implementation`, description: `The code behind the ${label.toLowerCase()} proxy.`, address: implementation, group, implementation: true });
   };
@@ -68,6 +70,11 @@ export const ALL_CONTRACTS: readonly ContractRow[] = (() => {
   add("Lending vault", "Holds the USDG that lenders supply and borrowers draw.", env.addresses.creditVault, "Lending", "creditVault");
   add("Lending pair", "Locks a stock token as collateral and lends USDG against it, with a liquidation limit.", env.creditPair, "Lending", "creditPairTslaUsdg");
   add("Pons router", "Buys and sells Pons tokens for ETH in their own pools. No owner, no fee, no funds held.", CONTRACTS.find((entry) => entry.label === "Pons router")?.address, "Pons");
-  add("Upgrade placeholder", "An empty contract the proxies point at while they are being deployed.", recorded?.upgradePlaceholder, "Core");
+  add("Upgrade placeholder", "An empty contract the proxies point at while they are being deployed.", recorded?.upgradePlaceholder, "Core", undefined, true);
   return rows;
 })();
+
+/// What the website lists: each contract a reader uses, at its proxy address (or its own address, for the two that
+/// are not proxies: the lending oracle and the Pons router). The implementations behind the proxies and the
+/// placeholder stay in `ALL_CONTRACTS`, which the deploy script counts as 51.
+export const LISTED_CONTRACTS: readonly ContractRow[] = ALL_CONTRACTS.filter((row) => !row.implementation && !row.placeholder);
