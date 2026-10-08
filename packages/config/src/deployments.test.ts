@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { addressesForChain, OPTIONAL_CONTRACTS, protocolTokens, resolveAddresses } from "./deployments.js";
+import { readFileSync } from "node:fs";
+import { resolve as resolvePath } from "node:path";
+import { addressesForChain, implementationRecords, OPTIONAL_CONTRACTS, protocolTokens, resolveAddresses } from "./deployments.js";
 import { ROBINHOOD_MAINNET_CHAIN_ID, ROBINHOOD_TESTNET_CHAIN_ID } from "./chains.js";
 
 const ADDRESS = `0x${"ab".repeat(20)}`;
@@ -49,4 +51,16 @@ test("only mainnet records a protocol token, and it is a valid address", () => {
   assert.ok(token);
   assert.match(token.address, /^0x[0-9a-fA-F]{40}$/);
   assert.equal(token.symbol, "ALPHA");
+});
+
+test("the recorded implementations match the deployment files, and every one sits behind a recorded proxy", () => {
+  for (const [chainId, network] of [[ROBINHOOD_TESTNET_CHAIN_ID, "robinhood_testnet"], [ROBINHOOD_MAINNET_CHAIN_ID, "robinhood_mainnet"]] as const) {
+    const file = JSON.parse(readFileSync(resolvePath(import.meta.dirname, `../../contracts/deployments/${network}.implementations.json`), "utf8")) as Record<string, string>;
+    const record = implementationRecords[chainId];
+    for (const [key, address] of Object.entries(file)) {
+      assert.equal(record.implementations[key as keyof typeof record.implementations], address, `${network} ${key}: run a sync or update deployments.ts`);
+    }
+    const proxies = addressesForChain(chainId);
+    for (const key of Object.keys(record.implementations)) assert.ok(key in proxies, `${network}: implementation ${key} has no proxy recorded`);
+  }
 });

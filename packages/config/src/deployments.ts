@@ -103,6 +103,76 @@ const robinhoodMainnetAddresses: ContractAddresses = {
   rfqManager: "0xE4B6aA5FdC12491e89D999FDe17e69340e19344C",
 };
 
+/// The code behind each proxy of a chain's deployment, and the empty UUPS placeholder `DeployAll` also deploys.
+/// Every contract in the stack is an upgradeable proxy, so a reader who checks a contract on the explorer needs
+/// both addresses: the proxy that holds the state and the implementation that holds the code. The core stack
+/// mirrors `packages/contracts/deployments/<network>.implementations.json`; the credit implementations were read
+/// from each proxy's EIP-1967 slot (`cast implementation`), and the placeholder from the `DeployAll` broadcast.
+export interface ImplementationRecord {
+  implementations: Partial<Record<keyof ContractAddresses, Address>>;
+  upgradePlaceholder?: Address;
+}
+
+const robinhoodTestnetImplementations: ImplementationRecord = {
+  implementations: {
+    buybackModule: "0x1442178047eB7AeD0A1992cF968F662873d97016",
+    collateralManager: "0x3e91e189685e1AA9D419837028cC82d439b86DDB",
+    crossMargin: "0x70532B29924F26648eF25d0c121DfCd5C87cEAb6",
+    feeManager: "0x96469c8e86f5f24fa39e098deC5B2751cb74a081",
+    fundingManager: "0x80b0910fdaAaF35E15b01f814046B26a71eed3d2",
+    insuranceFund: "0xA795faF59a8314d9A1ed15740D0a12217a00F6A1",
+    liquidationEngine: "0xe726862939dFF210621F5A3caaE11B9278c37c78",
+    marketRegistry: "0x74731890b66e729511d112d3ecF060726208e2e4",
+    optionMarket: "0x845D6CeF7191B3a9d0E6E07d16a7182d28d8dD06",
+    optionPositionManager: "0x16Dc9Bf7C8E980Dc4a6e4d768F124C713134660C",
+    optionsEngine: "0x967f3Ba1C7113D0bc45D4111F11E3880009214C8",
+    oracleRouter: "0xBcA81fFc345315b683CdD524fa27609E92BA0deD",
+    perpOrderManager: "0x0b5197A7329dbEd27a89073513216B7915829BE1",
+    perpPositionManager: "0xb6AA98019A7AC3def7ae547fB088E138bf730086",
+    perpsEngine: "0xdB6E91915BdD30C1e82Cb9CDf644443c341Aad19",
+    priceValidator: "0x1d7e31D3964b8316926503B593b84d5dE9e05E6D",
+    rfqManager: "0xf0bfdE031eeFf632FfCA25Ea253294F8BC72f11b",
+    riskManager: "0x0f458436361b084837B6f73949a68697016447b5",
+    subaccountFactory: "0x18457af07EfF9BEF5f778486F7D0d83fc4c92F9B",
+    vault: "0x3283fE5a2f10D1Dce381C1a25952E411E8DD9CAB",
+    creditRegistry: "0xBFFCa2aFc35f0970caaAECe43a17289811F54BfD",
+    creditRouter: "0xde4f3d9D7C9fea37447D0A965fE27037993Ed597",
+    creditVault: "0xA29E07205B437cf1737BD00D811933eE2418417F",
+    creditPairTslaUsdg: "0x0272607F65Ac2d7b8F42096B1749cCa0F3fDD0E7",
+  },
+  upgradePlaceholder: "0x8281801548Aa1a43A2e351351895fc6162ACA446",
+};
+
+const robinhoodMainnetImplementations: ImplementationRecord = {
+  implementations: {
+    buybackModule: "0x9f6207312aA6D431f51235DfFF3884EAaa14218D",
+    collateralManager: "0x498249bC18986216FEC0BECd2f6130D162C970eD",
+    crossMargin: "0x113b7E4E7B70797f25B8A95627c0a3439089E565",
+    feeManager: "0x4398d1D38613D2010eCac29600ed70366A62a873",
+    fundingManager: "0x5cbCA4eD07d5597208539FF53E76f75a1C2c61Cb",
+    insuranceFund: "0xBA5256Ca177a797600BAe6Fe666b2171c6C776e4",
+    liquidationEngine: "0x44D68f1eD1Bb5a352062f451Cf6689fE6BcC9587",
+    marketRegistry: "0x9a2C84c0AEf8e4fc2a88Cc65aAf9ef8E600179A1",
+    optionMarket: "0x73261B27AFca7110cB3b591Ca3B3376223678425",
+    optionPositionManager: "0x90622fCB4861036A5A4B47a6d26aBa28fa3EA134",
+    optionsEngine: "0x0a1F47a4eF84acb7C85cf54Fbe15C912FcB70BEE",
+    oracleRouter: "0xD656Db63141B7Df88699964AC0B22ed0865dBd3f",
+    perpOrderManager: "0xCD077cb2CAD5f4c7B9b06FB9958dB36535A0aEd2",
+    perpPositionManager: "0x3e46dBCa6916B13512b705Eb58FFf2994b4a3857",
+    perpsEngine: "0x1f9903f49b80E58fDcc7bFC90f8a9c1373C5eaD2",
+    priceValidator: "0x44e086815e2E84287Df285BC03eab864a9F10fB3",
+    rfqManager: "0xCC321f37FF752B03D04c3dF9BC93c3Da96c256D2",
+    riskManager: "0x16239Dc67101fE6A20E27FFC7222aeD48A37571F",
+    subaccountFactory: "0xC3eF7f7901B8ea4bd4EcC8CD8E795f4Bf51b8a9F",
+    vault: "0xfe97357eBa1dED613A3E7A560c35cF2DB360e939",
+  },
+};
+
+export const implementationRecords: Record<ChainId, ImplementationRecord> = {
+  [ROBINHOOD_TESTNET_CHAIN_ID]: robinhoodTestnetImplementations,
+  [ROBINHOOD_MAINNET_CHAIN_ID]: robinhoodMainnetImplementations,
+};
+
 export const deployments: Record<ChainId, ContractAddresses> = {
   [ROBINHOOD_TESTNET_CHAIN_ID]: robinhoodTestnetAddresses,
   [ROBINHOOD_MAINNET_CHAIN_ID]: robinhoodMainnetAddresses,

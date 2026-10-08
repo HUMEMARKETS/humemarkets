@@ -1,20 +1,19 @@
 "use client";
 
-import { groupForSymbol } from "@hume/config";
-import { Panel, Skeleton, Tabs, cn, chip } from "@hume/ui";
+import { groupForSymbol, marketsForTier, ROBINHOOD_MAINNET_CHAIN_ID } from "@hume/config";
+import { Num, Panel, Skeleton, Tabs, cn, chip, toneOf } from "@hume/ui";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState, type ReactNode } from "react";
-import type { MarketStats } from "@hume/sdk";
+import type { MarketStats, ReferenceQuote } from "@hume/sdk";
 import { isMarketGroup, type MarketConfig, type MarketGroup } from "@hume/types";
-import { useAllMarkets, useMarketOverviews, useMarketStats, useSettlementDecimals } from "@/hooks/queries";
+import { useAllMarkets, useMarketOverviews, useMarketStats, useReferenceQuotes, useSettlementDecimals } from "@/hooks/queries";
 import { env } from "@/lib/env";
 import { fmtBps, fmtPrice, fmtUsdOrDash } from "@/lib/format";
 import { groupTabs, inGroup, symbolOf, type GroupTab } from "@/lib/market";
 import { useTerminal } from "@/stores/terminal";
-import { Change } from "./Change";
+import { Change, fmtChange } from "./Change";
 import { PanelState } from "./PanelState";
-import { QuotedRows } from "./QuotedRows";
 
 type Overview = ReturnType<typeof useMarketOverviews>[number]["data"];
 
@@ -44,8 +43,27 @@ interface Line {
   loading: boolean;
 }
 
+/// A stock with no feed on this venue (most of the China group): a reference price and its change, in the same
+/// columns as a market and with no trade control. The list is the same on Testnet and on Mainnet.
+interface ReferenceLine {
+  reference: true;
+  symbol: string;
+  name: string;
+  group: MarketGroup;
+  quote?: ReferenceQuote;
+}
+
+type Row = Line | ReferenceLine;
+
+const isReference = (row: Row): row is ReferenceLine => "reference" in row;
+
+const REFERENCE_LISTINGS = marketsForTier(ROBINHOOD_MAINNET_CHAIN_ID, "quoted");
+
 /// A number to order by, or undefined when the figure is missing (those rows go last either way).
-function sortValue(line: Line, key: SortKey): number | string | undefined {
+function sortValue(line: Row, key: SortKey): number | string | undefined {
+  if (isReference(line)) {
+    return key === "asset" ? line.symbol : key === "index" ? line.quote?.price : key === "change" ? (line.quote?.changeBps ?? undefined) : undefined;
+  }
   switch (key) {
     case "asset":
       return line.symbol;
@@ -64,7 +82,7 @@ function sortValue(line: Line, key: SortKey): number | string | undefined {
   }
 }
 
-function sorted(lines: Line[], key: SortKey, direction: "asc" | "desc"): Line[] {
+function sorted(lines: Row[], key: SortKey, direction: "asc" | "desc"): Row[] {
   const sign = direction === "asc" ? 1 : -1;
   return [...lines].sort((a, b) => {
     const x = sortValue(a, key);
@@ -148,6 +166,35 @@ function MarketRow({ line, decimals }: { line: Line; decimals: number }) {
   );
 }
 
+function ReferenceRow({ line }: { line: ReferenceLine }) {
+  const { symbol, name, quote } = line;
+  return (
+    <tr className="border-t border-line">
+      <td className={cell}>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="font-medium">{symbol}</span>
+          <span className="text-xs font-normal text-muted max-xl:hidden">{name.replace(" • Robinhood Token", "")}</span>
+        </div>
+      </td>
+      <td className={cell} title={quote ? `Reference price from Robinhood, updated ${new Date(quote.asOf).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}` : undefined}>
+        {quote ? quote.price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "–"}
+      </td>
+      <td className={cell}>
+        {quote?.changeBps === null || quote === undefined ? (
+          <Num tone="muted">–</Num>
+        ) : (
+          <Num tone={toneOf(quote.changeBps)}>{fmtChange(quote.changeBps)}</Num>
+        )}
+      </td>
+      <td className={cn(cell, "max-md:hidden")}>–</td>
+      <td className={cn(cell, "max-md:hidden")}>–</td>
+      <td className={cn(cell, "max-md:hidden")}>–</td>
+      <td className={cn(cell, "max-sm:hidden")}>–</td>
+      <td className="max-md:hidden" />
+    </tr>
+  );
+}
+
 /// Enough markets that finding one by eye is slower than typing part of its name.
 const FILTER_FROM = 6;
 
@@ -178,8 +225,19 @@ export function MarketsTable() {
     overview: overviews[index]?.data,
     loading: overviews[index]?.isPending ?? true,
   }));
+  const { data: quotes } = useReferenceQuotes();
+  // The listing is the same on both networks. A symbol the registry already lists is a market, not a reference row.
+  const listed = new Set(symbols);
+  const references: ReferenceLine[] = REFERENCE_LISTINGS.filter((listing) => !listed.has(listing.symbol)).map((listing) => ({
+    reference: true,
+    symbol: listing.symbol,
+    name: listing.name,
+    group: listing.group,
+    quote: quotes?.[listing.symbol],
+  }));
+  const rows: Row[] = [...lines, ...references];
   const shown = sorted(
-    inGroup(lines, group).filter((line) => line.symbol.includes(filter.trim().toUpperCase())),
+    inGroup(rows, group).filter((row) => row.symbol.includes(filter.trim().toUpperCase())),
     sort.key,
     sort.direction,
   );
@@ -188,7 +246,7 @@ export function MarketsTable() {
     setSort((current) => ({ key, direction: current.key === key && current.direction === "asc" ? "desc" : key === "asset" ? "asc" : "desc" }));
   }
 
-  const tabs = groupTabs(lines);
+  const tabs = groupTabs(rows);
 
   return (
     <Panel
@@ -247,14 +305,13 @@ export function MarketsTable() {
               </tr>
             </thead>
             <tbody>
-              {shown.map((line) => (
-                <MarketRow key={line.market.marketId} line={line} decimals={decimals} />
-              ))}
+              {shown.map((row) =>
+                isReference(row) ? <ReferenceRow key={row.symbol} line={row} /> : <MarketRow key={row.market.marketId} line={row} decimals={decimals} />,
+              )}
             </tbody>
           </table>
         )}
       </div>
-      {filter ? null : <QuotedRows group={group} />}
       {!env.apiUrl ? (
         <p className="border-t border-line p-3 text-muted">
           24h change and volumes come from the indexer. Set NEXT_PUBLIC_API_URL to show them.
@@ -263,7 +320,7 @@ export function MarketsTable() {
         <p className="border-t border-line p-3 text-down">The statistics service is not responding, so 24h change and volumes are hidden.</p>
       ) : (
         <p className="border-t border-line p-3 text-xs text-muted">
-          Volumes are for the last 24 hours, in USD. Options volume is the premium paid on new positions.
+          Volumes are for the last 24 hours, in USD. Options volume is the premium paid on new positions. A row with no trade buttons shows a reference price from Robinhood.
         </p>
       )}
     </Panel>

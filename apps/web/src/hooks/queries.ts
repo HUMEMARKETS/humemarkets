@@ -3,7 +3,7 @@
 import { keepPreviousData, useQueries, useQuery } from "@tanstack/react-query";
 import { formatUnits } from "viem";
 import { useAccount } from "wagmi";
-import type { CandleInterval, Leaderboard, LeaderboardMetric, OpenInterestRange, PerpMarketInfo, PriceSet } from "@hume/sdk";
+import type { CandleInterval, Leaderboard, LeaderboardMetric, OpenInterestRange, PerpMarketInfo, PriceSet, ReferenceQuote } from "@hume/sdk";
 import type { Address } from "@hume/types";
 import { useAccountMode } from "@/hooks/useAccountMode";
 import { humeRead } from "@/lib/hume";
@@ -400,31 +400,20 @@ export function useCreditCollateralPrice(oracle?: Address, collateralToken?: Add
   return fromPair.data !== undefined ? { price: fromPair.data, source: "pair" as const, isPending: false } : { price: fromTerminal.data, source: "terminal" as const, isPending: fromTerminal.isPending };
 }
 
-export interface QuotedRow {
-  symbol: string;
-  name: string;
-  group: string;
-  token: string;
-  price: number | null;
-  source: string;
-  asOf: string | null;
-}
-
-/// Display-only rows from `services/api` (`/v1/quoted`): price, source and age, nothing to trade.
-export const quotedQuery = () => ({
-  queryKey: ["quoted", env.apiUrl],
-  queryFn: async (): Promise<QuotedRow[]> => {
-    const response = await fetch(`${env.apiUrl}/v1/quoted`);
-    if (!response.ok) throw new Error("quoted unavailable");
+/// Display-only reference prices for the Markets page, by symbol, from this app's own `/api/quoted` route.
+export const referenceQuotesQuery = () => ({
+  queryKey: ["reference-quotes"],
+  queryFn: async (): Promise<Record<string, ReferenceQuote>> => {
+    const response = await fetch("/api/quoted");
+    if (!response.ok) throw new Error("reference prices unavailable");
     return response.json();
   },
-  enabled: Boolean(env.apiUrl),
   refetchInterval: 60_000,
   retry: false,
 });
 
-export function useQuotedMarkets() {
-  return useQuery(quotedQuery());
+export function useReferenceQuotes() {
+  return useQuery(referenceQuotesQuery());
 }
 
 export interface PonsRow {

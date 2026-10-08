@@ -20,7 +20,9 @@ export interface MarketListing {
   name: string;
   /// The tokenized asset. `MarketRegistry.addMarket` checks it is non-zero and then never reads it
   /// again (`REFERENCE.md` Section 2 Finding 5), so it is the asset's identity, not a settlement path.
-  token: Address;
+  /// Required for a `tradeable` listing. A display-only row for a stock that has no token on this chain
+  /// (the China names such as PDD and JD) has none.
+  token?: Address;
   /// The Chainlink feed. **Present if and only if `tier` is `tradeable`** — see `assertTierInvariant`.
   feed?: Address;
   maxLeverage: number;
@@ -34,13 +36,16 @@ export interface MarketListing {
 /// never be mistaken for a settlement price. Asserted in both directions on every listing this package
 /// hands out, at module load, because a silently mis-tagged row is exactly the failure that would let a
 /// display price reach `PriceValidator`.
-export function assertTierInvariant(listing: Pick<MarketListing, "symbol" | "tier" | "feed">): void {
-  const { symbol, tier, feed } = listing;
+export function assertTierInvariant(listing: Pick<MarketListing, "symbol" | "tier" | "feed"> & { token?: Address }): void {
+  const { symbol, tier, feed, token } = listing;
   if (!isListingTier(tier)) {
     throw new Error(`@hume/config: market ${symbol} has unknown tier "${String(tier)}" (expected one of ${LISTING_TIERS.join(", ")})`);
   }
   if (tierNeedsFeed(tier) && !feed) {
     throw new Error(`@hume/config: market ${symbol} is tier "${tier}" but has no feed address; a tradeable market settles on chain and needs a price feed`);
+  }
+  if (tierNeedsFeed(tier) && !token) {
+    throw new Error(`@hume/config: market ${symbol} is tier "${tier}" but has no token address; a tradeable market lists a tokenized asset`);
   }
   if (!tierNeedsFeed(tier) && feed) {
     throw new Error(`@hume/config: market ${symbol} is tier "${tier}" but carries feed ${feed}; a display-only tier must have no feed, or its price could reach settlement`);
@@ -119,6 +124,23 @@ const robinhoodMainnetMarkets: readonly MarketListing[] = [
   { symbol: "FUTU", name: "Futu Holdings • Robinhood Token", token: "0xeB30663bDFf0622Ef4e4E5cBb4E975F19f33f51D", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted" },
   { symbol: "EWT", name: "iShares MSCI Taiwan Capped ETF • Robinhood Token", token: "0x1c690498150252222C275A5CEd69d3A6b1f52D5E", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted" },
   { symbol: "SIMO", name: "Silicon Motion • Robinhood Token", token: "0x77E655E37F4d913fB9540e0d541D824171a60e81", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted" },
+  { symbol: "PDD", name: "PDD Holdings", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted" },
+  { symbol: "JD", name: "JD.com", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted" },
+  { symbol: "BIDU", name: "Baidu", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted" },
+  { symbol: "NIO", name: "NIO", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted" },
+  { symbol: "XPEV", name: "XPeng", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted" },
+  { symbol: "LI", name: "Li Auto", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted" },
+  { symbol: "NTES", name: "NetEase", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted" },
+  { symbol: "BILI", name: "Bilibili", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted" },
+  { symbol: "TME", name: "Tencent Music Entertainment", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted" },
+  { symbol: "YUMC", name: "Yum China Holdings", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted" },
+  { symbol: "ZTO", name: "ZTO Express", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted" },
+  { symbol: "TCOM", name: "Trip.com Group", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted" },
+  { symbol: "BEKE", name: "KE Holdings", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted" },
+  { symbol: "KWEB", name: "KraneShares CSI China Internet ETF", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted" },
+  { symbol: "FXI", name: "iShares China Large-Cap ETF", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted" },
+  { symbol: "MCHI", name: "iShares MSCI China ETF", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted" },
+  { symbol: "ASHR", name: "Xtrackers Harvest CSI 300 China A-Shares ETF", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted" },
 ];
 
 /// No market list is recorded for testnet: `deployments/robinhood_testnet.markets.json` does not

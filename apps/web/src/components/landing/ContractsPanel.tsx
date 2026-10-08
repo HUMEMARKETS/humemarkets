@@ -4,12 +4,12 @@ import { cn } from '@hume/ui';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowIcon } from '@/components/ArrowIcon';
 import { ContractCopyButton } from '@/components/ContractCopyButton';
-import { CONTRACTS } from '@/lib/contracts';
+import { ALL_CONTRACTS } from '@/lib/contracts';
 import { env } from '@/lib/env';
 import { explorerAddressUrl } from '@/lib/explorer';
 import { MONO, SPACED_CAPS } from '@/lib/frame';
 
-const FILTERS = ['All', 'Core', 'Perps', 'Options', 'Risk'] as const;
+const FILTERS = ['All', 'Core', 'Perps', 'Options', 'Risk', 'Lending', 'Pons'] as const;
 type Filter = (typeof FILTERS)[number];
 
 const CATEGORY: Record<string, Exclude<Filter, 'All'>> = {
@@ -25,10 +25,17 @@ const CATEGORY: Record<string, Exclude<Filter, 'All'>> = {
     'Insurance fund': 'Risk',
     'Oracle router': 'Risk',
     'Price validator': 'Risk',
+    'Lending oracle': 'Lending',
+    'Lending registry': 'Lending',
+    'Lending router': 'Lending',
+    'Lending vault': 'Lending',
+    'Lending pair': 'Lending',
+    'Pons router': 'Pons',
 };
 
+/// An implementation sits in the same category as its proxy.
 const categoryOf = (label: string): Exclude<Filter, 'All'> =>
-    CATEGORY[label] ?? 'Core';
+    CATEGORY[label.replace(/ implementation$/, '')] ?? 'Core';
 
 /// Every contract, in a panel that slides in from the right, opened by `#contracts`. A reader can
 /// search, filter, copy and open each address on the explorer without leaving the page.
@@ -82,7 +89,7 @@ export function ContractsPanel({
 
     const rows = useMemo(() => {
         const needle = query.trim().toLowerCase();
-        return CONTRACTS.filter(
+        return ALL_CONTRACTS.filter(
             (contract) =>
                 (filter === 'All' || categoryOf(contract.label) === filter) &&
                 (needle === '' ||
@@ -124,7 +131,7 @@ export function ContractsPanel({
                             Smart contracts
                         </p>
                         <p className="mt-2 text-muted">
-                            All {CONTRACTS.length} contracts HUME runs on.
+                            All {ALL_CONTRACTS.length} contracts HUME runs on, each proxy with the code behind it.
                             Collateral, positions and settlement are checkable
                             onchain.
                         </p>

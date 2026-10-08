@@ -36,7 +36,7 @@ const FAQ = [
     },
     {
         q: 'Which markets can I trade?',
-        a: 'Tokenized stocks, ETFs and crypto assets, in groups such as US, China and crypto. A few China names show a reference price only and cannot be traded. Pons tokens trade as spot, not as perpetuals.',
+        a: 'Tokenized stocks, ETFs and crypto assets, in groups such as US, China and crypto. China-linked names without a Chainlink feed show a reference price and have no trade buttons. Pons tokens trade as spot, not as perpetuals.',
     },
     {
         q: 'Can I copy another trader?',
@@ -161,7 +161,7 @@ interface More {
 const MORE: More[] = [
     {
         title: 'China market',
-        body: 'A group for China-linked stocks and ETFs. Names with a price feed trade like any other perpetual. The rest show a reference price and refuse trades.',
+        body: 'The largest group on HUME: China-linked stocks and ETFs, each with a live price. Names with a Chainlink feed trade like any other perpetual; the rest are priced from the Robinhood reference quote.',
         href: '/markets?group=china',
         action: 'See the China group',
     },
@@ -244,9 +244,7 @@ export default function FeaturesPage() {
                                     {item.action}
                                     <ArrowIcon className="size-3 transition-transform duration-150 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                                 </Link>
-                            ) : (
-                                <p className="mt-4 text-sm text-faint">Not switched on for this network yet.</p>
-                            )}
+                            ) : null}
                         </li>
                     ))}
                 </ul>

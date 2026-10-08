@@ -1,13 +1,20 @@
-'use client';
+"use client";
 
-import { cn } from '@hume/ui';
-import { CONTRACTS } from '@/lib/contracts';
-import { env } from '@/lib/env';
-import { explorerAddressUrl } from '@/lib/explorer';
-import { MONO } from '@/lib/frame';
+import { cn } from "@hume/ui";
+import { ALL_CONTRACTS, type ContractRow } from "@/lib/contracts";
+import { env } from "@/lib/env";
+import { explorerAddressUrl } from "@/lib/explorer";
+import { MONO, SPACED_CAPS } from "@/lib/frame";
 
-/// Every contract of the chosen network, with its address and an explorer link. It reads the network in this
-/// browser, so it follows the header's choice and is never the build network's list on another network.
+const GROUPS: ReadonlyArray<{ id: ContractRow["group"]; title: string }> = [
+    { id: "Core", title: "Core stack" },
+    { id: "Lending", title: "Lending stack" },
+    { id: "Pons", title: "Pons" },
+];
+
+/// Every contract of the chosen network, with its address and an explorer link, each proxy followed by the
+/// implementation behind it. It reads the network in this browser, so it follows the header's choice and is never
+/// the build network's list on another network. A contract that is not deployed here is not listed.
 export function ContractsTable() {
     return (
         <div className="overflow-x-auto rounded-panel border border-line/70 bg-surface">
@@ -26,37 +33,39 @@ export function ContractsTable() {
                         </th>
                     </tr>
                 </thead>
-                <tbody className="divide-y divide-line">
-                    {CONTRACTS.map((contract) => {
-                        const url = contract.address ? explorerAddressUrl(env.explorerUrl, contract.address) : undefined;
-                        return (
-                            <tr key={contract.label}>
-                                <th scope="row" className="whitespace-nowrap px-4 py-3 text-left font-medium">
-                                    {contract.label}
+                {GROUPS.map((group) => {
+                    const rows = ALL_CONTRACTS.filter((row) => row.group === group.id);
+                    if (rows.length === 0) return null;
+                    return (
+                        <tbody key={group.id} className="divide-y divide-line border-t border-line">
+                            <tr>
+                                <th colSpan={3} scope="colgroup" className={cn(SPACED_CAPS, "bg-raised/60 px-4 py-2 text-left font-medium text-muted")}>
+                                    {group.title} · {rows.length}
                                 </th>
-                                <td className="px-4 py-3 text-muted">{contract.description}</td>
-                                <td className={cn(MONO, 'px-4 py-3 text-xs')}>
-                                    {contract.address ? (
-                                        url ? (
-                                            <a
-                                                href={url}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="break-all underline decoration-line underline-offset-4 transition-colors duration-150 hover:text-accent-hover"
-                                            >
-                                                {contract.address}
-                                            </a>
-                                        ) : (
-                                            <span className="break-all">{contract.address}</span>
-                                        )
-                                    ) : (
-                                        <span className="text-faint">Not deployed</span>
-                                    )}
-                                </td>
                             </tr>
-                        );
-                    })}
-                </tbody>
+                            {rows.map((row) => {
+                                const url = explorerAddressUrl(env.explorerUrl, row.address);
+                                return (
+                                    <tr key={`${row.label}-${row.address}`}>
+                                        <th scope="row" className={cn("whitespace-nowrap px-4 py-3 text-left", row.implementation ? "pl-8 font-normal text-muted" : "font-medium")}>
+                                            {row.label}
+                                        </th>
+                                        <td className="px-4 py-3 text-muted">{row.description}</td>
+                                        <td className={cn(MONO, "px-4 py-3 text-xs")}>
+                                            {url ? (
+                                                <a href={url} target="_blank" rel="noreferrer" className="break-all underline decoration-line underline-offset-4 transition-colors duration-150 hover:text-accent-hover">
+                                                    {row.address}
+                                                </a>
+                                            ) : (
+                                                <span className="break-all">{row.address}</span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    );
+                })}
             </table>
         </div>
     );

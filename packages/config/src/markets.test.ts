@@ -46,22 +46,26 @@ test("the checked-in literal matches deployments/robinhood_mainnet.markets.json"
   );
 });
 
-test("36 mainnet markets are tradeable with a feed, and 4 China names are quoted without one", () => {
+test("36 mainnet markets are tradeable with a feed, and 21 China names are quoted without one", () => {
   const all = marketsForChain(ROBINHOOD_MAINNET_CHAIN_ID);
-  assert.equal(all.length, 40);
+  assert.equal(all.length, 57);
   for (const market of all) {
     if (market.tier === "quoted") {
       assert.equal(market.feed, undefined, market.symbol);
+      assert.equal(market.group, "china", market.symbol);
       continue;
     }
     assert.equal(market.tier, "tradeable", market.symbol);
     assert.ok(market.feed, `${market.symbol} has no feed`);
+    assert.ok(market.token, `${market.symbol} has no token`);
   }
 });
 
 test("marketsForGroup returns each group's set, the groups partition the list, and an empty group is []", () => {
   const symbols = (group: MarketGroup) => marketsForGroup(ROBINHOOD_MAINNET_CHAIN_ID, group).map((m) => m.symbol);
-  assert.deepEqual(symbols("china"), ["BABA", "EWY", "TSM", "UMC", "FUTU", "EWT", "SIMO"]);
+  // China is 3 tradeable names plus 21 quoted ones, 24 in all, so the group reads as a full list on every network.
+  assert.equal(symbols("china").length, 24);
+  assert.deepEqual(symbols("china").slice(0, 7), ["BABA", "EWY", "TSM", "UMC", "FUTU", "EWT", "SIMO"]);
   assert.deepEqual(symbols("commodities"), ["SLV", "USO"]);
   assert.deepEqual(symbols("etf"), ["SPY", "QQQ"]);
   assert.equal(symbols("us-equities").length, 25);
@@ -77,7 +81,9 @@ test("marketsForGroup returns each group's set, the groups partition the list, a
 
 test("marketsForTier returns the tier's set, and the tiers partition the list", () => {
   assert.equal(marketsForTier(ROBINHOOD_MAINNET_CHAIN_ID, "tradeable").length, 36);
-  assert.deepEqual(marketsForTier(ROBINHOOD_MAINNET_CHAIN_ID, "quoted").map((m) => m.symbol), ["UMC", "FUTU", "EWT", "SIMO"]);
+  const quoted = marketsForTier(ROBINHOOD_MAINNET_CHAIN_ID, "quoted").map((m) => m.symbol);
+  assert.equal(quoted.length, 21);
+  assert.deepEqual(quoted.slice(0, 4), ["UMC", "FUTU", "EWT", "SIMO"]);
   assert.deepEqual(marketsForTier(ROBINHOOD_MAINNET_CHAIN_ID, "listed"), []);
   const total = LISTING_TIERS.reduce((sum, tier) => sum + marketsForTier(ROBINHOOD_MAINNET_CHAIN_ID, tier).length, 0);
   assert.equal(total, marketsForChain(ROBINHOOD_MAINNET_CHAIN_ID).length);
@@ -119,6 +125,9 @@ test("a valid row of each tier passes the invariant, so the check is not vacuous
   assert.doesNotThrow(() => validateMarkets([tradeable]));
   assert.doesNotThrow(() => validateMarkets([{ ...tradeable, symbol: "UMC", tier: "quoted", feed: undefined }]));
   assert.doesNotThrow(() => validateMarkets([{ ...tradeable, symbol: "FUTU", tier: "listed", feed: undefined }]));
+  // A display-only row may have no token (a stock with no tokenized asset on this chain); a tradeable one may not.
+  assert.doesNotThrow(() => validateMarkets([{ ...tradeable, symbol: "PDD", tier: "quoted", feed: undefined, token: undefined }]));
+  assert.throws(() => validateMarkets([{ ...tradeable, token: undefined }]), /has no token address/);
   // And the real data passes it, every row, in both directions.
   assert.doesNotThrow(() => validateMarkets(marketsForChain(ROBINHOOD_MAINNET_CHAIN_ID)));
 });

@@ -180,9 +180,11 @@ export default function Docs() {
                         </p>
                         <p className={bodyText}>
                             <strong className="font-medium text-text">Markets.</strong> Each market is a tokenized
-                            stock, ETF or crypto asset, in groups such as US, China and crypto. A market with a price
-                            feed trades. A few China names have only a reference price and no feed, so they show a
-                            price and refuse trades. Prices come from the oracle router (see Price feeds). The list
+                            stock, ETF or crypto asset, in groups such as US, China and crypto. A market with a Chainlink
+                            price feed trades as a perpetual and an option. China is the largest group: every name in
+                            it shows a live price, and the names without a Chainlink feed show a reference price from
+                            Robinhood and have no trade buttons. Prices for trading come from the oracle router (see
+                            Price feeds). The list
                             of markets, and their leverage and limits, are under Live parameters.
                         </p>
                         <p className={bodyText}>

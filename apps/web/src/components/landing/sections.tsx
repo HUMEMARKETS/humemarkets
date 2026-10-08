@@ -11,7 +11,7 @@ import { ContractAddressBadge } from '@/components/ContractAddressBadge';
 import { LtvBar } from '@/components/LendingView';
 import { useCreditMarket, useLeaderboard, usePerpMarkets } from '@/hooks/queries';
 import { useAccountMode } from '@/hooks/useAccountMode';
-import { CONTRACTS } from '@/lib/contracts';
+import { ALL_CONTRACTS, CONTRACTS } from '@/lib/contracts';
 import { env } from '@/lib/env';
 import { explorerAddressUrl } from '@/lib/explorer';
 import { fmtSigned, shortHash, signTone } from '@/lib/format';
@@ -60,7 +60,7 @@ function Fact({ term, children }: { term: string; children: ReactNode }) {
 function Facts() {
     const markets = usePerpMarkets();
     const list = markets.data;
-    const deployed = CONTRACTS.filter((contract) => Boolean(contract.address)).length;
+    const deployed = ALL_CONTRACTS.length;
     const maxLeverage = list?.reduce((max, market) => (market.maxLeverage > max ? market.maxLeverage : max), 0n);
     const paused = list?.filter((market) => !market.active).length ?? 0;
     const value = (text: ReactNode) =>
@@ -493,7 +493,7 @@ function Verify({ onContracts }: SectionProps) {
                     </ul>
                 )}
                 <button type="button" onClick={onContracts} className={cn(more, 'mt-3')}>
-                    All {CONTRACTS.length} contracts
+                    All {ALL_CONTRACTS.length} contracts
                     <span aria-hidden="true">+</span>
                 </button>
             </div>

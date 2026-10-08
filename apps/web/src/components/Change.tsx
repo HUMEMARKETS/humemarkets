@@ -10,12 +10,15 @@ export function useStatsFor(symbol: string): MarketStats | undefined {
   return symbol ? data?.find((row) => symbolOf(row.marketId) === symbol) : undefined;
 }
 
+/// "+1.25%" or "−0.40%", from basis points.
+export const fmtChange = (bps: number) => `${bps > 0 ? "+" : bps < 0 ? "−" : ""}${(Math.abs(bps) / 100).toFixed(2)}%`;
+
 /// "+1.25%" with the sign and market colour; a shorter-than-24h window is called out so a move
 /// over twenty minutes is not mistaken for a day's.
 export function Change({ stats, className }: { stats?: MarketStats; className?: string }) {
   if (!stats || stats.change24hBps === null) return <Num tone="muted" className={className}>–</Num>;
   const bps = stats.change24hBps;
-  const text = `${bps > 0 ? "+" : bps < 0 ? "−" : ""}${(Math.abs(bps) / 100).toFixed(2)}%`;
+  const text = fmtChange(bps);
   const partial = stats.changeWindowSeconds < 86_400;
   return (
     <Num

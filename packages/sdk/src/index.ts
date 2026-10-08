@@ -175,3 +175,4 @@ export { CREDIT_STATUS } from "./credit.js";
 export type { CreditNamespace, CreditStatus } from "./credit.js";
 export type { PonsNamespace } from "./pons.js";
 export { copyFollowMessage, copyUnfollowMessage, type CopyFollowTerms } from "./copy.js";
+export { fetchReferenceQuotes, parseReferenceQuote, REFERENCE_QUOTES_URL, type ReferenceQuote } from "./referenceQuotes.js";

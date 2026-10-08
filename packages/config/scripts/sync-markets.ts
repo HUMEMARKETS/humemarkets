@@ -22,7 +22,7 @@ if (!literal.test(source)) throw new Error(`sync-markets: ${constName} literal n
 interface Row {
   symbol: string;
   name: string;
-  token: string;
+  token?: string;
   feed?: string;
   maxLeverage: number;
   maintenanceBps: number;
@@ -37,7 +37,8 @@ for (const row of file.markets) {
   const where = `${jsonPath} ${row.symbol ?? "(no symbol)"}`;
   if (typeof row.symbol !== "string" || row.symbol === "") throw new Error(`sync-markets: ${where} has no symbol`);
   if (typeof row.name !== "string" || row.name === "") throw new Error(`sync-markets: ${where} has no name`);
-  if (!isAddress(row.token)) throw new Error(`sync-markets: ${where} token is not an address`);
+  // A display-only row for a stock with no token on this chain has none; a tradeable one always has.
+  if (row.token === undefined ? tierNeedsFeed(row.tier) : !isAddress(row.token)) throw new Error(`sync-markets: ${where} token is missing or not an address`);
   if (!Number.isInteger(row.maxLeverage) || row.maxLeverage < 1) throw new Error(`sync-markets: ${where} maxLeverage is not a positive integer`);
   if (!Number.isInteger(row.maintenanceBps) || row.maintenanceBps < 1) throw new Error(`sync-markets: ${where} maintenanceBps is not a positive integer`);
   if (!isMarketGroup(row.group)) throw new Error(`sync-markets: ${where} has unknown group "${row.group}"`);
@@ -52,7 +53,7 @@ const body = file.markets
     const fields = [
       `symbol: ${JSON.stringify(row.symbol)}`,
       `name: ${JSON.stringify(row.name)}`,
-      `token: ${JSON.stringify(row.token)}`,
+      ...(row.token ? [`token: ${JSON.stringify(row.token)}`] : []),
       ...(row.feed ? [`feed: ${JSON.stringify(row.feed)}`] : []),
       `maxLeverage: ${row.maxLeverage}`,
       `maintenanceBps: ${row.maintenanceBps}`,

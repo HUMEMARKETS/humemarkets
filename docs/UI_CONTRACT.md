@@ -132,9 +132,9 @@ Nothing beyond this list is allowed. Ratios are on `ground` / `surface` / `raise
 | `accent-press` | `#000000`   | `#D6D2C8`   | 18.58 / 17.31 / 15.78 | 13.04 / 12.20 / 11.30 | Active                              |
 | `accent-soft`  | `#E3DFD5`   | `#262523`   | —                   | —                   | The hover fill behind an accent control |
 | `accent-line`  | the accent at 0.4 alpha | same rule | —        | —                   | Focus ring, hover ring                  |
-| `up`           | `#1D6B3F`   | `#B9E8C9`   | 5.76 / 5.36 / 4.89  | 14.48 / 13.55 / 12.55 | Direction only                        |
+| `up`           | `#1D6B3F`   | `#22C55E`   | 5.76 / 5.36 / 4.89  | 8.64 / 8.08 / 7.48  | Direction only. Dark was a pale mint `#B9E8C9`; changed 2026-10-08 so a Long button reads as green |
 | `down`         | `#A63D2C`   | `#C4705F`   | 5.59 / 5.21 / 4.75  | 5.46 / 5.11 / 4.73  | Direction only                          |
-| `up-hover` / `up-press`     | `#17573A` / `#124A2E` | `#CBEFD8` / `#A6D9B9` | 7.55 / 9.09 ink | 15.82 / 12.42 ink | The up control's states |
+| `up-hover` / `up-press`     | `#17573A` / `#124A2E` | `#4ADE80` / `#16A34A` | 7.55 / 9.09 ink | 11.30 / 5.97 ink | The up control's states |
 | `down-hover` / `down-press` | `#8F3324` / `#7A2A1D` | `#D08575` / `#B46554` | 6.97 / 8.54 ink | 6.84 / 4.62 ink   | The down control's states |
 | `up-soft` / `down-soft`     | the up/down colour at 0.12 alpha | same rule | — | — | The hover fill behind an up/down control |
 | `up-line` / `down-line`     | the up/down colour at 0.35 alpha | same rule | — | — | Focus ring on up/down controls |

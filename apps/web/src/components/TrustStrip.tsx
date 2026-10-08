@@ -4,7 +4,7 @@ import { chains } from "@hume/config";
 import { Skeleton, cn } from "@hume/ui";
 import Link from "next/link";
 import { usePerpMarkets } from "@/hooks/queries";
-import { CONTRACTS } from "@/lib/contracts";
+import { ALL_CONTRACTS } from "@/lib/contracts";
 import { env } from "@/lib/env";
 import { MONO } from "@/lib/frame";
 import { REGISTRY_ERROR } from "@/lib/market";
@@ -18,7 +18,6 @@ const value = cn(MONO, "text-base text-text");
 /// registry loads a figure is a skeleton, and when it cannot be read it reads "–" and says why.
 export function TrustStrip({ className, stacked = false }: { className?: string; stacked?: boolean }) {
   const markets = usePerpMarkets();
-  const deployed = CONTRACTS.filter((contract) => Boolean(contract.address)).length;
   return (
     <dl className={cn(stacked ? "grid grid-cols-1 gap-y-4" : "grid grid-cols-2 gap-x-6 gap-y-4 border-t border-line pt-5 sm:grid-cols-[repeat(4,auto)] sm:justify-between", className)}>
       <div>
@@ -30,8 +29,8 @@ export function TrustStrip({ className, stacked = false }: { className?: string;
       <div>
         <dt className={label}>Contracts</dt>
         <dd className={value}>
-          <Link href="/#contracts" className="underline decoration-line underline-offset-4 transition-colors duration-150 hover:text-accent-hover">
-            {`${deployed} of ${CONTRACTS.length} listed`}
+          <Link href="/features#contracts" className="underline decoration-line underline-offset-4 transition-colors duration-150 hover:text-accent-hover">
+            {`${ALL_CONTRACTS.length} listed`}
           </Link>
         </dd>
       </div>
