@@ -90,7 +90,7 @@ export function LandingCanvas({ world, theme, markets, deployed, onFailed }: Pro
 
         // A phone draws about half the instances.
         const detail = hostEl.clientWidth < 768 ? 0.6 : 1;
-        const { stations, setMarkets } = buildStations(palette, detail, blocks.current);
+        const { stations, captions, setMarkets } = buildStations(palette, detail, blocks.current);
         for (const station of stations) scene.add(station.group);
         const floor = buildGround(palette);
         scene.add(floor.object);
@@ -167,6 +167,14 @@ export function LandingCanvas({ world, theme, markets, deployed, onFailed }: Pro
                 width,
                 height,
             );
+            // Captions need room: a landscape screen wide enough that the drawing keeps most of its size. On
+            // a short or narrow one they grow with the square root of what the drawing shrank, to stay legible.
+            // ponytail: hidden on phones and tablets; a smaller caption per layout if they need them.
+            const boost = THREE.MathUtils.clamp(1 / Math.sqrt(camera.zoom * Math.min(1, height / 900)), 1, 1.4);
+            for (const caption of captions) {
+                caption.visible = wide && camera.zoom >= 0.8;
+                caption.scale.copy(caption.userData.base).multiplyScalar(boost);
+            }
         }
         resize();
         const observer = new ResizeObserver(resize);

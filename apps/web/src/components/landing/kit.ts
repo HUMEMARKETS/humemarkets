@@ -454,10 +454,12 @@ const cssVar = (name: string, fallback: string) =>
     getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
 
 /// A pill of mono text that always faces the camera, drawn on a canvas in the page's surface, line and
-/// text tokens. `recolor` redraws it after a theme change; `set` redraws it with new text.
+/// text tokens. The pill is as wide as its text needs, never narrower than the 250 px market pill, on a
+/// canvas twice that wide so a caption fits. `recolor` redraws it after a theme change; `set` redraws it
+/// with new text.
 export function label(text: string) {
     const canvas = document.createElement('canvas');
-    canvas.width = 256;
+    canvas.width = 512;
     canvas.height = 80;
     const texture = new THREE.CanvasTexture(canvas);
     texture.colorSpace = THREE.SRGBColorSpace;
@@ -465,24 +467,25 @@ export function label(text: string) {
         const context = canvas.getContext('2d');
         if (!context) return;
         context.clearRect(0, 0, canvas.width, canvas.height);
+        context.font = `500 30px ${cssVar('--font-mono', 'monospace')}`;
+        const wide = Math.min(506, Math.max(250, context.measureText(text).width + 64));
         context.fillStyle = cssVar('--color-surface', 'white');
         context.strokeStyle = cssVar('--color-line', 'gray');
         context.lineWidth = 3;
         context.beginPath();
-        context.roundRect(3, 3, 250, 74, 37);
+        context.roundRect(256 - wide / 2, 3, wide, 74, 37);
         context.fill();
         context.stroke();
         context.fillStyle = cssVar('--color-text', 'black');
-        context.font = `500 30px ${cssVar('--font-mono', 'monospace')}`;
         context.textAlign = 'center';
         context.textBaseline = 'middle';
-        context.fillText(text, 128, 42);
+        context.fillText(text, 256, 42);
         texture.needsUpdate = true;
     };
     draw();
     const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthWrite: false, depthTest: false });
     const sprite = new THREE.Sprite(material);
-    sprite.scale.set(1.28, 0.4, 1);
+    sprite.scale.set(2.56, 0.4, 1);
     return {
         sprite,
         recolor: draw,

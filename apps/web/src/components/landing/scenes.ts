@@ -98,6 +98,18 @@ function bag() {
     };
 }
 
+/// A caption pill on a station, always on top, that says what a part of the drawing is. `buildStations`
+/// scales every one to the same size on screen, whatever its station's own scale, and the canvas hides them
+/// where the drawing is too small, or the copy sits under it.
+function caption(own: ReturnType<typeof bag>, group: THREE.Group, text: string, x: number, y: number, z: number) {
+    const tag = own.add(label(text));
+    tag.sprite.position.set(x, y, z);
+    tag.sprite.renderOrder = 100;
+    tag.sprite.userData.caption = true;
+    group.add(tag.sprite);
+    return tag;
+}
+
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
 const facing = (direction: THREE.Vector3) => new THREE.Quaternion().setFromUnitVectors(Z_AXIS, direction.clone().normalize());
 
@@ -271,6 +283,9 @@ function globe(palette: Palette, detail: number) {
     const equator = own.add(orbitRing(2.8, palette, 'muted', 0.35));
     equator.mesh.rotation.x = Math.PI / 2 + 0.25;
     group.add(equator.mesh);
+    caption(own, group, 'Pillar = one market', -1.3, -3.2, 0);
+    caption(own, group, 'Height = leverage cap', 1.3, -3.2, 0);
+    caption(own, group, 'Short grey = paused', 0, -4, 0);
     let pillars: ReturnType<typeof voxelField> | null = null;
     let startedAt = -1;
     // Per pillar: its market, its direction out of the globe, its resting centre and how far it is lifted.
@@ -435,6 +450,10 @@ function payoffField(palette: Palette, detail: number): Station {
     bars.mesh.position.x = frame.lines.position.x = price.lines.position.x = 0.6;
     let shown: number | null = null;
     const front = 1.4 + gap;
+    caption(own, group, 'Underlying price', 0.6, -2.3, front);
+    caption(own, group, 'Option value', -1.9, 2.6, front);
+    caption(own, group, 'Front row = at expiry', 1.6, 2.6, front);
+    caption(own, group, 'Back rows = more time', -1.6, 0.4, -1);
     const ends = [-1.6, front, 2.2, front, -1.6, front, -1.6, 1.4 - rows * gap];
     return {
         group,
@@ -524,6 +543,10 @@ function vaultGauge(palette: Palette, detail: number): Station {
     });
     const dial = own.add(voxelField(tickSpecs, palette, { size: 0.12 }));
     gauge.add(dial.mesh);
+    caption(own, group, 'Collateral vault', 0, -3.3, 0);
+    caption(own, group, 'Health factor', 0, -0.3, 0);
+    caption(own, group, 'Nothing borrowed', -2.6, 0.1, 0);
+    caption(own, group, 'Liquidation', 2.6, 0.1, 0);
     const needle = own.add(solid(new THREE.BoxGeometry(0.07, 2, 0.07), palette, 'text'));
     needle.mesh.position.y = 1;
     const pivot = new THREE.Group();
@@ -593,6 +616,10 @@ function network(palette: Palette, detail: number): Station {
     const pulses = own.add(particles(followers, palette, 'text', 0.13));
     group.add(peers.lines, follows.lines, pulses.points);
     const near = new THREE.Vector3();
+    caption(own, group, 'Leader', 0, 0.9, 0);
+    // The other two ride on a follower and on a trader who follows no one, which both drift.
+    const followerTag = caption(own, group, 'Follower', 0, 0, 0);
+    const traderTag = caption(own, group, 'Trader, no copy', 0, 0, 0);
     return {
         group,
         setFade: own.setFade,
@@ -616,6 +643,8 @@ function network(palette: Palette, detail: number): Station {
                 spec.z += dz * push;
             });
             traders.tick(now);
+            followerTag.sprite.position.set(specs[0]!.x, specs[0]!.y + 0.55, specs[0]!.z);
+            traderTag.sprite.position.set(specs[count - 1]!.x, specs[count - 1]!.y + 0.55, specs[count - 1]!.z);
             pairs.forEach(([a, b], index) => {
                 const from = specs[a]!;
                 const to = specs[b]!;
@@ -669,6 +698,10 @@ function contractBlocks(palette: Palette, deployed: readonly boolean[]): Station
     }
     const links = own.add(segments(chain, palette, 'muted', 0.4));
     group.add(links.lines);
+    const low = -((rows - 1) / 2) * gap - 1;
+    caption(own, group, 'Block = one contract', -1.4, low, 0.4);
+    caption(own, group, 'Lit = being checked', 1.4, low, 0.4);
+    if (deployed.some((value) => !value)) caption(own, group, 'Small = not deployed', 0, low - 0.8, 0.4);
     const live = deployed.map((value, index) => (value ? index : -1)).filter((index) => index >= 0);
     let lit = -1;
     let picked = -1;
@@ -732,6 +765,8 @@ function resolved(palette: Palette, detail: number): Station {
     });
     const ring = own.add(voxelField(tickSpecs, palette, { size: 0.1, live: true }));
     group.add(ring.mesh);
+    caption(own, group, 'The HUME mark', 0, 0, 0);
+    caption(own, group, 'Click to send a pulse', 0, -4.4, 0);
     const heights = tickSpecs.map((spec) => spec.sy!);
     let pulsed = -1;
     return {
@@ -778,12 +813,21 @@ export function buildStations(palette: Palette, detail: number, deployed: readon
     // The stations were sized for a camera 12 to 15 units away; the path stands 10.5 away, so each is scaled
     // to keep the size it had on screen.
     const fit = [0.78, 0.875, 0.84, 0.84, 0.84, 0.84, 0.62];
+    const captions: THREE.Object3D[] = [];
     stations.forEach((station, index) => {
         station.group.position.copy(stationPosition(index));
         station.group.scale.multiplyScalar(fit[index] ?? 1);
+        // A caption keeps the size it would have on a station fitted at 0.84.
+        station.group.traverse((part) => {
+            if (!part.userData.caption) return;
+            part.scale.multiplyScalar(0.84 / (fit[index] ?? 1));
+            part.userData.base = part.scale.clone();
+            captions.push(part);
+        });
     });
     return {
         stations,
+        captions,
         setMarkets(list: readonly MarketConfig[]) {
             start.setMarkets(list);
             markets.setMarkets(list);
@@ -795,6 +839,9 @@ export function buildStations(palette: Palette, detail: number, deployed: readon
 /// cells, so it reads as endless and still. A small shader fades each line with distance and fades it out
 /// under the header.
 export function buildGround(palette: Palette) {
+    // The lines are the muted tone, which is dark on light and light on dark; on the near-black ground they
+    // need more opacity than on ivory to read, and the text tone is the lighter of the two there.
+    const opacity = () => (palette.text.r > 0.5 ? 0.65 : 0.22);
     const STEP = 2;
     const REACH = 48;
     const positions: number[] = [];
@@ -805,7 +852,7 @@ export function buildGround(palette: Palette) {
     const uniforms = {
         uColor: { value: palette.muted.clone() },
         uResolution: { value: new THREE.Vector2(1, 1) },
-        uOpacity: { value: 0.22 },
+        uOpacity: { value: opacity() },
     };
     const material = new THREE.ShaderMaterial({
         uniforms,
@@ -847,6 +894,7 @@ export function buildGround(palette: Palette) {
         },
         recolor() {
             uniforms.uColor.value.copy(palette.muted);
+            uniforms.uOpacity.value = opacity();
         },
         dispose() {
             geometry.dispose();
