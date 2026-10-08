@@ -4,16 +4,19 @@ import { env } from '@/lib/env';
 import { APP_GUTTER } from '@/lib/frame';
 import { MORE_LINKS } from '@/lib/nav';
 import { X_URL } from '@/lib/social';
-import { listLink } from '@hume/ui';
+import { cn, interactive } from '@hume/ui';
 import { Logo } from './Logo';
 import { StatusBadge } from './StatusBadge';
 import { XIcon } from './XIcon';
 
 /// One thin line, not a menu: the brand and the tagline on the left; the pages with no slot in the header
 /// (Activity, Docs, Features), the network status and the X link on the right. Wraps and centres on a phone.
+/// The type is the header nav's: 14 px, regular, muted, full brightness on hover.
+const footLink = cn(interactive, 'inline-flex items-center gap-2 text-muted hover:text-text');
+
 export function Footer() {
     return (
-        <footer className="border-t border-line bg-surface">
+        <footer className="border-t border-line bg-surface text-sm">
             <div
                 className={`w-full ${APP_GUTTER} flex flex-wrap items-center justify-center gap-x-6 gap-y-3 py-6 sm:justify-between`}
             >
@@ -28,7 +31,7 @@ export function Footer() {
                     className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2"
                 >
                     {MORE_LINKS.map((link) => (
-                        <Link key={link.href} href={link.href} className={listLink}>
+                        <Link key={link.href} href={link.href} className={footLink}>
                             {link.label}
                         </Link>
                     ))}
@@ -37,7 +40,7 @@ export function Footer() {
                         href={X_URL}
                         target="_blank"
                         rel="noreferrer"
-                        className={`${listLink} items-center gap-2`}
+                        className={footLink}
                     >
                         <XIcon />
                     </a>
