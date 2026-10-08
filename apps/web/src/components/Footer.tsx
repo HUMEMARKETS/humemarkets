@@ -11,11 +11,11 @@ import { XIcon } from './XIcon';
 
 /// One thin line, not a menu: the brand and the tagline on the left; the pages with no slot in the header
 /// (Activity, Docs, Features), the network status and the X link on the right. Wraps and centres on a phone.
-export function Footer({ gutter = APP_GUTTER }: { gutter?: string }) {
+export function Footer() {
     return (
         <footer className="border-t border-line bg-surface">
             <div
-                className={`w-full ${gutter} flex flex-wrap items-center justify-center gap-x-6 gap-y-3 py-6 sm:justify-between`}
+                className={`w-full ${APP_GUTTER} flex flex-wrap items-center justify-center gap-x-6 gap-y-3 py-6 sm:justify-between`}
             >
                 <div className="flex flex-wrap items-center gap-3">
                     <Logo size="sm" />

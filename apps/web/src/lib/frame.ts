@@ -1,8 +1,8 @@
 /// The landing page's frame, after zupiter.tech: the content takes about 91% of the viewport, with a
 /// fluid gutter (54 px per side at 1280, 80 at 1920, 112 at 2560) and a very wide cap. The header and the
 /// bottom rail share it, so the wordmark and the wallet button sit on the same edges as the content.
-export const LANDING_GUTTER = 'px-4 sm:px-6 md:px-[clamp(40px,4.2vw,112px)]';
-export const LANDING_FRAME = `mx-auto w-full max-w-[2560px] ${LANDING_GUTTER}`;
+export const LANDING_FRAME =
+    'mx-auto w-full max-w-[2560px] px-4 sm:px-6 md:px-[clamp(40px,4.2vw,112px)]';
 
 /// The reading frame of `/docs`: a column capped at 1600 px, so long prose and tables stay readable.
 export const PAGE_FRAME =

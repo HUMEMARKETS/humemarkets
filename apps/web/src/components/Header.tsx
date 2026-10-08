@@ -6,7 +6,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useAccount } from "wagmi";
 import { useDismiss } from "@/hooks/useDismiss";
 import { APP_GUTTER, CHIP_LABEL, LANDING_FRAME } from "@/lib/frame";
-import { MORE_LINKS, NAV, isCurrent, isFrontDoor, type NavLink } from "@/lib/nav";
+import { MORE_LINKS, NAV, isCurrent, type NavLink } from "@/lib/nav";
 import { X_URL } from "@/lib/social";
 import { chip, cn, interactive, menuItem } from "@hume/ui";
 import { ArrowIcon } from "./ArrowIcon";
@@ -26,9 +26,6 @@ const navLink = (current: boolean) =>
     "flex h-full items-center border-b-2 px-1 text-base font-medium",
     current ? "border-accent text-accent" : "border-transparent text-text hover:text-accent",
   );
-
-/// The links in the front-door bar: muted, full brightness on hover and on the current page.
-const frontLink = (current: boolean) => cn("transition-colors duration-150 hover:text-text", current ? "text-text" : "text-muted");
 
 const menuLink = (current: boolean) =>
   cn("flex h-11 items-center px-3 text-sm font-medium", current ? "bg-accent text-accent-ink" : cn("text-text", menuItem));
@@ -90,12 +87,10 @@ export function Header() {
   const [open, setOpen] = useState(false);
   const [group, setGroup] = useState<string | null>(null);
   // On the landing page the header floats over the hero only, so the hero reads as the whole first
-  // screen; on every other page it sits in the normal flow above content. The nav text carries no fill
-  // of its own, so the bar needs one soft, even scrim behind everything to stay readable over whatever
-  // sits under it. Features and Docs wear the landing bar (`frontDoor`) so the front door never changes
-  // shape; only the landing page floats it.
-  const frontDoor = isFrontDoor(pathname);
-  const floating = pathname === "/";
+  // screen; on every other page — and once the landing page scrolls past its hero — it sits in the
+  // normal flow above content. The nav text carries no fill of its own, so the bar needs one soft,
+  // even scrim behind everything to stay readable over whatever sits under it.
+  const landing = pathname === "/";
   const ref = useRef<HTMLElement>(null);
   const navRef = useRef<HTMLElement>(null);
   const close = useCallback(() => setOpen(false), []);
@@ -113,15 +108,15 @@ export function Header() {
       ref={ref}
       className={cn(
         "z-40 shrink-0 border-b border-line bg-ground/70 backdrop-blur-md",
-        floating ? "absolute inset-x-0 top-0" : "relative",
+        landing ? "absolute inset-x-0 top-0" : "relative",
       )}
     >
-      <div className={cn("flex items-center justify-between gap-3", frontDoor ? `h-[96px] ${LANDING_FRAME}` : `h-20 ${APP_GUTTER}`)}>
+      <div className={cn("flex items-center justify-between gap-3", landing ? `h-[96px] ${LANDING_FRAME}` : `h-20 ${APP_GUTTER}`)}>
         <div className="flex h-full items-center gap-6">
           <Link href="/" aria-label="HUME home" className="flex h-full shrink-0 items-center">
             <Logo />
           </Link>
-          {frontDoor ? null : (
+          {landing ? null : (
             <nav
               ref={navRef}
               aria-label="Primary"
@@ -145,15 +140,15 @@ export function Header() {
           )}
         </div>
         <div className="flex items-center gap-3 sm:gap-6">
-          {frontDoor ? (
+          {landing ? (
             <nav aria-label="Landing" className="hidden items-center gap-6 text-sm xl:flex">
-              <Link href="/features" aria-current={isCurrent(pathname, "/features") ? "page" : undefined} className={frontLink(isCurrent(pathname, "/features"))}>
+              <Link href="/features" className="text-muted transition-colors duration-150 hover:text-text">
                 Features
               </Link>
-              <a href={pathname === "/" || isCurrent(pathname, "/features") ? "#contracts" : "/features#contracts"} className={frontLink(false)}>
+              <a href="#contracts" className="text-muted transition-colors duration-150 hover:text-text">
                 Contracts
               </a>
-              <Link href="/markets" className={frontLink(false)}>
+              <Link href="/markets" className="text-muted transition-colors duration-150 hover:text-text">
                 Markets
               </Link>
             </nav>
@@ -172,13 +167,13 @@ export function Header() {
           </a>
           {/* On a phone the wallet button lives at the bottom of the menu, which leaves the bar to the logo, X and the menu button — Trade goes with it, since "Markets"/"Perpetuals" in the sheet already cover that entry point on mobile. */}
           <div className="hidden items-center gap-3 xl:flex 2xl:gap-6">
-            {frontDoor ? null : (
+            {landing ? null : (
               <Link href="/perpetuals" className={cn(tradeLink, "max-2xl:hidden")}>
                 Terminal
                 <ArrowIcon />
               </Link>
             )}
-            <WalletButton variant={frontDoor ? "secondary" : "primary"} />
+            <WalletButton variant={landing ? "secondary" : "primary"} />
           </div>
           <button
             type="button"
@@ -201,7 +196,7 @@ export function Header() {
           className={cn(
             "absolute inset-x-0 top-full max-h-[calc(100dvh-7.125rem)] overflow-y-auto bg-ground xl:hidden",
             "md:inset-x-auto md:top-[calc(100%+0.5rem)] md:max-h-[calc(100dvh-8.5rem)] md:w-[26rem] md:rounded-panel md:border md:border-line md:bg-raised md:pb-2 md:shadow-lift",
-            frontDoor ? "md:right-[clamp(40px,4.2vw,112px)]" : "md:right-6 lg:right-10",
+            landing ? "md:right-[clamp(40px,4.2vw,112px)]" : "md:right-6 lg:right-10",
           )}
         >
           <div className="md:grid md:grid-cols-2 md:gap-x-1">

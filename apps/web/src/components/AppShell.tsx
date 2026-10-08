@@ -3,7 +3,6 @@
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { env } from "@/lib/env";
-import { isFrontDoor } from "@/lib/nav";
 import { ConnectExplainer } from "./ConnectExplainer";
 import { Header } from "./Header";
 import { LandingTicker } from "./LandingTicker";
@@ -14,7 +13,7 @@ import { TxToasts } from "./TxToasts";
 /// The frame every page shares: the markets ticker, header, a warning when the RPC is not configured,
 /// the scrolling page area and the transaction toasts. Pages render only their own content. The ticker
 /// sits above the header on every app page so the same live strip of prices is the first thing on
-/// screen. The landing page, Features and Docs leave it out (`isFrontDoor`): the hero has to win against a clean top of page, and the
+/// screen. The landing page leaves it out: the hero has to win against a clean top of page, and the
 /// landing page owns its own scroller, so its `main` does not scroll as well.
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -27,10 +26,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         Skip to content
       </a>
 
-      {isFrontDoor(pathname) ? null : <LandingTicker />}
+      {pathname === "/" ? null : <LandingTicker />}
       <div className="relative flex min-h-0 flex-1 flex-col">
         <Header />
-        {env.rpcConfigured || isFrontDoor(pathname) ? null : (
+        {env.rpcConfigured || pathname === "/" ? null : (
           <p role="alert" className="shrink-0 border-b border-line bg-raised px-4 py-2 text-down">
             NEXT_PUBLIC_RPC_URL is not set, so no market data can load. Add it to .env and restart.
           </p>
