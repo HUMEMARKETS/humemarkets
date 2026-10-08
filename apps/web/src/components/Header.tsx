@@ -17,14 +17,15 @@ import { ThemeToggle } from "./ThemeToggle";
 import { WalletButton } from "./WalletButton";
 import { XIcon } from "./XIcon";
 
-/// Primary nav is plain text on the header's own blur, not another row of boxes: full-brightness
-/// text, an accent hairline under the current page, accent text on hover. The hairline is the only
-/// thing that moves between states, so nothing shifts size or position when a page changes.
+/// Primary nav is plain text on the header's own blur, not another row of boxes. The type is the landing
+/// bar's (14 px, regular, muted, full brightness on hover) so the two bars read as one; an accent hairline
+/// marks the current page. The hairline is the only thing that moves between states, so nothing shifts
+/// size or position when a page changes.
 const navLink = (current: boolean) =>
   cn(
     interactive,
-    "flex h-full items-center border-b-2 px-1 text-base font-medium",
-    current ? "border-accent text-accent" : "border-transparent text-text hover:text-accent",
+    "flex h-full items-center border-b-2 px-1 text-sm",
+    current ? "border-accent text-accent" : "border-transparent text-muted hover:text-text",
   );
 
 const menuLink = (current: boolean) =>
