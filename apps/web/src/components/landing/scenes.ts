@@ -126,15 +126,61 @@ function mobiusTube(u: number, v: number, out: THREE.Vector3, swell = 1) {
     return out.set(r * Math.cos(around), p * Math.sin(turn) + q * Math.cos(turn), r * Math.sin(around));
 }
 
+/// The HUME mark as `src/assets/hume-logo.svg` draws it: a flat ribbon with one half twist, its half-width
+/// 0.194 of the ring's radius. As in the logo, the twist is not even (it is crowded into one stretch of the
+/// loop, `bunch` at `where`) and the ribbon is not the same width all round (`wide` and `wider` are the
+/// first and second swing, each with its phase). The numbers were fitted so the silhouette at `HUME_REST`
+/// overlaps the logo's mask by about 90%, seen from the camera that stands in front of Start. `spin` is where the
+/// twist starts on the loop and `yaw` turns the whole ribbon about the ring's axis to the logo's side.
+/// `thin` is half the thickness, so the two faces never meet and each draws its own grid. A `swell` above 1
+/// lifts a point off the face it is on, for the dust.
+const RIBBON = {
+    radius: 2.5,
+    half: 0.485,
+    thin: 0.04,
+    spin: 4.0036,
+    bunch: -0.4772,
+    where: 5.923,
+    wide: [0.1499, 1.964],
+    wider: [-0.1687, -0.11],
+    yaw: 1.9613,
+};
+/// The tilt at which that ribbon shows as the logo does: the ring's axis leaning as the logo's does, seen from
+/// the camera in front of Start. `wireMark` spins the ring about its axis, which moves the twist round.
+const HUME_REST = new THREE.Euler(0.1926, 0, 0.2459);
+function mobiusRibbon(u: number, v: number, out: THREE.Vector3, swell = 1) {
+    const around = 2 * Math.PI * u;
+    const turn = around / 2 + RIBBON.spin + RIBBON.bunch * Math.sin(around - RIBBON.where);
+    const width = RIBBON.half * (1 + RIBBON.wide[0]! * Math.cos(around + RIBBON.wide[1]!) + RIBBON.wider[0]! * Math.cos(2 * around + RIBBON.wider[1]!));
+    // Across the width the ribbon runs evenly from one edge to the other and back on its other face.
+    const across = v < 0.5 ? 1 - 4 * v : 4 * v - 3;
+    const face = Math.sin(2 * Math.PI * v);
+    const p = width * across;
+    const q = RIBBON.thin * face + (swell - 1) * 0.28 * Math.sign(face);
+    const r = RIBBON.radius + p * Math.cos(turn) - q * Math.sin(turn);
+    const x = r * Math.cos(around);
+    const z = r * Math.sin(around);
+    const cos = Math.cos(RIBBON.yaw);
+    const sin = Math.sin(RIBBON.yaw);
+    return out.set(x * cos + z * sin, p * Math.sin(turn) + q * Math.cos(turn), z * cos - x * sin);
+}
+
 /// The HUME mark as Start and Vision draw it: the shaded wire band, with dust drifting along its skin. It
-/// tilts toward the pointer from `rest`, ripples under it, and the dust drifts to it.
-function wireMark(own: ReturnType<typeof bag>, palette: Palette, detail: number, rest: THREE.Euler) {
+/// tilts toward the pointer from `rest`, ripples under it, and the dust drifts to it. `shape` is the band's
+/// surface: Start draws the logo's ribbon, Vision the flattened tube.
+function wireMark(
+    own: ReturnType<typeof bag>,
+    palette: Palette,
+    detail: number,
+    rest: THREE.Euler,
+    shape: typeof mobiusTube = mobiusTube,
+) {
     const tilt = new THREE.Group();
     tilt.rotation.copy(rest);
     const spin = new THREE.Group();
     tilt.add(spin);
     const band = own.add(
-        wireSurface(mobiusTube, Math.round(110 * detail), Math.max(14, Math.round(22 * detail)), palette, 'text', {
+        wireSurface(shape, Math.round(110 * detail), Math.max(14, Math.round(22 * detail)), palette, 'text', {
             line: { face: 0.2, edge: 0.95, spec: 0.9 },
             fill: { face: 0.07, edge: 0.24, spec: 0.08 },
             glow: { edge: 0.45, push: 0.04 },
@@ -166,7 +212,7 @@ function wireMark(own: ReturnType<typeof bag>, palette: Palette, detail: number,
             spin.rotation.y = time * 0.12;
             spin.worldToLocal(near.copy(pointer.world));
             motes.forEach((m, index) => {
-                mobiusTube((m.u + time * m.speed) % 1, m.v, mote, m.swell);
+                shape((m.u + time * m.speed) % 1, m.v, mote, m.swell);
                 if (reach > 0.01) mote.lerp(near, reach * 0.35 * Math.exp(-mote.distanceToSquared(near) * 0.8));
                 mote.toArray(dust.positions, 3 * index);
             });
@@ -189,7 +235,7 @@ function marketLabels(markets: readonly MarketConfig[], limit: number) {
 function hero(palette: Palette, detail: number) {
     const own = bag();
     const group = new THREE.Group();
-    const mark = wireMark(own, palette, detail, new THREE.Euler(0.32, 0, 0.3));
+    const mark = wireMark(own, palette, detail, HUME_REST, mobiusRibbon);
     group.add(mark.object);
     const count = Math.round(90 * detail);
     const dots = own.add(particles(count, palette));
