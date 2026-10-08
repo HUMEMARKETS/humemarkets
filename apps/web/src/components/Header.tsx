@@ -117,19 +117,7 @@ export function Header() {
           <Link href="/" aria-label="HUME home" className="flex h-full shrink-0 items-center">
             <Logo />
           </Link>
-          {landing ? (
-            <nav aria-label="Landing" className="hidden h-full items-center gap-5 xl:flex 2xl:gap-8">
-              <Link href="/features" className={navLink(false)}>
-                Features
-              </Link>
-              <a href="#contracts" className={navLink(false)}>
-                Contracts
-              </a>
-              <Link href="/markets" className={navLink(false)}>
-                Markets
-              </Link>
-            </nav>
-          ) : (
+          {landing ? null : (
             <nav
               ref={navRef}
               aria-label="Primary"
@@ -153,6 +141,19 @@ export function Header() {
           )}
         </div>
         <div className="flex items-center gap-3 sm:gap-6">
+          {landing ? (
+            <nav aria-label="Landing" className="hidden items-center gap-6 text-sm xl:flex">
+              <Link href="/features" className="text-muted transition-colors duration-150 hover:text-text">
+                Features
+              </Link>
+              <a href="#contracts" className="text-muted transition-colors duration-150 hover:text-text">
+                Contracts
+              </a>
+              <Link href="/markets" className="text-muted transition-colors duration-150 hover:text-text">
+                Markets
+              </Link>
+            </nav>
+          ) : null}
           <NetworkMenu />
           {/* Below xl the bar has no room beside the logo; the toggle moves into the menu sheet. */}
           <ThemeToggle className="max-xl:hidden" />
