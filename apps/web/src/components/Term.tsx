@@ -61,7 +61,7 @@ export function Term({ term, children }: { term: TermKey; children?: ReactNode }
         aria-expanded={open}
         aria-controls={open ? id : undefined}
         onClick={() => setOpen((value) => !value)}
-        className="cursor-help underline decoration-faint decoration-dotted underline-offset-4 transition-colors duration-150 hover:text-text hover:decoration-accent"
+        className="inline min-h-0 min-w-0 cursor-help underline decoration-faint decoration-dotted underline-offset-4 transition-colors duration-150 hover:text-text hover:decoration-accent"
       >
         {children ?? entry.title}
       </button>

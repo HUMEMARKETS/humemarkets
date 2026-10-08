@@ -1,11 +1,10 @@
-import { chains } from '@hume/config';
 import Link from 'next/link';
-import { env } from '@/lib/env';
 import { APP_GUTTER } from '@/lib/frame';
 import { MORE_LINKS } from '@/lib/nav';
 import { X_URL } from '@/lib/social';
 import { cn, interactive } from '@hume/ui';
 import { Logo } from './Logo';
+import { ChainName } from './NetworkText';
 import { StatusBadge } from './StatusBadge';
 import { XIcon } from './XIcon';
 
@@ -35,7 +34,7 @@ export function Footer() {
                             {link.label}
                         </Link>
                     ))}
-                    <StatusBadge label={chains[env.chainId].name} />
+                    <StatusBadge label={<ChainName />} />
                     <a
                         href={X_URL}
                         target="_blank"

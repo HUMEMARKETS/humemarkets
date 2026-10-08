@@ -2,7 +2,7 @@
 
 import { Num, Panel, Segmented, Stat, TextField, cn, fieldBorder } from "@hume/ui";
 import { analyzeStrategy, payoffCurve, strategyLegs, STRATEGY_KINDS, type Leg, type OptionQuote, type StrategyKind } from "@hume/sdk";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { formatUnits } from "viem";
 import { useIndexPrice, useListedExpiries, useOptionChain, useOptionUnderlyings, usePerpMarketConfig } from "@/hooks/queries";
 import { useAccountMode } from "@/hooks/useAccountMode";
@@ -29,8 +29,18 @@ const selectClass = cn(fieldBorder, "h-8 rounded-md border bg-raised px-2 text-s
 /// A payoff-at-expiry line chart. Green above zero, red below, with the price and break-evens on
 /// the axis. Drawn as plain SVG: it is a display of the analysis, nothing here is signed.
 export function PayoffChart({ legs, low, high, spot, breakEvens }: { legs: Leg[]; low: number; high: number; spot: number; breakEvens: number[] }) {
-  const width = 640;
-  const height = 220;
+  // Drawn at the pixel width it is shown at, so the axis labels stay 12 px on a phone instead of shrinking with the drawing.
+  const box = useRef<HTMLDivElement>(null);
+  const [measured, setMeasured] = useState(640);
+  useEffect(() => {
+    const element = box.current;
+    if (!element) return;
+    const observer = new ResizeObserver(([entry]) => setMeasured(Math.max(240, Math.round(entry?.contentRect.width ?? 640))));
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+  const width = measured;
+  const height = Math.max(170, Math.round((measured * 220) / 640));
   const pad = 28;
   const curve = payoffCurve(legs, low, high, 121);
   const values = curve.map(([, value]) => value);
@@ -42,35 +52,37 @@ export function PayoffChart({ legs, low, high, spot, breakEvens }: { legs: Leg[]
   const path = curve.map(([price, value], index) => `${index === 0 ? "M" : "L"}${x(price).toFixed(1)},${y(value).toFixed(1)}`).join(" ");
 
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Payoff at expiry" className="w-full">
-      <line x1={pad} x2={width - pad} y1={y(0)} y2={y(0)} stroke="currentColor" strokeOpacity={0.35} />
-      <clipPath id="above">
-        <rect x={0} y={0} width={width} height={y(0)} />
-      </clipPath>
-      <clipPath id="below">
-        <rect x={0} y={y(0)} width={width} height={height} />
-      </clipPath>
-      <path d={path} fill="none" className="stroke-up" strokeWidth={2} clipPath="url(#above)" />
-      <path d={path} fill="none" className="stroke-down" strokeWidth={2} clipPath="url(#below)" />
-      <line x1={x(spot)} x2={x(spot)} y1={pad} y2={height - pad} stroke="currentColor" strokeOpacity={0.4} strokeDasharray="3 3" />
-      <text x={x(spot)} y={pad - 8} textAnchor="middle" className="fill-muted text-[10px]">
-        now {spot.toFixed(2)}
-      </text>
-      {breakEvens.map((price) => (
-        <g key={price}>
-          <circle cx={x(price)} cy={y(0)} r={3} className="fill-text" />
-          <text x={x(price)} y={y(0) + 14} textAnchor="middle" className="fill-muted text-[10px]">
-            {price.toFixed(2)}
-          </text>
-        </g>
-      ))}
-      <text x={pad} y={height - 6} className="fill-muted text-[10px]">
-        {low.toFixed(0)}
-      </text>
-      <text x={width - pad} y={height - 6} textAnchor="end" className="fill-muted text-[10px]">
-        {high.toFixed(0)}
-      </text>
-    </svg>
+    <div ref={box} className="w-full min-w-0 overflow-hidden">
+      <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Payoff at expiry" className="block max-w-full">
+        <line x1={pad} x2={width - pad} y1={y(0)} y2={y(0)} stroke="currentColor" strokeOpacity={0.35} />
+        <clipPath id="above">
+          <rect x={0} y={0} width={width} height={y(0)} />
+        </clipPath>
+        <clipPath id="below">
+          <rect x={0} y={y(0)} width={width} height={height} />
+        </clipPath>
+        <path d={path} fill="none" className="stroke-up" strokeWidth={2} clipPath="url(#above)" />
+        <path d={path} fill="none" className="stroke-down" strokeWidth={2} clipPath="url(#below)" />
+        <line x1={x(spot)} x2={x(spot)} y1={pad} y2={height - pad} stroke="currentColor" strokeOpacity={0.4} strokeDasharray="3 3" />
+        <text x={x(spot)} y={pad - 8} textAnchor="middle" className="fill-muted text-xs">
+          now {spot.toFixed(2)}
+        </text>
+        {breakEvens.map((price) => (
+          <g key={price}>
+            <circle cx={x(price)} cy={y(0)} r={3} className="fill-text" />
+            <text x={x(price)} y={y(0) + 16} textAnchor="middle" paintOrder="stroke" strokeWidth={4} strokeLinejoin="round" className="fill-muted stroke-surface text-xs">
+              {price.toFixed(2)}
+            </text>
+          </g>
+        ))}
+        <text x={pad} y={height - 6} className="fill-muted text-xs">
+          {low.toFixed(0)}
+        </text>
+        <text x={width - pad} y={height - 6} textAnchor="end" className="fill-muted text-xs">
+          {high.toFixed(0)}
+        </text>
+      </svg>
+    </div>
   );
 }
 

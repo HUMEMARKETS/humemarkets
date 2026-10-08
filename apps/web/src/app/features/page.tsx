@@ -1,22 +1,21 @@
-import { chains } from '@hume/config';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { AppPage } from '@/components/AppPage';
+import { ContractsTable } from '@/components/ContractsTable';
+import { ChainName } from '@/components/NetworkText';
 import { ArrowIcon } from '@/components/ArrowIcon';
 import { DocsLiveParameters } from '@/components/DocsLiveParameters';
 import { OptionsPreview, PerpPreview, VaultPreview } from '@/components/ProductPreviews';
 import { SupportedMarkets } from '@/components/SupportedMarkets';
 import { TrustStrip } from '@/components/TrustStrip';
-import { CONTRACTS } from '@/lib/contracts';
 import { env } from '@/lib/env';
-import { explorerAddressUrl } from '@/lib/explorer';
 import { MONO, SPACED_CAPS } from '@/lib/frame';
 import { cn } from '@hume/ui';
 
 export const metadata: Metadata = {
     description:
-        'Perpetuals, options and a shared vault for tokenized stocks on Robinhood Chain: how each works, what it costs, and how to check it yourself.',
+        'Perpetuals, options, lending, a China market, Pons spot trading, a leaderboard and copy trading on Robinhood Chain: how each works, what it costs, and how to check it yourself.',
 };
 
 const STEPS = [
@@ -34,6 +33,14 @@ const FAQ = [
     {
         q: 'Can I try it without risking money?',
         a: 'Yes. Choose Robinhood Chain Testnet in the header. It uses test tokens with no value and mock prices; the header shows which network you are on. Mainnet uses real funds.',
+    },
+    {
+        q: 'Which markets can I trade?',
+        a: 'Tokenized stocks, ETFs and crypto assets, in groups such as US, China and crypto. A few China names show a reference price only and cannot be traded. Pons tokens trade as spot, not as perpetuals.',
+    },
+    {
+        q: 'Can I copy another trader?',
+        a: 'Yes, where copy trading is switched on. You pick a trader and a budget, set limits, and review them before you sign. Trades are copied into a separate account. HUME cannot withdraw from it, and you can stop at any time.',
     },
     {
         q: 'What happens when a market is paused?',
@@ -142,13 +149,49 @@ const MODULES: Module[] = [
     },
 ];
 
+interface More {
+    title: string;
+    body: string;
+    href?: string;
+    action: string;
+}
+
+/// The features that are not one of the three product modules above. A feature that is switched off on this
+/// build has no link, so nobody is sent to a page that is not there.
+const MORE: More[] = [
+    {
+        title: 'China market',
+        body: 'A group for China-linked stocks and ETFs. Names with a price feed trade like any other perpetual. The rest show a reference price and refuse trades.',
+        href: '/markets?group=china',
+        action: 'See the China group',
+    },
+    {
+        title: 'Pons market',
+        body: 'Buy and sell Pons tokens for ETH without leaving HUME. Each swap shows its price, its price impact and the least you will receive before you sign.',
+        href: '/pons',
+        action: 'Open Pons',
+    },
+    {
+        title: 'Leaderboard and PNL card',
+        body: 'Traders ranked by PNL, ROI or volume. A closed position becomes a card you can share.',
+        href: '/leaderboard',
+        action: 'Open the leaderboard',
+    },
+    {
+        title: 'Copy trading',
+        body: 'Follow a trader you choose, with a budget and limits you set. Skipped trades are shown with the reason, and you can stop and withdraw at any time.',
+        href: env.copyTrading ? '/copy' : undefined,
+        action: 'Open copy trading',
+    },
+];
+
 const PREVIEWS: Record<string, ReactNode> = {
     perpetuals: <PerpPreview className="h-full" />,
     options: <OptionsPreview className="h-full" />,
     vault: <VaultPreview className="h-full" />,
 };
 
-function Block({ id, eyebrow, title, children }: { id?: string; eyebrow: string; title: string; children: ReactNode }) {
+function Block({ id, eyebrow, title, children }: { id?: string; eyebrow: string; title: ReactNode; children: ReactNode }) {
     return (
         <section id={id} aria-labelledby={`${id ?? eyebrow}-title`} className="scroll-mt-6 border-t border-line py-12 first:border-t-0 first:pt-0 lg:py-16">
             <p className={cn(SPACED_CAPS, 'text-muted')}>{eyebrow}</p>
@@ -190,6 +233,25 @@ export default function FeaturesPage() {
                 </Block>
             ))}
 
+            <Block id="more" eyebrow="04 / More on HUME" title="Markets, spot and community.">
+                <ul className="grid gap-4 sm:grid-cols-2">
+                    {MORE.map((item) => (
+                        <li key={item.title} className="flex flex-col rounded-panel border border-line/70 bg-surface p-5">
+                            <p className="text-lg font-medium">{item.title}</p>
+                            <p className="mt-2 flex-1 text-muted">{item.body}</p>
+                            {item.href ? (
+                                <Link href={item.href} className="group mt-4 inline-flex items-center gap-2 text-sm text-accent-hover transition-colors duration-150 hover:text-text">
+                                    {item.action}
+                                    <ArrowIcon className="size-3 transition-transform duration-150 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                                </Link>
+                            ) : (
+                                <p className="mt-4 text-sm text-faint">Not switched on for this network yet.</p>
+                            )}
+                        </li>
+                    ))}
+                </ul>
+            </Block>
+
             <Block id="how-it-works" eyebrow="How it works" title="Four steps, one signature.">
                 <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     {STEPS.map((step, index) => (
@@ -217,47 +279,12 @@ export default function FeaturesPage() {
                 </div>
             </Block>
 
-            <Block id="markets" eyebrow="Markets" title="Tokenized stocks, listed on the registry.">
+            <Block id="markets" eyebrow="Markets" title="Every market, listed on the registry.">
                 <SupportedMarkets />
             </Block>
 
-            <Block id="contracts" eyebrow="Verify it" title={`Every contract, on ${chains[env.chainId].name}.`}>
-                <div className="overflow-x-auto rounded-panel border border-line/70 bg-surface">
-                    <table className="w-full min-w-[40rem] border-collapse text-sm">
-                        <caption className="sr-only">Every contract HUME runs on, with its address and a link to the explorer</caption>
-                        <thead>
-                            <tr className="border-b border-line text-left text-xs text-muted">
-                                <th scope="col" className="px-4 py-3 font-medium">Contract</th>
-                                <th scope="col" className="px-4 py-3 font-medium">What it does</th>
-                                <th scope="col" className="px-4 py-3 font-medium">Address</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-line">
-                            {CONTRACTS.map((contract) => {
-                                const url = contract.address ? explorerAddressUrl(env.explorerUrl, contract.address) : undefined;
-                                return (
-                                    <tr key={contract.label}>
-                                        <th scope="row" className="whitespace-nowrap px-4 py-3 text-left font-medium">{contract.label}</th>
-                                        <td className="px-4 py-3 text-muted">{contract.description}</td>
-                                        <td className={cn(MONO, 'px-4 py-3 text-xs')}>
-                                            {contract.address ? (
-                                                url ? (
-                                                    <a href={url} target="_blank" rel="noreferrer" className="break-all underline decoration-line underline-offset-4 transition-colors duration-150 hover:text-accent-hover">
-                                                        {contract.address}
-                                                    </a>
-                                                ) : (
-                                                    <span className="break-all">{contract.address}</span>
-                                                )
-                                            ) : (
-                                                <span className="text-faint">Not deployed</span>
-                                            )}
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
+            <Block id="contracts" eyebrow="Verify it" title={<>Every contract, on <ChainName />.</>}>
+                <ContractsTable />
             </Block>
 
             {/* The token and ecosystem section goes here once its details are decided. */}

@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Panel, Skeleton } from "@hume/ui";
+import { Button, Panel, SampleBadge, Skeleton } from "@hume/ui";
 import Link from "next/link";
 import { useCopyFollowers, useLeaderboard, useSettlementDecimals } from "@/hooks/queries";
 import { fmtSigned, fmtUsd } from "@/lib/format";
@@ -51,6 +51,12 @@ export function TraderProfile({ wallet }: { wallet: string }) {
         </dl>
       )}
       <p className="border-t border-line p-3 text-xs text-muted">
+        {entry?.sample ? (
+          <>
+            <SampleBadge label="Simulated" className="mr-2 align-middle" />
+            This wallet is a bot run by HUME to keep the testnet active. It is not a user.{" "}
+          </>
+        ) : null}
         {followers.data ? `${followers.data.followers} ${followers.data.followers === 1 ? "person copies" : "people copy"} this trader. ` : ""}
         Past results do not predict future ones. Max drawdown is not recorded yet.
       </p>

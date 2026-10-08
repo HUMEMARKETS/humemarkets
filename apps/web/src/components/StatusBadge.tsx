@@ -1,10 +1,11 @@
+import type { ReactNode } from "react";
 import { cn } from "@hume/ui";
 import { MONO } from "@/lib/frame";
 
 /// A small bordered pill with a glowing dot: "this is live" or "this checks out", read at a glance
 /// across the landing page's card sections (Products, Smart contracts) instead of a different status
 /// convention per section.
-export function StatusBadge({ label, tone = "up" }: { label: string; tone?: "up" | "faint" }) {
+export function StatusBadge({ label, tone = "up" }: { label: ReactNode; tone?: "up" | "faint" }) {
   return (
     <span
       className={cn(

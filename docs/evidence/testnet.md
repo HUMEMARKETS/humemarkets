@@ -175,3 +175,16 @@ API tests: `services/api/src/copy.test.ts` (signature, window, replay, subaccoun
 
 Known gaps: the keeper cron runs every 5 minutes (the plan's minimum), so copies on Railway lag up to 5 minutes; run the keeper locally for a filmed copy. The e2e leader and follower wallets appear on the leaderboard as ordinary traders (they are not in `SAMPLE_WALLETS`). Pons market caps read "–" while the ETH feed is stale.
 
+
+## UI audit and content refresh (2026-10-08)
+
+Every route checked at 375 px and 1440 px, light and dark, with no console error and no horizontal overflow (Playwright crawl). Screenshots in `docs/evidence/ui-audit/`. Result: **pass**.
+
+- Titles and favicon: one title, `HUME: Markets are beliefs in motion`, on every page; share banner (`/opengraph-image`, `/twitter-image`).
+- Nav and footer share one type scale (14 px, regular, muted, full brightness on hover). Data tables are 14 px everywhere (three tables were 13 px).
+- A market with no fresh price shows a dash and a "No price" badge instead of a placeholder that never fills (`MarketHeader`, `MarketList`).
+- `not-found.tsx`: the 404 page is in the app frame and type, not the framework default.
+- The network name in the footer, `/docs` and `/features` follows the header's choice (they were fixed to the build network); `/docs` no longer says "Robinhood Chain Testnet mainnet" or "real funds" on testnet.
+- Stale text updated: leaderboard footnote and Simulated labels (the API's `sample` flag was not shown per row), the landing "Copy trading: In development" card, the landing and Features copy for China, Pons, lending and copy trading, the Features contract table (adds the lending pair and the Pons router), and four new `/docs` sections (lending, Pons, copy trading, leaderboard and PNL card).
+- Mobile: markets rows no longer clip the 24h column; the market header stats line up; the strategy payoff chart keeps 12 px labels.
+- The 3D scene was not touched.

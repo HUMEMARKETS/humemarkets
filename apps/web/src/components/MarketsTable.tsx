@@ -93,7 +93,7 @@ function MarketRow({ line, decimals }: { line: Line; decimals: number }) {
       onClick={market.perpsEnabled ? () => router.push(perps) : undefined}
     >
       <td className={cell}>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           {market.perpsEnabled ? (
             <Link href={perps} className="font-medium transition-colors duration-150 hover:text-accent" onClick={(event) => event.stopPropagation()}>
               {symbol}
@@ -102,19 +102,19 @@ function MarketRow({ line, decimals }: { line: Line; decimals: number }) {
             <span className="font-medium">{symbol}</span>
           )}
           {market.active ? null : <span className="rounded-sm border border-down px-1 text-xs text-down">Paused</span>}
+          {market.optionsEnabled ? (
+            <Link
+              href="/options"
+              onClick={(event) => {
+                event.stopPropagation();
+                setSymbol(symbol);
+              }}
+              className={cn(chip, "h-7 px-2 text-xs font-medium md:hidden")}
+            >
+              Options
+            </Link>
+          ) : null}
         </div>
-        {market.optionsEnabled ? (
-          <Link
-            href="/options"
-            onClick={(event) => {
-              event.stopPropagation();
-              setSymbol(symbol);
-            }}
-            className={cn(chip, "mt-1 h-7 px-2 text-xs font-medium md:hidden")}
-          >
-            Options
-          </Link>
-        ) : null}
       </td>
       <td className={cell}>
         <Figure loading={loading}>{fmtPrice(overview?.prices?.index.price)}</Figure>
@@ -218,7 +218,7 @@ export function MarketsTable() {
         ) : shown.length === 0 ? (
           <PanelState>No market matches “{filter}”.</PanelState>
         ) : (
-          <table className="w-full text-cell md:min-w-[900px]">
+          <table className="w-full md:min-w-[900px]">
             <thead>
               <tr>
                 {columns.map((column) => {

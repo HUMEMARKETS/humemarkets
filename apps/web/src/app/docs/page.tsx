@@ -1,19 +1,17 @@
-import { chains } from '@hume/config';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { ContractAddressBadge } from '@/components/ContractAddressBadge';
 import { DocsLiveParameters } from '@/components/DocsLiveParameters';
 import { Footer } from '@/components/Footer';
+import { ChainId, ChainName, ExplorerLink, OnMainnet } from '@/components/NetworkText';
 import { TrustStrip } from '@/components/TrustStrip';
-import { env } from '@/lib/env';
-import { explorerAddressUrl } from '@/lib/explorer';
 import { MONO, PAGE_FRAME } from '@/lib/frame';
 import { cn, listLink } from '@hume/ui';
 
 export const metadata: Metadata = {
     description:
-        'How HUME perpetuals, options, margin, liquidation and settlement work on Robinhood Chain mainnet, checked against the deployed contracts.',
+        'How HUME perpetuals, options, lending, Pons trading, copy trading, margin, liquidation and settlement work on Robinhood Chain, checked against the deployed contracts.',
 };
 
 /// Every claim on this page comes from the Solidity source in `packages/contracts/src`, and the file
@@ -29,6 +27,10 @@ const SECTIONS = [
     { id: 'liquidation', title: 'Liquidation' },
     { id: 'funding', title: 'Funding' },
     { id: 'options', title: 'Options' },
+    { id: 'lending', title: 'Lending' },
+    { id: 'pons', title: 'Pons market' },
+    { id: 'copy', title: 'Copy trading' },
+    { id: 'leaderboard', title: 'Leaderboard and PNL card' },
     { id: 'oracle', title: 'Price feeds' },
     { id: 'parameters', title: 'Live parameters' },
     { id: 'limits', title: 'Known limits' },
@@ -92,10 +94,6 @@ function Term({ children }: { children: ReactNode }) {
 }
 
 export default function Docs() {
-    const chain = chains[env.chainId];
-    const vaultUrl = explorerAddressUrl(env.explorerUrl, env.addresses.vault);
-    const settlementTokenUrl = explorerAddressUrl(env.explorerUrl, env.addresses.settlementToken);
-
     return (
         <div className="flex min-h-full flex-col">
             <div className={`${PAGE_FRAME} grid flex-1 gap-10 py-12 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-16 lg:py-20 xl:grid-cols-[15rem_minmax(0,1fr)_16rem]`}>
@@ -126,11 +124,23 @@ export default function Docs() {
                             role="note"
                             className="mt-6 rounded-panel border border-line bg-surface p-5 text-base leading-relaxed text-muted"
                         >
-                            <strong className="font-medium text-text">Live on {chain.name} mainnet.</strong>{' '}
-                            Deposits, positions and payouts are real funds. Trade only what you can afford to lose,
-                            and read <a href="#limits" className="text-accent underline underline-offset-4">Known limits</a>{' '}
-                            before you deposit. See <a href="#network" className="text-accent underline underline-offset-4">Network and token</a>{' '}
-                            for the chain, the settlement token and the protocol token address.
+                            <OnMainnet
+                                otherwise={
+                                    <>
+                                        <strong className="font-medium text-text">This is <ChainName />.</strong>{' '}
+                                        It uses test tokens with no value, mock prices and simulated traders, so nothing here
+                                        is real money. See{' '}
+                                        <a href="#limits" className="text-accent underline underline-offset-4">Known limits</a>.
+                                    </>
+                                }
+                            >
+                                <strong className="font-medium text-text">Live on <ChainName />.</strong>{' '}
+                                Deposits, positions and payouts are real funds. Trade only what you can afford to lose,
+                                and read <a href="#limits" className="text-accent underline underline-offset-4">Known limits</a>{' '}
+                                before you deposit.
+                            </OnMainnet>{' '}
+                            The chain, the settlement token and the protocol token address are under{' '}
+                            <a href="#network" className="text-accent underline underline-offset-4">Network and token</a>.
                         </p>
                     </header>
 
@@ -140,7 +150,7 @@ export default function Docs() {
                         sources={['core/HumeVault.sol', 'core/MarketRegistry.sol']}
                     >
                         <p className={bodyText}>
-                            HUME trades perpetuals and options on tokenized stocks. Both products share one
+                            HUME trades perpetuals and options on tokenized stocks, ETFs and crypto assets. Both products share one
                             vault, one market registry, one price router and one risk manager. There is no order book:
                             you trade against the vault at the oracle price.
                         </p>
@@ -154,35 +164,26 @@ export default function Docs() {
 
                     <Section id="network" title="Network and token">
                         <p className={bodyText}>
-                            HUME runs on {chain.name} mainnet (chain ID <Term>{String(env.chainId)}</Term>), an
+                            HUME runs on <ChainName /> (chain ID <Term><ChainId /></Term>), an
                             Ethereum L2. Gas is paid in ETH. Every contract address is listed in full under{' '}
-                            <Link href="/#contracts" className="text-accent underline underline-offset-4">
-                                Smart contracts
+                            <Link href="/features#contracts" className="text-accent underline underline-offset-4">
+                                Every contract
                             </Link>{' '}
-                            on the home page.
+                            on the Features page.
                         </p>
                         <p className={bodyText}>
                             <strong className="font-medium text-text">Settlement token.</strong> Margin, fees, profit
-                            and loss and option premiums are all in USDG, which has 6 decimals.
-                            {settlementTokenUrl ? (
-                                <>
-                                    {' '}
-                                    <a
-                                        href={settlementTokenUrl}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="text-accent underline underline-offset-4"
-                                    >
-                                        View the token on the explorer
-                                    </a>
-                                    .
-                                </>
-                            ) : null}
+                            and loss and option premiums are all in <OnMainnet otherwise="a mock settlement token with no value, which anyone can mint on testnet">USDG, which has 6 decimals</OnMainnet>.{' '}
+                            <ExplorerLink of="settlementToken" className="text-accent underline underline-offset-4">
+                                View the token on the explorer
+                            </ExplorerLink>
                         </p>
                         <p className={bodyText}>
                             <strong className="font-medium text-text">Markets.</strong> Each market is a tokenized
-                            stock on the chain. Its price comes from a Chainlink data feed (see Price feeds). The
-                            list of markets, and their leverage and limits, are under Live parameters.
+                            stock, ETF or crypto asset, in groups such as US, China and crypto. A market with a price
+                            feed trades. A few China names have only a reference price and no feed, so they show a
+                            price and refuse trades. Prices come from the oracle router (see Price feeds). The list
+                            of markets, and their leverage and limits, are under Live parameters.
                         </p>
                         <p className={bodyText}>
                             <strong className="font-medium text-text">Protocol token.</strong> The protocol token is
@@ -389,6 +390,89 @@ put payout  = max(strike − settlement, 0) × contract size × contracts`}</For
                     </Section>
 
                     <Section
+                        id="lending"
+                        title="Lending"
+                        sources={['credit/HumeCreditPair.sol', 'credit/HumeCreditRouter.sol', 'credit/HumeCreditVault.sol']}
+                    >
+                        <p className={bodyText}>
+                            Lending is a separate engine from the trading vault. A pair locks one stock token as
+                            collateral and lends one token against it. The pair live today is TSLA collateral and USDG
+                            borrowed. A pair is isolated: its loans cannot draw on any other pair or on the trading
+                            vault.
+                        </p>
+                        <p className={bodyText}>
+                            You can borrow up to the pair&apos;s borrow limit, a share of the collateral&apos;s value.
+                            Past a second, higher share (the liquidation limit) the loan can be liquidated. The health
+                            factor is that single number.
+                        </p>
+                        <Formula>{`loan to value   = debt ÷ collateral value
+health factor   = liquidation limit ÷ loan to value
+liquidated when health factor < 1`}</Formula>
+                        <p className={bodyText}>
+                            When a loan is liquidated, anyone can repay part of the debt and take the matching
+                            collateral plus a bonus of 5%. You keep what is left. The collateral price is pushed
+                            by an authorised feeder into a sanity oracle. By default it rejects an update that jumps
+                            more than 15% in one step and treats a price older than an hour as stale, and a stale
+                            price blocks lending. The borrow limit, the liquidation limit and the caps are read from the pair and
+                            shown on the Lending page. Caps are small on purpose.
+                        </p>
+                    </Section>
+
+                    <Section id="pons" title="Pons market" sources={['pons/HumePonsRouter.sol']}>
+                        <p className={bodyText}>
+                            Pons is a separate token launcher. The Pons page lists tokens launched there and lets you
+                            buy and sell them for ETH. This is spot trading, not a perpetual: there is no leverage and no
+                            vault. Hume lists tokens and adds no fee.
+                        </p>
+                        <p className={bodyText}>
+                            A swap goes through a router that trades in the token&apos;s own Uniswap v4 pool. The router
+                            holds no funds between calls and has no owner. It rebuilds the pool from the Pons factory,
+                            so it cannot be pointed at a pool the factory does not know. The review step shows the
+                            price, the price impact and the least you will receive. The site sets that minimum a
+                            few percent under the quote, and the swap reverts if the pool pays less.
+                        </p>
+                        <p className={bodyText}>
+                            <strong className="font-medium text-text">Risk.</strong> Anyone can launch a Pons token.
+                            Hume does not vet them, pools can be thin, and a token can lose all its value.
+                        </p>
+                    </Section>
+
+                    <Section id="copy" title="Copy trading" sources={['accounts/Subaccount.sol', 'accounts/SubaccountFactory.sol']}>
+                        <p className={bodyText}>
+                            Copy trading mirrors another trader&apos;s new perpetual trades into a separate copy
+                            account that holds only the budget you choose. Your main account is never touched. The copy
+                            account is a subaccount you own. HUME&apos;s executor is a delegate on it: it can open and
+                            close positions and can never withdraw.
+                        </p>
+                        <p className={bodyText}>
+                            Trades are sized in proportion to balances. If the trader risks 10% of their balance, your
+                            copy account risks 10% of its balance. Positions the trader already holds when you start are
+                            not copied. When a trade would break one of your limits (per trade, total exposure, highest
+                            leverage), it is skipped, and the Copy trading page shows the skip with its reason.
+                            Nothing is copied in part.
+                        </p>
+                        <p className={bodyText}>
+                            <strong className="font-medium text-text">Limits of this design.</strong> The executor
+                            enforces your limits, they are not written into the contract. A bug in the executor could
+                            break a limit, but it cannot take money out. You can stop at any time and withdraw what is
+                            left. Copies can lag the trader by minutes. Copy trading is on testnet today.
+                        </p>
+                    </Section>
+
+                    <Section id="leaderboard" title="Leaderboard and PNL card">
+                        <p className={bodyText}>
+                            The leaderboard ranks traders by PNL (realised plus unrealised), by ROI on capital deployed,
+                            or by volume, over all time. Ties break on volume, then on wallet. It is built from the same
+                            events as every other page, and a wallet can hide itself from it.
+                        </p>
+                        <p className={bodyText}>
+                            A PNL card turns a closed position into a shareable image: market, side, PNL and ROI. The
+                            link carries the same figures. On testnet, wallets run by HUME to keep the market active are
+                            marked Simulated on the board and on their cards.
+                        </p>
+                    </Section>
+
+                    <Section
                         id="oracle"
                         title="Price feeds"
                         sources={['oracle/OracleRouter.sol', 'oracle/PriceValidator.sol']}
@@ -411,8 +495,8 @@ put payout  = max(strike − settlement, 0) × contract size × contracts`}</For
                             trading but not take funds.
                         </p>
                         <p className={bodyText}>
-                            <strong className="font-medium text-text">Chainlink feeds.</strong> Prices come from
-                            Chainlink data feeds on {chain.name}, which report each token&apos;s price with 8
+                            <strong className="font-medium text-text">Price feeds.</strong> Prices come from
+                            <OnMainnet otherwise="mock feeds that HUME moves for the demo, so testnet prices are not real. The feeds report">Chainlink data feeds on <ChainName />, which report</OnMainnet> each token&apos;s price with 8
                             decimals. The router converts them to 18. Stock feeds update on the equity market
                             schedule, 24 hours a day, 5 days a week. When a feed has not updated within the maximum
                             age, reads for that market revert. Opening, closing, liquidation and settlement wait
@@ -469,25 +553,16 @@ put payout  = max(strike − settlement, 0) × contract size × contracts`}</For
                     <Section id="verify" title="Verify it yourself">
                         <p className={bodyText}>
                             Do not rely on this page alone. Every contract address, in full, is listed under{' '}
-                            <Link href="/#contracts" className="text-accent underline underline-offset-4">
-                                Smart contracts
+                            <Link href="/features#contracts" className="text-accent underline underline-offset-4">
+                                Every contract
                             </Link>{' '}
-                            on the home page, with a link to the block explorer.
-                            {vaultUrl ? (
-                                <>
-                                    {' '}
-                                    Start with the{' '}
-                                    <a
-                                        href={vaultUrl}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="text-accent underline underline-offset-4"
-                                    >
-                                        vault
-                                    </a>
-                                    , which holds all deposited funds.
-                                </>
-                            ) : null}
+                            on the Features page, with a link to the block explorer.
+                            {' '}
+                            Start with the{' '}
+                            <ExplorerLink of="vault" className="text-accent underline underline-offset-4">
+                                vault
+                            </ExplorerLink>
+                            , which holds all deposited funds.
                         </p>
                         <p className={bodyText}>
                             If this page and the chain disagree, the chain is right. Tell us and we will correct the
@@ -503,9 +578,9 @@ put payout  = max(strike − settlement, 0) × contract size × contracts`}</For
                         <Link href="/features" className={listLink}>
                             All features
                         </Link>
-                        <a href="/#contracts" className={listLink}>
+                        <Link href="/features#contracts" className={listLink}>
                             Every contract
-                        </a>
+                        </Link>
                     </div>
                 </aside>
             </div>

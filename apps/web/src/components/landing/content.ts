@@ -16,14 +16,14 @@ export const SECTIONS: LandingSection[] = [
         nav: 'Start',
         eyebrow: 'Derivatives for tokenized equities',
         title: 'Global markets, onchain.',
-        lede: 'Perpetuals, options and lending on tokenized stocks. Priced by oracles, settled by contracts, and open for anyone to check.',
+        lede: 'Perpetuals, options and lending on tokenized stocks, with a China group and spot trading of Pons tokens. Priced by oracles, settled by contracts, and open for anyone to check.',
     },
     {
         id: 'markets',
         nav: 'Markets',
         eyebrow: '01 / Markets',
         title: 'Every market, one place.',
-        lede: 'Every tokenized stock with a live price feed, grouped by region. Each market sets its own leverage cap. While its session is shut, a market shows its last close and refuses new orders.',
+        lede: 'Every tokenized stock, ETF and crypto asset with a live price feed, grouped by region, including a China group. Each market sets its own leverage cap. While its session is shut, a market shows its last close and refuses new orders.',
     },
     {
         id: 'trade',

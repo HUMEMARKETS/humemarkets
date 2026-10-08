@@ -85,6 +85,7 @@ function Table({ entries, decimals, metric, self }: { entries: LeaderboardEntry[
                     ) : (
                       <span title={entry.wallet}>{shortHash(entry.wallet)}</span>
                     )}
+                    {entry.sample ? <SampleBadge label="Simulated" /> : null}
                     {mine ? <span className="text-xs text-accent-hover">you</span> : null}
                   </span>
                 </td>
@@ -170,10 +171,14 @@ export function LeaderboardView() {
         {"Ranked by total PNL (realised plus unrealised), ROI on capital deployed, or volume. Ties break on volume, then wallet. A wallet can hide itself from the board."}
       </p>
       <p className="max-w-prose text-xs leading-snug text-muted">
+        {"Max drawdown shows “–” until the indexer records it. A minimum number of trades to be ranked is not applied yet, so one trade is enough today. "}
         {env.copyTrading
-          ? "In development: max drawdown shows “–” until the indexer records it, and a minimum number of trades to be ranked is not applied yet, so one trade is enough today. Copy mirrors a trader's new perp trades into a separate account with limits you set."
-          : "In development: max drawdown shows “–” until the indexer records it, and a minimum number of trades to be ranked is not applied yet, so one trade is enough today. Copy trading is not available yet. It opens once leaders have a track record, and no date is promised."}
+          ? "Copy mirrors a trader's new perp trades into a separate account with limits you set."
+          : "Copy trading is not available yet. It opens once leaders have a track record, and no date is promised."}
       </p>
+      {entries.some((entry) => entry.sample) ? (
+        <p className="max-w-prose text-xs leading-snug text-muted">Wallets marked Simulated are bots run by HUME to keep the testnet active. They are not users, and their volume is not real volume.</p>
+      ) : null}
     </div>
   );
 }

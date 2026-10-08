@@ -19,7 +19,7 @@ export function QuotedRows({ group }: { group: string }) {
   return (
     <div className="border-t border-line">
       <h3 className={cn(MONO, "px-3 pt-3 text-[11px] uppercase tracking-[0.08em] text-faint")}>Quoted · price only, no trading</h3>
-      <table className="w-full text-cell">
+      <table className="w-full">
         <tbody>
           {rows.map((row) => (
             <tr key={row.symbol} className="border-t border-line first:border-t-0">

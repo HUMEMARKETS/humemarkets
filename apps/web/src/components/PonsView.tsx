@@ -225,7 +225,7 @@ export function PonsView() {
         ) : rows.length === 0 ? (
           <PanelState>No token matches “{filter}”.</PanelState>
         ) : (
-          <table className="w-full text-cell">
+          <table className="w-full">
             <thead>
               <tr className="text-xs text-muted">
                 <th scope="col" className="px-3 py-2 text-left font-normal">Token</th>

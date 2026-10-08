@@ -1,3 +1,4 @@
+import { ponsForChain } from "@hume/config";
 import { env } from "@/lib/env";
 
 /// Every contract in the deployment (`ContractAddresses`, packages/config/src/deployments.ts) —
@@ -28,4 +29,6 @@ export const CONTRACTS = [
   { label: "Cross margin manager", description: "Backs a cross position with the whole account, not just itself.", address: env.addresses.crossMargin },
   { label: "Subaccount factory", description: "Creates subaccounts and limits what they're allowed to call.", address: env.addresses.subaccountFactory },
   { label: "RFQ manager", description: "Lets a market maker quote a user's trade directly, off the order book.", address: env.addresses.rfqManager },
+  { label: "Lending pair", description: "Locks a stock token as collateral and lends USDG against it, with a liquidation limit.", address: env.creditPair },
+  { label: "Pons router", description: "Buys and sells Pons tokens for ETH in their own pools. No owner, no fee, no funds held.", address: ponsForChain(env.chainId).router },
 ];

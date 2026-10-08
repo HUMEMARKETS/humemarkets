@@ -15,7 +15,7 @@ const FILTER_FROM = 6;
 function MarketRow({ symbol }: { symbol: string }) {
   const selected = useTerminal((state) => state.symbol === symbol);
   const setSymbol = useTerminal((state) => state.setSymbol);
-  const { data } = usePerpMarket(symbol);
+  const { data, isPending } = usePerpMarket(symbol);
   const config = usePerpMarketConfig(symbol);
   const stats = useStatsFor(symbol);
 
@@ -38,7 +38,7 @@ function MarketRow({ symbol }: { symbol: string }) {
             <span className="rounded-sm border border-down px-1 text-[10px] font-normal text-down">Paused</span>
           ) : null}
         </span>
-        <Num>{data ? fmtPrice(data.markPrice) : <Skeleton className="w-12" />}</Num>
+        <Num>{data ? fmtPrice(data.markPrice) : isPending ? <Skeleton className="w-12" /> : "–"}</Num>
         <Num tone="muted" className="text-xs" title="Funding rate">
           {fmtBps(data?.funding.currentFundingRateBps)}
         </Num>

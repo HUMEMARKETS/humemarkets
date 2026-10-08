@@ -350,6 +350,20 @@ function InDevelopment({ title, body }: { title: string; body: string }) {
     );
 }
 
+/// A social feature that is live on this build: the same card, with a way in instead of the "In development" mark.
+function Live({ title, body, href, action }: { title: string; body: string; href: string; action: string }) {
+    return (
+        <li className={cn(card, 'p-4')}>
+            <p className="text-sm font-medium text-text">{title}</p>
+            <p className="mt-1 text-sm leading-snug text-muted">{body}</p>
+            <Link href={href} className={cn(more, 'mt-3')}>
+                {action}
+                <ArrowIcon />
+            </Link>
+        </li>
+    );
+}
+
 function Social() {
     const board = useLeaderboard('pnl');
     const sample = Boolean(board.data?.sample);
@@ -398,7 +412,11 @@ function Social() {
                 </div>
             </div>
             <ul className="grid gap-3 sm:grid-cols-2">
-                <InDevelopment title="Copy trading" body="Follow a trader you choose, with limits you set." />
+                {env.copyTrading ? (
+                    <Live title="Copy trading" body="Follow a trader you choose, with limits you set." href="/copy" action="Open copy trading" />
+                ) : (
+                    <InDevelopment title="Copy trading" body="Follow a trader you choose, with limits you set." />
+                )}
                 <InDevelopment title="Risk metrics" body="Drawdown and a minimum trade count beside every rank." />
             </ul>
         </div>
