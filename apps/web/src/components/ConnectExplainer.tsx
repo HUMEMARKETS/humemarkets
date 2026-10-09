@@ -32,7 +32,6 @@ const items = (caps: React.ReactNode) =>
   [
     { title: "What a wallet does here", body: "Your wallet holds your USDG and signs each action. HUME never holds your keys, and nothing moves until you approve it in your wallet." },
     { title: "The caps", body: caps },
-    { title: "Unaudited contracts", body: "These contracts have not been audited. Trade only what you can lose." },
   ] as const;
 
 /// The one-screen explainer, shown once at the moment a person chooses to connect. It is a dialog rather
