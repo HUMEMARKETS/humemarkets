@@ -4,7 +4,7 @@
 #   bash scripts/demo.sh run [0xWallet]    same, but in the foreground of your terminal (Ctrl+C stops it)
 #   bash scripts/demo.sh down              stop it (it spends gas every minute while it runs)
 #   bash scripts/demo.sh status            balances and whether it runs
-# The simulator moves every mock feed once a minute (SIM_MARKETS in services/simulator, 27 markets) and runs 5 bots. Mock feeds go
+# The simulator moves the NVDA mock feed every 5 seconds (SIM_MARKETS=a,b,c to drive more) and runs 5 bots, all on NVDA. Mock feeds go
 # stale after an hour, so a stopped simulator means markets stop trading until it runs again.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -16,7 +16,9 @@ eth() { cast balance "$1" --rpc-url "$R" --ether; }
 DEPLOYER=$(cast wallet address --private-key "$PRIVATE_KEY")
 
 export CHAIN_ID=46630 RPC_URL=$R SIM_RPC_URL=$R HUME_ADDRESSES=
-export SIM_TICK_MS=60000
+# NVDA only: one feed to push, so its price can move every 5 seconds. The other markets stay fresh through the Railway keeper.
+export SIM_MARKETS=${SIM_MARKETS:-NVDA}
+export SIM_TICK_MS=${SIM_TICK_MS:-5000}
 # 5 bots together trade about every 5 seconds (SIM_PACE=1 is the calm roster pace, about every 45 seconds; measured at 9: every ~10 s).
 export SIM_PACE=${SIM_PACE:-18}
 HOURS=${SIM_HOURS:-1}   # hours of bot gas to pay for; at this pace the bots burn about 0.008 ETH an hour with the price driver
