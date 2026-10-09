@@ -198,3 +198,12 @@ Result: **pass** on testnet; mainnet mode uses the same data, with the one diffe
 - **Dark mode up colour** `#B9E8C9` (pale mint) to `#22C55E` (8.64:1 on the ground), hover `#4ADE80`, press `#16A34A`; `docs/UI_CONTRACT.md` Section 4 updated.
 - Deploy: `git push origin main:testnet` only. The `mainnet` branch was not pushed (the operator chose a site-only update; the Railway mainnet services stay stopped).
 - Follow-up: the website lists the proxy addresses only (26 on testnet: 20 core, 5 lending, the Pons router; 20 on mainnet). The 24 implementations and the placeholder stay in `ALL_CONTRACTS` (51, the deploy script's count) and are not shown.
+
+## PNL card, ivory premium (2026-10-09)
+
+Result: **amber**. Layout, fonts and the share image pass at 375 px and 1440 px on a mock API; not yet seen on live testnet data or in the dark theme. Screenshots in `docs/evidence/pnl-card/`.
+
+- Double-rule frame, Playfair 600 figure with lining numerals, spaced-caps labels, hairline stat columns, a triangle beside the ROI. No colour, radius or font outside the contract; `check-hex.sh` and `check-brand.sh` pass.
+- Share image (`opengraph-image`) loads Playfair and Inter from `apps/web/src/assets/fonts`. The Playfair file has its lining figures mapped onto the plain digits, since the image renderer ignores `font-feature-settings`.
+- Checked cases (mock API): gain, loss (`-$12,345.67` fits at 375 px), open, liquidated, sample. Flat was not rendered.
+- Not checked: dark theme (the card is ivory in both), live data, Copy link / Post on X / Save image clicks.

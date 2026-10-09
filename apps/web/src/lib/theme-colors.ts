@@ -16,3 +16,8 @@ export const THEME_CHARCOAL = "#0b0b0b";
 export const THEME_CARD_ACCENT = "#1d6b3f";
 export const THEME_CARD_LOSS = "#7a2a1d";
 export const THEME_CARD_MUTED = "#514f4e";
+/// The PNL card's inner rule (charcoal at 15% over ivory) and the foot of its ivory-to-shade wash (charcoal at 5%
+/// over ivory), flattened because the edge renderer has no `color-mix`. They match `border-charcoal/15` and the
+/// `to-[color-mix(...95%...)]` stop in `packages/ui/src/PnlCard.tsx`.
+export const THEME_CARD_RULE = "#d0cec9";
+export const THEME_CARD_SHADE = "#e7e5df";
