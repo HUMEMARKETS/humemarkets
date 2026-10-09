@@ -4,6 +4,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import type { TxOptions } from "@hume/sdk";
 import { useTxStore } from "@/stores/tx";
 
+const HISTORY_RETRY_SECONDS = [3, 6, 10, 15, 25, 40, 60];
+
 /// Runs one SDK write and mirrors its Section 30 states into the confirmation panel. The SDK
 /// already turns reverts into typed errors and emits every state, so this only wires them up.
 export function useTx() {
@@ -24,6 +26,10 @@ export function useTx() {
       }
       // A confirmed write changes balances, positions and prices.
       void queryClient.invalidateQueries();
+      // The indexer lags the chain, so history is empty on the first refetch. Ask again until it catches up.
+      for (const seconds of HISTORY_RETRY_SECONDS) {
+        setTimeout(() => void queryClient.invalidateQueries({ queryKey: ["history"] }), seconds * 1000);
+      }
       return { ok: true, value };
     } catch {
       // The failure is already on the record via `onStatus`.
