@@ -19,7 +19,7 @@ import { ensureCollateral } from "./funds.js";
 import { createThrottledFetch } from "./throttle.js";
 import { deleteStatements, generateHistory, historyRows, insertStatements, type TickRow } from "./history.js";
 import { createLiquidator } from "./liquidator.js";
-import { LIQUIDATOR, ROSTER, type MarketView } from "./personas.js";
+import { LIQUIDATOR, paced, ROSTER, type MarketView } from "./personas.js";
 import { fromFeedPrice } from "./priceModel.js";
 import { createRng } from "./prng.js";
 import { deriveAccount, loadSeed } from "./wallets.js";
@@ -32,6 +32,9 @@ if (!Number.isFinite(TICK_MS) || TICK_MS < 500) throw new Error("SIM_TICK_MS mus
 /// Window of the "recent move" that trend and reverter bots react to: about five minutes of steps.
 const HISTORY_TICKS = Math.min(600, Math.max(20, Math.ceil(300_000 / TICK_MS)));
 const VOLATILITY = Number(process.env.SIM_VOLATILITY ?? 1);
+/// How much faster the bots act and close than their roster pace. 1 is the calm default; `demo.sh run` uses 9.
+const PACE = Number(process.env.SIM_PACE ?? 1);
+if (!Number.isFinite(PACE) || PACE < 1) throw new Error("SIM_PACE must be a number of at least 1.");
 
 const chainId = resolveChainId(process.env.CHAIN_ID);
 const chain = chains[chainId];
@@ -59,7 +62,7 @@ function accounts() {
   const seed = loadSeed(STATE_DIR);
   return {
     // SIM_BOTS=scalper-1,trend-1 runs only those bots. Addresses come from the roster index, so they do not change.
-    traders: ROSTER.map((persona, index) => ({ persona, account: deriveAccount(seed, index) })).filter(({ persona }) => BOT_IDS.length === 0 || BOT_IDS.includes(persona.id)),
+    traders: ROSTER.map((persona, index) => ({ persona: paced(persona, PACE), account: deriveAccount(seed, index) })).filter(({ persona }) => BOT_IDS.length === 0 || BOT_IDS.includes(persona.id)),
     liquidator: deriveAccount(seed, LIQUIDATOR.index),
   };
 }

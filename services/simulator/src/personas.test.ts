@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { decide, ROSTER, type DecisionContext, type MarketView, type Persona } from "./personas.js";
+import { decide, paced, ROSTER, type DecisionContext, type MarketView, type Persona } from "./personas.js";
 import { createRng } from "./prng.js";
 
 const market = (symbol: string, returnPct = 0, maxLeverage = 10, maxNotional = 250_000): MarketView => ({ symbol, price: 100, returnPct, maxLeverage, maxNotional });
@@ -85,4 +85,9 @@ test("the roster covers what a demo needs", () => {
     assert.deepEqual(degen.leverage, [10]);
   }
   for (const persona of ROSTER) assert.ok(persona.collateral[0] <= persona.collateral[1] && persona.depositUsd >= persona.collateral[1] * 2);
+});
+
+test("pace shortens the waits and holds and raises the gas budget by the same factor", () => {
+  const fast = paced(trader({ everyMs: [9_000, 18_000], holdMs: [90_000, 180_000], txPerHour: 10 }), 9);
+  assert.deepEqual([fast.everyMs, fast.holdMs, fast.txPerHour], [[1_000, 2_000], [10_000, 20_000], 90]);
 });

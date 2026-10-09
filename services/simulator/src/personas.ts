@@ -144,5 +144,12 @@ export const ROSTER: readonly Persona[] = [
   { id: "degen-short", symbols: ["NVDA", "AAPL"], collateral: [1_500, 4_000], leverage: [10], maxOpen: 1, holdMs: [12 * HOUR, 24 * HOUR], everyMs: [20 * SECOND, 1 * MINUTE], side: { kind: "fixed", side: "SHORT" }, takeProfitPct: 90, txPerHour: 6, depositUsd: 40_000 },
 ];
 
+/// `SIM_PACE` speeds a persona up: it acts, and closes, `pace` times as often, and spends that much more gas.
+export function paced(persona: Persona, pace: number): Persona {
+  if (pace === 1) return persona;
+  const scale = ([low, high]: readonly [number, number]) => [Math.round(low / pace), Math.round(high / pace)] as const;
+  return { ...persona, everyMs: scale(persona.everyMs), holdMs: scale(persona.holdMs), txPerHour: persona.txPerHour * pace };
+}
+
 /// The liquidator is one more wallet, after the traders.
 export const LIQUIDATOR = { id: "liquidator", index: ROSTER.length, txPerHour: 12 } as const;
