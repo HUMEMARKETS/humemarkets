@@ -1,4 +1,4 @@
-import { isAddress, type Address } from "viem";
+import { isAddress, parseAbi, type Address } from "viem";
 
 /// The credit pair's read surface, hand-written from `HumeCreditPair.sol` and `HumeCreditRegistry.sol`
 /// as the contracts lane's Phase 9 handoff (`docs/evidence/phase-9.md`) documents them. Pure helpers
@@ -110,4 +110,59 @@ export function creditPositionResponse(pair: Address, wallet: string, view: Cred
     hasDebt: view.debtAmount > 0n,
     liquidatable,
   };
+}
+
+/// The pair's events that touch one wallet. `user` is the first indexed argument of each.
+export const creditEventsAbi = parseAbi([
+  "event CollateralDeposited(address indexed user, uint256 amount)",
+  "event CollateralWithdrawn(address indexed user, uint256 amount)",
+  "event DebtBorrowed(address indexed user, uint256 amount)",
+  "event DebtRepaid(address indexed user, uint256 amount)",
+  "event PositionLiquidated(address indexed user, address indexed liquidator, uint256 debtRepaid, uint256 collateralSeized)",
+]);
+
+export type CreditHistoryKind = "supply" | "withdraw" | "borrow" | "repay" | "liquidated";
+
+const KIND_OF: Record<string, CreditHistoryKind> = {
+  CollateralDeposited: "supply",
+  CollateralWithdrawn: "withdraw",
+  DebtBorrowed: "borrow",
+  DebtRepaid: "repay",
+  PositionLiquidated: "liquidated",
+};
+
+export interface CreditHistoryLog {
+  eventName: string;
+  args: { amount?: bigint; debtRepaid?: bigint; collateralSeized?: bigint };
+  transactionHash: string;
+  blockNumber: bigint;
+  logIndex: number;
+}
+
+export interface CreditHistoryRow {
+  kind: CreditHistoryKind;
+  /// Base units: the collateral token for supply and withdraw, the debt token for borrow and repay. For a
+  /// liquidation it is the debt repaid, and `collateralSeized` is the collateral taken.
+  amount: string;
+  collateralSeized?: string;
+  txHash: string;
+  blockNumber: string;
+}
+
+/// Newest first, at most `limit` rows. Logs of a kind the page does not know are dropped.
+export function creditHistoryRows(logs: CreditHistoryLog[], limit: number): CreditHistoryRow[] {
+  return logs
+    .filter((log) => log.eventName in KIND_OF)
+    .sort((a, b) => (a.blockNumber === b.blockNumber ? b.logIndex - a.logIndex : a.blockNumber > b.blockNumber ? -1 : 1))
+    .slice(0, limit)
+    .map((log) => {
+      const liquidated = log.eventName === "PositionLiquidated";
+      return {
+        kind: KIND_OF[log.eventName]!,
+        amount: (liquidated ? log.args.debtRepaid : log.args.amount ?? 0n)?.toString() ?? "0",
+        ...(liquidated ? { collateralSeized: (log.args.collateralSeized ?? 0n).toString() } : {}),
+        txHash: log.transactionHash,
+        blockNumber: log.blockNumber.toString(),
+      };
+    });
 }

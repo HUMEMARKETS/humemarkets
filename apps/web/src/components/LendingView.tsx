@@ -5,13 +5,15 @@ import { toBaseUnits } from "@hume/sdk";
 import type { Address } from "@hume/types";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { useCreditCollateralPrice, useCreditMarket, useCreditPosition, useSettlementDecimals } from "@/hooks/queries";
+import { useCreditCollateralPrice, useCreditHistory, useCreditMarket, useCreditPosition, useSettlementDecimals, type CreditHistoryRow } from "@/hooks/queries";
 import { useAccountMode } from "@/hooks/useAccountMode";
 import { useOnline } from "@/hooks/useOnline";
 import { env } from "@/lib/env";
 import { fmt, fmtUsd } from "@/lib/format";
+import { fmtDateTime } from "@/lib/options";
 import { humeRead } from "@/lib/hume";
 import { fallToLiquidationBps, fmtHealth, HF_NO_DEBT, healthBand, healthFactorBps, healthWords, liquidationPrice, ltvBps, pct, statusSentence, type HealthBand } from "@/lib/lending";
+import { cell, head, TxCell } from "./ActivityTables";
 import { ConnectButton } from "./ConnectButton";
 import { CreditTicket } from "./CreditTicket";
 import { Term } from "./Term";
@@ -123,6 +125,77 @@ function HealthCalculator({ maxLtv, liquidationLtv, price, priceFromPair, exampl
   );
 }
 
+const historyLabel: Record<CreditHistoryRow["kind"], string> = {
+  supply: "Supplied",
+  withdraw: "Withdrew",
+  borrow: "Borrowed",
+  repay: "Repaid",
+  liquidated: "Liquidated",
+};
+
+/// What this wallet did in the pair, newest first. The same states as the page: not connected, not deployed, no
+/// API, loading, error (with a retry), offline, empty and populated.
+function CreditHistory({ symbol, collateralDecimals, debtDecimals }: { symbol: string; collateralDecimals: number; debtDecimals: number }) {
+  const mode = useAccountMode();
+  const online = useOnline();
+  const history = useCreditHistory();
+  const rows = history.data;
+
+  const amountOf = (row: CreditHistoryRow) => {
+    if (row.kind === "supply" || row.kind === "withdraw") return `${fmt(BigInt(row.amount), collateralDecimals, 6)} ${symbol}`;
+    if (row.kind === "liquidated") return `${fmtUsd(BigInt(row.amount), debtDecimals, 3)} repaid, ${fmt(BigInt(row.collateralSeized ?? "0"), collateralDecimals, 6)} ${symbol} taken`;
+    return fmtUsd(BigInt(row.amount), debtDecimals, 3);
+  };
+
+  return (
+    <Panel className="lg:col-span-2" title="Your history">
+      {mode === "disconnected" ? (
+        <Notice action={<ConnectButton />}>Connect a wallet to see what you have supplied, borrowed and repaid.</Notice>
+      ) : !env.creditPair ? (
+        <Notice>There is no history until the pair is live on this network.</Notice>
+      ) : !env.apiUrl ? (
+        <Notice>Your history comes from the API. It is not set up on this build.</Notice>
+      ) : !online && !rows ? (
+        <Notice>You are offline, so your history cannot load. It will refresh by itself when you reconnect.</Notice>
+      ) : history.isPending ? (
+        <div aria-busy="true" aria-label="Loading your history" className="flex flex-col gap-2 p-4">
+          <Skeleton className="h-5 w-full" />
+          <Skeleton className="h-5 w-2/3" />
+        </div>
+      ) : history.isError ? (
+        <Notice action={<Button size="sm" onClick={() => void history.refetch()}>Try again</Button>}>Your history could not be read right now. Your funds are not affected. Try again in a moment.</Notice>
+      ) : !rows || rows.length === 0 ? (
+        <Notice>Nothing yet. Each supply, borrow, repayment and withdrawal you make here is listed with its transaction.</Notice>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[560px] text-sm">
+            <thead>
+              <tr>
+                <th className={head}>Time</th>
+                <th className={head}>Action</th>
+                <th className={head}>Amount</th>
+                <th className={head}>Transaction</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={`${row.txHash}-${row.kind}-${row.amount}`} className="border-t border-line">
+                  <td className={cell}>{row.timestamp ? fmtDateTime(new Date(row.timestamp * 1000).toISOString()) : "–"}</td>
+                  <td className={cell}>{historyLabel[row.kind]}</td>
+                  <td className={cell}>
+                    <Num>{amountOf(row)}</Num>
+                  </td>
+                  <TxCell hash={row.txHash} />
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Panel>
+  );
+}
+
 /// The lending page's content. Seven states: loading (skeletons), empty (no pair deployed, or no position),
 /// populated, error, offline, not-connected, and paused (the pair renders, prices, and refuses new loans with a
 /// sentence).
@@ -225,6 +298,8 @@ export function LendingView() {
         bonus={m?.liquidationBonusBps}
         symbol={symbol}
       />
+
+      <CreditHistory symbol={symbol} collateralDecimals={cDecimals} debtDecimals={debtDecimals} />
     </div>
   );
 }

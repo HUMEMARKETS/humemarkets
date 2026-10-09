@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import Fastify from "fastify";
 import type { Address, PublicClient } from "viem";
-import { NO_DEBT_HEALTH_FACTOR_BPS, resolveCreditPair } from "./credit.js";
+import { creditHistoryRows, NO_DEBT_HEALTH_FACTOR_BPS, resolveCreditPair } from "./credit.js";
 import { registerCreditRoutes } from "./routes/credit.js";
 
 const PAIR = `0x${"c1".repeat(20)}` as Address;
@@ -11,7 +11,7 @@ const TSLA = `0x322F0929c4625eD5bAd873c95208D54E1c003b2d` as Address;
 const USDG = `0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168` as Address;
 
 /// A chain that answers by function name, with the values from the Phase 9 handoff.
-function fakeClient(over: Record<string, unknown> = {}, fail = false): Pick<PublicClient, "readContract"> {
+function fakeClient(over: Record<string, unknown> = {}, fail = false): Pick<PublicClient, "readContract" | "getLogs" | "getBlockNumber" | "getBlock"> {
   const answers: Record<string, unknown> = {
     marketId: `0x${"11".repeat(32)}`,
     registry: `0x${"22".repeat(20)}`,
@@ -41,6 +41,9 @@ function fakeClient(over: Record<string, unknown> = {}, fail = false): Pick<Publ
       if (request.functionName === "decimals") return request.address === TSLA ? 18 : 6;
       return answers[request.functionName];
     }) as never,
+    getBlockNumber: (async () => 1_000n) as never,
+    getLogs: (async () => []) as never,
+    getBlock: (async () => ({ number: 1n, timestamp: 1_700_000_000n })) as never,
   };
 }
 
@@ -105,4 +108,27 @@ test("a bad wallet is a 400 and an unreadable chain is a 5xx, never a wrong numb
   assert.equal((await app.inject({ url: "/v1/credit/positions/nope" })).statusCode, 400);
   assert.equal((await app.inject({ url: `/v1/credit/positions/${WALLET}` })).statusCode, 503);
   assert.equal((await app.inject({ url: "/v1/credit/markets" })).statusCode, 502);
+});
+
+test("history is newest first, names each event by what the wallet did, and a liquidation carries the collateral taken", () => {
+  const log = (eventName: string, blockNumber: bigint, logIndex: number, args: object) => ({ eventName, args, transactionHash: `0x${blockNumber}`, blockNumber, logIndex });
+  const rows = creditHistoryRows(
+    [
+      log("CollateralDeposited", 10n, 0, { amount: 5n }),
+      log("DebtBorrowed", 12n, 1, { amount: 7n }),
+      log("DebtRepaid", 12n, 3, { amount: 7n }),
+      log("PositionLiquidated", 20n, 0, { debtRepaid: 4n, collateralSeized: 9n }),
+      log("Unknown", 30n, 0, {}),
+    ],
+    3,
+  );
+  assert.deepEqual(rows.map((r) => r.kind), ["liquidated", "repay", "borrow"]);
+  assert.deepEqual([rows[0]!.amount, rows[0]!.collateralSeized], ["4", "9"]);
+});
+
+test("the history route answers an empty list for a quiet wallet and 400 for a bad address", async () => {
+  const app = Fastify();
+  registerCreditRoutes(app, fakeClient(), PAIR);
+  assert.deepEqual((await app.inject({ url: `/v1/credit/history/${WALLET}` })).json(), []);
+  assert.equal((await app.inject({ url: "/v1/credit/history/nope" })).statusCode, 400);
 });

@@ -12,8 +12,8 @@ import { perpLabel } from "@/lib/market";
 import { fmtDateTime } from "@/lib/options";
 import { humeRead } from "@/lib/hume";
 
-const head = "px-3 py-2 text-right text-xs font-normal text-muted first:text-left";
-const cell = "px-3 py-2 text-right tabular-nums first:text-left";
+export const head = "px-3 py-2 text-right text-xs font-normal text-muted first:text-left";
+export const cell = "px-3 py-2 text-right tabular-nums first:text-left";
 
 function txLink(hash: string) {
   try {
@@ -23,7 +23,7 @@ function txLink(hash: string) {
   }
 }
 
-function TxCell({ hash }: { hash: string }) {
+export function TxCell({ hash }: { hash: string }) {
   const link = txLink(hash);
   return (
     <td className={cell}>

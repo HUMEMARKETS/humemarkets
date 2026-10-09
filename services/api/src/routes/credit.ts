@@ -4,6 +4,8 @@ import {
   ADDRESS_PATTERN,
   CREDIT_STATUS,
   CREDIT_TIER,
+  creditEventsAbi,
+  creditHistoryRows,
   creditPairAbi,
   creditPositionResponse,
   creditRegistryAbi,
@@ -14,7 +16,18 @@ import {
 /// indexer to derive. Both routes are display data; borrowing, repaying and liquidating happen on chain.
 /// Until the pair is deployed (`creditPairTslaUsdg` in the config, or `CREDIT_PAIR_ADDRESS`), the list is
 /// empty and the position route answers 404, which the page renders as "not open yet".
-export function registerCreditRoutes(app: FastifyInstance, client: Pick<PublicClient, "readContract">, pair: Address | undefined) {
+/// The RPC allows 10M blocks per `getLogs`. Two chunks look back about three weeks.
+// ponytail: history older than two chunks is not shown; the pair is days old on testnet and not on mainnet yet,
+// so raise CHUNKS (or store the events in the indexer) when a wallet can be older than that.
+const CHUNK = 9_000_000n;
+const CHUNKS = 2;
+const HISTORY_ROWS = 25;
+
+export function registerCreditRoutes(
+  app: FastifyInstance,
+  client: Pick<PublicClient, "readContract" | "getLogs" | "getBlockNumber" | "getBlock">,
+  pair: Address | undefined,
+) {
   /// The pair's configuration and totals. `status` is `normal`, `reduce_only` or `paused`; a paused pair is
   /// still listed, so the page can render it and say so.
   app.get("/v1/credit/markets", async (request, reply) => {
@@ -75,6 +88,33 @@ export function registerCreditRoutes(app: FastifyInstance, client: Pick<PublicCl
       // A stale or missing credit oracle price makes `getPosition` revert: the health factor cannot be read.
       request.log.error({ err: error }, "credit: position read failed");
       return reply.code(503).send({ error: "credit price unavailable" });
+    }
+  });
+
+  /// One wallet's supply, withdraw, borrow, repay and liquidation events on the pair, newest first, read from
+  /// the chain's logs (the indexer does not store them). `timestamp` is the block's time in seconds.
+  app.get<{ Params: { wallet: string } }>("/v1/credit/history/:wallet", async (request, reply) => {
+    if (!ADDRESS_PATTERN.test(request.params.wallet)) return reply.code(400).send({ error: "wallet must be an address" });
+    if (!pair) return [];
+    const user = request.params.wallet as Address;
+    try {
+      const head = await client.getBlockNumber();
+      const windows = Array.from({ length: CHUNKS }, (_, i) => {
+        const to = head - BigInt(i) * CHUNK;
+        return { fromBlock: to - CHUNK + 1n > 0n ? to - CHUNK + 1n : 0n, toBlock: to };
+      }).filter((w) => w.toBlock >= 0n);
+      const found = await Promise.all(
+        windows.flatMap((window) =>
+          creditEventsAbi.map((event) => client.getLogs({ address: pair, event, args: { user }, ...window })),
+        ),
+      );
+      const rows = creditHistoryRows(found.flat() as never, HISTORY_ROWS);
+      const blocks = await Promise.all([...new Set(rows.map((row) => row.blockNumber))].map((n) => client.getBlock({ blockNumber: BigInt(n) })));
+      const time = new Map(blocks.map((block) => [block.number.toString(), Number(block.timestamp)]));
+      return rows.map((row) => ({ ...row, timestamp: time.get(row.blockNumber) ?? 0 }));
+    } catch (error) {
+      request.log.error({ err: error }, "credit: history read failed");
+      return reply.code(502).send({ error: "chain unavailable" });
     }
   });
 }

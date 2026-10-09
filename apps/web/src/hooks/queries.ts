@@ -386,6 +386,33 @@ export function useCreditPosition() {
   });
 }
 
+export interface CreditHistoryRow {
+  kind: "supply" | "withdraw" | "borrow" | "repay" | "liquidated";
+  /// Base units of the collateral (supply, withdraw) or the debt token (borrow, repay, liquidated).
+  amount: string;
+  collateralSeized?: string;
+  txHash: string;
+  blockNumber: string;
+  /// Block time in seconds.
+  timestamp: number;
+}
+
+/// The connected wallet's supply, withdraw, borrow, repay and liquidation events, from the API's chain-log route.
+export function useCreditHistory() {
+  const { address, enabled } = useWalletEnabled();
+  return useQuery({
+    queryKey: ["credit-history", env.creditPair, address, env.apiUrl],
+    queryFn: async (): Promise<CreditHistoryRow[]> => {
+      const response = await fetch(`${env.apiUrl}/v1/credit/history/${address}`);
+      if (!response.ok) throw new Error("credit history unavailable");
+      return response.json();
+    },
+    enabled: enabled && Boolean(env.creditPair && env.apiUrl),
+    refetchInterval: 15_000,
+    retry: false,
+  });
+}
+
 /// The collateral's USD price for the health calculator: the pair's own oracle when there is a pair, otherwise
 /// the terminal's index price for the same symbol.
 export function useCreditCollateralPrice(oracle?: Address, collateralToken?: Address) {
