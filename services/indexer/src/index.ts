@@ -44,8 +44,10 @@ const addresses = resolveAddresses(chainId);
 const contractNames = contractNamesByAddress(addresses);
 const addressList = watchedAddresses(addresses);
 
-const publicClient = createPublicClient({ transport: http(requireEnv("RPC_URL")) });
-const hume = new Hume({ chainId, transport: http(requireEnv("RPC_URL")) });
+// A request that hangs fails after 20 s (and is retried), so a stuck RPC shows up in the log instead of a silent run.
+const rpcTransport = () => http(requireEnv("RPC_URL"), { timeout: 20_000, retryCount: 3, retryDelay: 500 });
+const publicClient = createPublicClient({ transport: rpcTransport() });
+const hume = new Hume({ chainId, transport: rpcTransport() });
 const db = getDb();
 
 async function lastIndexedBlock(): Promise<bigint> {
@@ -134,6 +136,7 @@ async function indexRange(fromBlock: bigint, toBlock: bigint) {
 
 async function tick() {
   const resumed = (await lastIndexedBlock()) + 1n;
+  console.log(`indexer: resuming from block ${resumed}${FROM_BLOCK !== undefined ? `, start block ${FROM_BLOCK}` : ""}`);
   const from = FROM_BLOCK !== undefined && FROM_BLOCK > resumed ? FROM_BLOCK : resumed;
   const head = await publicClient.getBlockNumber();
   if (from > head) return;
