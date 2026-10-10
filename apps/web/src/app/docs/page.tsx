@@ -565,7 +565,9 @@ liquidated when health factor < 1`}</Formula>
                             <ExplorerLink of="vault" className="text-accent underline underline-offset-4">
                                 vault
                             </ExplorerLink>
-                            , which holds all deposited funds.
+                            , which holds all deposited funds. The contracts are deployed and callable on the chain; publishing
+                            their source code on the explorer is in progress, and until it is done the explorer shows the
+                            proxies and not the logic behind them.
                         </p>
                         <p className={bodyText}>
                             If this page and the chain disagree, the chain is right. Tell us and we will correct the

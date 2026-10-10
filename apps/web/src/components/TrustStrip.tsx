@@ -42,7 +42,7 @@ export function TrustStrip({ className, stacked = false }: { className?: string;
         <dt className={label}>Source code</dt>
         <dd className={value}>
           <Link href="/docs#verify" className="underline decoration-line underline-offset-4 transition-colors duration-150 hover:text-accent-hover">
-            Verified
+            Publishing on the explorer
           </Link>
         </dd>
       </div>

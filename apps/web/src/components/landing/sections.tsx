@@ -70,7 +70,7 @@ function Facts() {
             <dl className="flex flex-wrap gap-x-10 gap-y-4">
                 <Fact term="Markets">{value(list?.length)}</Fact>
                 <Fact term="Max leverage">{value(maxLeverage ? `${maxLeverage}x` : '–')}</Fact>
-                <Fact term="Contracts verified">
+                <Fact term="Contracts deployed">
                     <a href="#contracts" className="underline decoration-line underline-offset-4 transition-colors duration-150 hover:decoration-text">
                         {deployed}
                     </a>
@@ -452,7 +452,7 @@ function Verify({ onContracts }: SectionProps) {
                 <div className="flex items-center justify-between gap-3">
                     <p className={label}>Contracts</p>
                     <Link href="/docs#verify" className="inline-flex items-center gap-1.5 text-xs text-muted transition-colors duration-150 hover:text-text">
-                        Verified source
+                        How to check
                         <ArrowIcon />
                     </Link>
                 </div>
