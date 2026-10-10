@@ -157,7 +157,8 @@ async function sampleIndexPrices() {
       const { price } = await hume.oracle.getIndexPrice(marketId);
       await db.insert(priceTicks).values({ marketId, price: price.toString() });
     } catch (error) {
-      console.warn(`indexer: could not sample index price for ${marketId}`, error);
+      // One line: a market whose session is closed reverts on every sample, and the full stack floods the log.
+      console.warn(`indexer: could not sample index price for ${marketId}: ${(error as { shortMessage?: string }).shortMessage ?? "failed"}`);
     }
   }
 
