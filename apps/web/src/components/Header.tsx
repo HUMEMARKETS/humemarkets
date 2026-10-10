@@ -10,6 +10,7 @@ import { MORE_LINKS, NAV, isCurrent, type NavLink } from "@/lib/nav";
 import { X_URL } from "@/lib/social";
 import { chip, cn, interactive, menuItem } from "@hume/ui";
 import { ArrowIcon } from "./ArrowIcon";
+import { HeaderCa } from "./HeaderCa";
 import { Logo } from "./Logo";
 import { MenuIcon } from "./MenuIcon";
 import { NetworkMenu } from "./NetworkMenu";
@@ -117,6 +118,7 @@ export function Header() {
           <Link href="/" aria-label="HUME home" className="flex h-full shrink-0 items-center">
             <Logo />
           </Link>
+          <HeaderCa />
           {landing ? null : (
             <nav
               ref={navRef}
