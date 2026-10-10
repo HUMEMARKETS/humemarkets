@@ -1,6 +1,7 @@
 "use client";
 
 import { keepPreviousData, useQueries, useQuery } from "@tanstack/react-query";
+import { ponsForChain } from "@hume/config";
 import { formatUnits } from "viem";
 import { useAccount } from "wagmi";
 import type { CandleInterval, Leaderboard, LeaderboardMetric, OpenInterestRange, PerpMarketInfo, PriceSet, ReferenceQuote } from "@hume/sdk";
@@ -10,6 +11,7 @@ import { humeRead } from "@/lib/hume";
 import { symbolOf } from "@/lib/market";
 import { env } from "@/lib/env";
 import { readHistoryAfter } from "@/lib/history";
+import { readPonsHistory } from "@/lib/ponsHistory";
 import { seriesKey } from "@/lib/options";
 
 // Fans out per market (overviewQuery, listedExpiriesQuery) across every mounted component — a
@@ -478,30 +480,14 @@ export function usePonsTokens() {
   return useQuery(ponsQuery());
 }
 
-export interface PonsHistoryRow {
-  side: "buy" | "sell";
-  token: Address;
-  /// Wei, paid on a buy and received on a sell.
-  eth: string;
-  /// Token base units, received on a buy and paid on a sell.
-  tokens: string;
-  txHash: string;
-  blockNumber: string;
-  /// Block time in seconds.
-  timestamp: number;
-}
-
-/// The connected wallet's Pons buys and sells, from the API's router-log route.
+/// The connected wallet's Pons buys and sells, read from the router's logs by the browser (`lib/ponsHistory.ts`).
 export function usePonsHistory() {
   const { address, enabled } = useWalletEnabled();
+  const pons = ponsForChain(env.chainId);
   return useQuery({
-    queryKey: ["pons-history", address, env.apiUrl],
-    queryFn: async (): Promise<PonsHistoryRow[]> => {
-      const response = await fetch(`${env.apiUrl}/v1/pons/history/${address}`);
-      if (!response.ok) throw new Error("pons history unavailable");
-      return response.json();
-    },
-    enabled: enabled && Boolean(env.apiUrl),
+    queryKey: ["pons-history", address, env.chainId],
+    queryFn: () => readPonsHistory(env.rpcUrl, pons.router as Address, pons.fromBlock, address as Address),
+    enabled: enabled && Boolean(pons.router),
     refetchInterval: 15_000,
     retry: false,
   });

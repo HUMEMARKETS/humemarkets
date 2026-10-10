@@ -11,7 +11,8 @@ export interface PonsConfig {
   /// The Pons pool hook (`0x0` on testnet, where the mock pools have none).
   hook: Address;
   poolManager: Address;
-  /// First block to scan for `LaunchSwept` events (the factory's deployment block, or earlier).
+  /// First block to scan: for `LaunchSwept` events (the factory's deployment block, or earlier), and for the
+  /// router's buys and sells (the router's deployment block).
   fromBlock: number;
   /// How many launches the list reads, newest first, when the chain has no `featured` list.
   listSize: number;
@@ -104,7 +105,7 @@ const pons: Record<ChainId, PonsConfig> = {
     router: "0x908A1371a1c994B01431D1DAF14E809E8EF90bB9",
     hook: "0xE5e702641Ea86F4ae6cC3cDaeD2B886f976Be044",
     poolManager: "0x8366a39CC670B4001A1121B8F6A443A643e40951",
-    fromBlock: 0,
+    fromBlock: 85_140_000, // the block `HumePonsRouter` was deployed in; history starts there
     listSize: 100,
     dexscreenerChain: "robinhood",
     featured: MAINNET_FEATURED,

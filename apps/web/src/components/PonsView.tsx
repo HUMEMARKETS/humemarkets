@@ -10,13 +10,14 @@ import { formatUnits } from "viem";
 import { useAccount, useBalance } from "wagmi";
 import { useAccountMode } from "@/hooks/useAccountMode";
 import { useWalletHume } from "@/hooks/useHume";
-import { usePonsHistory, usePonsTokens, type PonsHistoryRow, type PonsRow } from "@/hooks/queries";
+import { usePonsHistory, usePonsTokens, type PonsRow } from "@/hooks/queries";
 import { useOnline } from "@/hooks/useOnline";
 import { fmtDateTime } from "@/lib/options";
 import { useTx } from "@/hooks/useTx";
 import { env } from "@/lib/env";
 import { MONO } from "@/lib/frame";
 import { humeRead } from "@/lib/hume";
+import type { PonsHistoryRow } from "@/lib/ponsHistory";
 import { estimateBuy, estimateSell, minimumOut, PONS_WARNING, ponsReview, type PoolSnapshot } from "@/lib/pons";
 import { cell, head, TxCell } from "./ActivityTables";
 import { ConnectButton } from "./ConnectButton";
@@ -211,8 +212,6 @@ function PonsHistory({ tokens, routerOpen }: { tokens: PonsRow[]; routerOpen: bo
         <HistoryNotice action={<ConnectButton />}>Connect a wallet to see the Pons tokens you have bought and sold.</HistoryNotice>
       ) : !routerOpen ? (
         <HistoryNotice>Buying and selling is not open on this network yet, so there is no history.</HistoryNotice>
-      ) : !env.apiUrl ? (
-        <HistoryNotice>Your history comes from the API. It is not set up on this build.</HistoryNotice>
       ) : !online && !rows ? (
         <HistoryNotice>You are offline, so your history cannot load. It will refresh by itself when you reconnect.</HistoryNotice>
       ) : history.isPending ? (
