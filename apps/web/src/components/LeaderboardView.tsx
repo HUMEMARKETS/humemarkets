@@ -49,7 +49,7 @@ function Notice({ children, action }: { children: string; action?: React.ReactNo
 function Table({ entries, decimals, metric, self }: { entries: LeaderboardEntry[]; decimals: number; metric: LeaderboardMetric; self?: string }) {
   const strong = (m: LeaderboardMetric) => (metric === m ? "font-medium text-text" : "text-muted");
   return (
-    <div className="overflow-x-auto">
+    <div className="relative overflow-x-auto">
       <table className="w-full text-sm sm:min-w-[860px]">
         <caption className="sr-only">Traders ranked by {metrics.find((m) => m.value === metric)?.label}, all time</caption>
         <thead>

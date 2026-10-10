@@ -58,7 +58,7 @@ export function DocsLiveParameters() {
     const dec = decimals.data ?? 6;
 
     return (
-        <div className="overflow-x-auto rounded-panel bg-surface">
+        <div className="relative overflow-x-auto rounded-panel bg-surface">
             <table className="w-full min-w-[56rem] border-collapse">
                 <caption className="sr-only">Live per-market parameters read from the chain</caption>
                 <thead>

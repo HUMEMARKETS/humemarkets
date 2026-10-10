@@ -17,7 +17,7 @@ const GROUPS: ReadonlyArray<{ id: ContractRow["group"]; title: string }> = [
 /// that is not deployed here is not listed.
 export function ContractsTable() {
     return (
-        <div className="overflow-x-auto rounded-panel border border-line/70 bg-surface">
+        <div className="relative overflow-x-auto rounded-panel border border-line/70 bg-surface">
             <table className="w-full min-w-[40rem] border-collapse text-sm">
                 <caption className="sr-only">Every contract HUME runs on, with its address and a link to the explorer</caption>
                 <thead>
