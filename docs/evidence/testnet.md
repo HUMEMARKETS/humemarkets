@@ -222,3 +222,11 @@ Result: **amber**. Layout, fonts and the share image pass at 375 px and 1440 px 
 
 - `PonsView` renders the ticket as a table row directly under the clicked token, so no scroll is needed. Checked in a browser against the testnet API at 375 and 1440 px: the ticket is the next row after the selected token, 21 logos loaded. Screenshots: `docs/evidence/screens/pons-trade-375.png`, `docs/evidence/screens/pons-trade-1440.png`.
 - Not checked: dark theme, a signed buy or sell.
+
+## Pons: trades work end to end, history added (2026-10-10) — pass
+
+- Trade, SDK path: a fresh wallet bought, approved and sold CRH, WIF and BUN through `hume.pons` on router `0x8553c25ab09220216169eF9543400E3d26C0D61A`; every tx confirmed.
+- Trade, real UI: the Pons page in a browser with an injected wallet (local key, same RPC) bought AGE, WIF, CRH and ZZZ, approved and sold WIF, all `ok` on the explorer. Two buys of ZZZ in a row both confirmed.
+- Bug found and fixed: the ticket quoted from the list, which the API caches for 15 s. In these thin pools one trade moves the price by 30% or more, so a second trade inside that window quoted an old price and reverted with `SlippageExceeded`. The ticket now reads `/v1/pons/pool/:token` (uncached, every 4 s and after each trade).
+- History: `/v1/pons/history/:wallet` reads `PonsBought` and `PonsSold` from the router (50 rows, newest first); the Pons page lists them under "Your Pons history" with time, action, token, amounts and the transaction link. Seven states. Checked: 10 rows for the test wallet at 1440 and 375 px. Screenshots: `docs/evidence/screens/pons-history-1440.png`, `pons-history-375.png`.
+- Not checked: a hardware or extension wallet (MetaMask) on a phone; the dark theme; mainnet (no router there).
