@@ -10,12 +10,15 @@ import { formatUnits } from "viem";
 import { useAccount, useBalance } from "wagmi";
 import { useAccountMode } from "@/hooks/useAccountMode";
 import { useWalletHume } from "@/hooks/useHume";
-import { usePonsTokens, type PonsRow } from "@/hooks/queries";
+import { usePonsHistory, usePonsTokens, type PonsHistoryRow, type PonsRow } from "@/hooks/queries";
+import { useOnline } from "@/hooks/useOnline";
+import { fmtDateTime } from "@/lib/options";
 import { useTx } from "@/hooks/useTx";
 import { env } from "@/lib/env";
 import { MONO } from "@/lib/frame";
 import { humeRead } from "@/lib/hume";
 import { estimateBuy, estimateSell, minimumOut, PONS_WARNING, ponsReview, type PoolSnapshot } from "@/lib/pons";
+import { cell, head, TxCell } from "./ActivityTables";
 import { ConnectButton } from "./ConnectButton";
 import { PanelState } from "./PanelState";
 
@@ -165,7 +168,7 @@ function PonsTicket({ token, router }: { token: PonsRow; router?: Address }) {
       <TextField label={side === "buy" ? "Amount (ETH)" : `Amount (${token.symbol})`} className="max-w-xs" value={amount} onValueChange={setAmount} placeholder="0.00" invalid={amount !== "" && !valid} />
       {estimate && minimum !== undefined ? (
         <p className="text-xs text-muted">
-          About {amountText(estimate.out, outDecimals, 4)} {side === "buy" ? token.symbol : "ETH"}, price impact {estimate.impactPct.toFixed(2)}%.
+          About {amountText(estimate.out, outDecimals, side === "buy" ? 4 : 8)} {side === "buy" ? token.symbol : "ETH"}, price impact {estimate.impactPct.toFixed(2)}%.
         </p>
       ) : null}
       {refusal ? <p className="max-w-prose leading-snug text-down">{refusal}</p> : null}
@@ -177,6 +180,80 @@ function PonsTicket({ token, router }: { token: PonsRow; router?: Address }) {
         </Button>
       )}
       <p className="max-w-prose text-xs leading-snug text-muted">{PONS_WARNING}</p>
+    </div>
+  );
+}
+
+/// What this wallet bought and sold here, newest first. The same states as the list: not connected, no router on
+/// this network, no API, offline, loading, error (with a retry), empty and populated.
+function PonsHistory({ tokens, routerOpen }: { tokens: PonsRow[]; routerOpen: boolean }) {
+  const mode = useAccountMode();
+  const online = useOnline();
+  const history = usePonsHistory();
+  const rows = history.data;
+  const info = (address: Address) => tokens.find((t) => t.address.toLowerCase() === address.toLowerCase());
+
+  return (
+    <Panel title="Your Pons history">
+      {mode === "disconnected" ? (
+        <HistoryNotice action={<ConnectButton />}>Connect a wallet to see the Pons tokens you have bought and sold.</HistoryNotice>
+      ) : !routerOpen ? (
+        <HistoryNotice>Buying and selling is not open on this network yet, so there is no history.</HistoryNotice>
+      ) : !env.apiUrl ? (
+        <HistoryNotice>Your history comes from the API. It is not set up on this build.</HistoryNotice>
+      ) : !online && !rows ? (
+        <HistoryNotice>You are offline, so your history cannot load. It will refresh by itself when you reconnect.</HistoryNotice>
+      ) : history.isPending ? (
+        <div aria-busy="true" aria-label="Loading your history" className="flex flex-col gap-2 p-4">
+          <Skeleton className="h-5 w-full" />
+          <Skeleton className="h-5 w-2/3" />
+        </div>
+      ) : history.isError ? (
+        <HistoryNotice action={<Button size="sm" onClick={() => void history.refetch()}>Try again</Button>}>
+          Your history could not be read right now. Your funds are not affected. Try again in a moment.
+        </HistoryNotice>
+      ) : !rows || rows.length === 0 ? (
+        <HistoryNotice>Nothing yet. Each Pons token you buy or sell here is listed with its transaction.</HistoryNotice>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[560px] text-sm">
+            <thead>
+              <tr>
+                <th className={head}>Time</th>
+                <th className={head}>Action</th>
+                <th className={head}>Token</th>
+                <th className={head}>Tokens</th>
+                <th className={head}>ETH</th>
+                <th className={head}>Transaction</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row: PonsHistoryRow) => {
+                const token = info(row.token);
+                return (
+                  <tr key={`${row.txHash}-${row.side}-${row.tokens}`} className="border-t border-line">
+                    <td className={cell}>{row.timestamp ? fmtDateTime(new Date(row.timestamp * 1000).toISOString()) : "–"}</td>
+                    <td className={cell}>{row.side === "buy" ? "Bought" : "Sold"}</td>
+                    <td className={cell}>{token?.symbol ?? `${row.token.slice(0, 6)}…${row.token.slice(-4)}`}</td>
+                    <td className={cell}>{amountText(BigInt(row.tokens), token?.decimals ?? 18, 4)}</td>
+                    <td className={cell}>{amountText(BigInt(row.eth), 18, 8)}</td>
+                    <TxCell hash={row.txHash} />
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Panel>
+  );
+}
+
+function HistoryNotice({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {
+  return (
+    <div className="flex flex-1 flex-wrap items-center justify-between gap-3 p-4">
+      <p className="max-w-prose text-muted">{children}</p>
+      {action}
     </div>
   );
 }
@@ -193,6 +270,7 @@ export function PonsView() {
   const selected = rows.find((t) => t.address === picked);
 
   return (
+    <div className="flex flex-1 flex-col gap-4">
     <Panel
       className="flex-1"
       title="Pons tokens"
@@ -270,5 +348,7 @@ export function PonsView() {
       </div>
       {!selected && (data?.length ?? 0) > 0 ? <p className="border-t border-line p-3 text-xs text-muted">{PONS_WARNING}</p> : null}
     </Panel>
+    <PonsHistory tokens={data ?? []} routerOpen={Boolean(router)} />
+    </div>
   );
 }

@@ -478,6 +478,35 @@ export function usePonsTokens() {
   return useQuery(ponsQuery());
 }
 
+export interface PonsHistoryRow {
+  side: "buy" | "sell";
+  token: Address;
+  /// Wei, paid on a buy and received on a sell.
+  eth: string;
+  /// Token base units, received on a buy and paid on a sell.
+  tokens: string;
+  txHash: string;
+  blockNumber: string;
+  /// Block time in seconds.
+  timestamp: number;
+}
+
+/// The connected wallet's Pons buys and sells, from the API's router-log route.
+export function usePonsHistory() {
+  const { address, enabled } = useWalletEnabled();
+  return useQuery({
+    queryKey: ["pons-history", address, env.apiUrl],
+    queryFn: async (): Promise<PonsHistoryRow[]> => {
+      const response = await fetch(`${env.apiUrl}/v1/pons/history/${address}`);
+      if (!response.ok) throw new Error("pons history unavailable");
+      return response.json();
+    },
+    enabled: enabled && Boolean(env.apiUrl),
+    refetchInterval: 15_000,
+    retry: false,
+  });
+}
+
 export interface CopyFollowRow {
   id: number;
   follower: string;
