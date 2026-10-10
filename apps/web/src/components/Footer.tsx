@@ -3,6 +3,7 @@ import { APP_GUTTER } from '@/lib/frame';
 import { MORE_LINKS } from '@/lib/nav';
 import { X_URL } from '@/lib/social';
 import { cn, interactive } from '@hume/ui';
+import { FooterCa } from './FooterCa';
 import { Logo } from './Logo';
 import { ChainName } from './NetworkText';
 import { StatusBadge } from './StatusBadge';
@@ -25,6 +26,7 @@ export function Footer() {
                         Global markets, onchain.
                     </p>
                 </div>
+                <FooterCa />
                 <nav
                     aria-label="Footer"
                     className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2"

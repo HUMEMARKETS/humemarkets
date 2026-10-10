@@ -76,6 +76,7 @@ function Facts() {
                     </a>
                 </Fact>
             </dl>
+            <ContractAddressBadge className="mt-5" />
             {markets.isError ? (
                 <p className="mt-3 text-sm text-muted">
                     {REGISTRY_ERROR}
