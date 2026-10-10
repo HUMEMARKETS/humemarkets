@@ -11,7 +11,7 @@
       "maintenanceBps": 750,
       "group": "us-equities",
       "tier": "tradeable",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0xd0601ce157db5bdc3162bbac2a2c8af5320d9eec.png"
+      "logo": "https://financialmodelingprep.com/image-stock/NVDA.png"
     },
     {
       "symbol": "AAPL",
@@ -22,7 +22,7 @@
       "maintenanceBps": 750,
       "group": "us-equities",
       "tier": "tradeable",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0xaf3d76f1834a1d425780943c99ea8a608f8a93f9.png"
+      "logo": "https://financialmodelingprep.com/image-stock/AAPL.png"
     },
     {
       "symbol": "TSLA",
@@ -33,7 +33,7 @@
       "maintenanceBps": 750,
       "group": "us-equities",
       "tier": "tradeable",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0x322f0929c4625ed5bad873c95208d54e1c003b2d.png"
+      "logo": "https://financialmodelingprep.com/image-stock/TSLA.png"
     },
     {
       "symbol": "MSFT",
@@ -44,7 +44,7 @@
       "maintenanceBps": 750,
       "group": "us-equities",
       "tier": "tradeable",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0xe93237c50d904957cf27e7b1133b510c669c2e74.png"
+      "logo": "https://financialmodelingprep.com/image-stock/MSFT.png"
     },
     {
       "symbol": "GOOGL",
@@ -55,7 +55,7 @@
       "maintenanceBps": 750,
       "group": "us-equities",
       "tier": "tradeable",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0x2e0847e8910a9732eb3fb1bb4b70a580adad4fe3.png"
+      "logo": "https://financialmodelingprep.com/image-stock/GOOGL.png"
     },
     {
       "symbol": "AMZN",
@@ -66,7 +66,7 @@
       "maintenanceBps": 750,
       "group": "us-equities",
       "tier": "tradeable",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0x12f190a9f9d7d37a250758b26824b97ce941bf54.png"
+      "logo": "https://financialmodelingprep.com/image-stock/AMZN.png"
     },
     {
       "symbol": "META",
@@ -77,7 +77,7 @@
       "maintenanceBps": 750,
       "group": "us-equities",
       "tier": "tradeable",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0xc0d6457c16cc70d6790dd43521c899c87ce02f35.png"
+      "logo": "https://financialmodelingprep.com/image-stock/META.png"
     },
     {
       "symbol": "COIN",
@@ -88,7 +88,7 @@
       "maintenanceBps": 750,
       "group": "us-equities",
       "tier": "tradeable",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0x6330d8c3178a418788df01a47479c0ce7ccf450b.png"
+      "logo": "https://financialmodelingprep.com/image-stock/COIN.png"
     },
     {
       "symbol": "MSTR",
@@ -99,7 +99,7 @@
       "maintenanceBps": 750,
       "group": "us-equities",
       "tier": "tradeable",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0xec262a75e413fafd0df80480274532c79d42da09.png"
+      "logo": "https://financialmodelingprep.com/image-stock/MSTR.png"
     },
     {
       "symbol": "SPY",
@@ -110,7 +110,7 @@
       "maintenanceBps": 500,
       "group": "etf",
       "tier": "tradeable",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0x117cc2133c37b721f49de2a7a74833232b3b4c0c.png"
+      "logo": "https://financialmodelingprep.com/image-stock/SPY.png"
     },
     {
       "symbol": "QQQ",
@@ -121,7 +121,7 @@
       "maintenanceBps": 500,
       "group": "etf",
       "tier": "tradeable",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0xd5f3879160bc7c32ebb4dc785f8a4f505888de68.png"
+      "logo": "https://financialmodelingprep.com/image-stock/QQQ.png"
     },
     {
       "symbol": "AMD",
@@ -132,7 +132,7 @@
       "maintenanceBps": 750,
       "group": "us-equities",
       "tier": "tradeable",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0x86923f96303d656e4aa86d9d42d1e57ad2023fdc.png"
+      "logo": "https://financialmodelingprep.com/image-stock/AMD.png"
     },
     {
       "symbol": "ASML",
@@ -143,7 +143,7 @@
       "maintenanceBps": 750,
       "group": "us-equities",
       "tier": "tradeable",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0x47f93d52cbec7c6d2cfc080e154002370a60daea.png"
+      "logo": "https://financialmodelingprep.com/image-stock/ASML.png"
     },
     {
       "symbol": "BABA",
@@ -154,7 +154,7 @@
       "maintenanceBps": 750,
       "group": "china",
       "tier": "tradeable",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0xad25ac6c84d497db898fa1e8387bf6af3532a1c4.png"
+      "logo": "https://financialmodelingprep.com/image-stock/BABA.png"
     },
     {
       "symbol": "CLSK",
@@ -165,7 +165,7 @@
       "maintenanceBps": 1000,
       "group": "us-equities",
       "tier": "tradeable",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0xcbb95bbf36099d34da091dc6fa6f49efa257cee3.png"
+      "logo": "https://financialmodelingprep.com/image-stock/CLSK.png"
     },
     {
       "symbol": "CRCL",
@@ -176,7 +176,7 @@
       "maintenanceBps": 750,
       "group": "us-equities",
       "tier": "tradeable",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0xdf0992e440dd0be65bd8439b609d6d4366bf1cb5.png"
+      "logo": "https://financialmodelingprep.com/image-stock/CRCL.png"
     },
     {
       "symbol": "CRWV",
@@ -187,7 +187,7 @@
       "maintenanceBps": 1000,
       "group": "us-equities",
       "tier": "tradeable",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0x5f10a1c971b69e47e059e1dc91901b59b3fb49c3.png"
+      "logo": "https://financialmodelingprep.com/image-stock/CRWV.png"
     },
     {
       "symbol": "EWY",
@@ -198,7 +198,7 @@
       "maintenanceBps": 750,
       "group": "china",
       "tier": "tradeable",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0x7f0abef0c07280f82c6a08ead09ded6bae2c13fc.png"
+      "logo": "https://financialmodelingprep.com/image-stock/EWY.png"
     },
     {
       "symbol": "GME",
@@ -209,7 +209,7 @@
       "maintenanceBps": 1000,
       "group": "us-equities",
       "tier": "tradeable",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0x1b0e319c6a659f002271b69db8a7df2f911c153e.png"
+      "logo": "https://financialmodelingprep.com/image-stock/GME.png"
     },
     {
       "symbol": "INTC",
@@ -220,7 +220,7 @@
       "maintenanceBps": 750,
       "group": "us-equities",
       "tier": "tradeable",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0xc72b96e0e48ecd4dc75e1e45396e26300bc39681.png"
+      "logo": "https://financialmodelingprep.com/image-stock/INTC.png"
     },
     {
       "symbol": "IONQ",
@@ -231,7 +231,7 @@
       "maintenanceBps": 1000,
       "group": "us-equities",
       "tier": "tradeable",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0x558378e000d634a36593e338ebacdd6207640efe.png"
+      "logo": "https://financialmodelingprep.com/image-stock/IONQ.png"
     },
     {
       "symbol": "MU",
@@ -242,7 +242,7 @@
       "maintenanceBps": 750,
       "group": "us-equities",
       "tier": "tradeable",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0xff080c8ce2e5feadaca0da81314ae59d232d4afd.png"
+      "logo": "https://financialmodelingprep.com/image-stock/MU.png"
     },
     {
       "symbol": "NBIS",
@@ -253,7 +253,7 @@
       "maintenanceBps": 1000,
       "group": "us-equities",
       "tier": "tradeable",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0x9d9c6684f596f66a64c030b93a886d51fd4d7931.png"
+      "logo": "https://financialmodelingprep.com/image-stock/NBIS.png"
     },
     {
       "symbol": "ORCL",
@@ -264,7 +264,7 @@
       "maintenanceBps": 750,
       "group": "us-equities",
       "tier": "tradeable",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0xb0992820e760d836549ba69bc7598b4af75dee03.png"
+      "logo": "https://financialmodelingprep.com/image-stock/ORCL.png"
     },
     {
       "symbol": "PLTR",
@@ -275,7 +275,7 @@
       "maintenanceBps": 750,
       "group": "us-equities",
       "tier": "tradeable",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0x894e1ec2d74ffe5aef8dc8a9e84686accb964f2a.png"
+      "logo": "https://financialmodelingprep.com/image-stock/PLTR.png"
     },
     {
       "symbol": "RGTI",
@@ -286,7 +286,7 @@
       "maintenanceBps": 1000,
       "group": "us-equities",
       "tier": "tradeable",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0x284358abc07f9359f19f4b5b4ac91901be2597ba.png"
+      "logo": "https://financialmodelingprep.com/image-stock/RGTI.png"
     },
     {
       "symbol": "RKLB",
@@ -297,7 +297,7 @@
       "maintenanceBps": 1000,
       "group": "us-equities",
       "tier": "tradeable",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0x3b14c39e89d60d627b42a1a4ca45b5bb45fc12e2.png"
+      "logo": "https://financialmodelingprep.com/image-stock/RKLB.png"
     },
     {
       "symbol": "SLV",
@@ -308,7 +308,7 @@
       "maintenanceBps": 750,
       "group": "commodities",
       "tier": "tradeable",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0x411efb0e7f985935daec3d4c3ebaea0d0ad7d89f.png"
+      "logo": "https://financialmodelingprep.com/image-stock/SLV.png"
     },
     {
       "symbol": "SNDK",
@@ -319,7 +319,7 @@
       "maintenanceBps": 1000,
       "group": "us-equities",
       "tier": "tradeable",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0xb90a19ff0af67f7779aff50a882a9cff42446400.png"
+      "logo": "https://financialmodelingprep.com/image-stock/SNDK.png"
     },
     {
       "symbol": "SPCX",
@@ -330,7 +330,7 @@
       "maintenanceBps": 750,
       "group": "us-equities",
       "tier": "tradeable",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0x4a0e65a3eccec6dbe60ae065f2e7bb85fae35eea.png"
+      "logo": "https://financialmodelingprep.com/image-stock/SPCX.png"
     },
     {
       "symbol": "TSM",
@@ -341,7 +341,7 @@
       "maintenanceBps": 750,
       "group": "china",
       "tier": "tradeable",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0x58ffe4a942d3885baa22d7520691f611ef09e7aa.png"
+      "logo": "https://financialmodelingprep.com/image-stock/TSM.png"
     },
     {
       "symbol": "USO",
@@ -352,7 +352,7 @@
       "maintenanceBps": 750,
       "group": "commodities",
       "tier": "tradeable",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0xa30fa36db767ad9ed3f7a60fc79526fb4d56d344.png"
+      "logo": "https://financialmodelingprep.com/image-stock/USO.png"
     },
     {
       "symbol": "BTC",
@@ -396,7 +396,7 @@
       "maintenanceBps": 750,
       "group": "crypto",
       "tier": "tradeable",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0xc9a981fee1f9dec688bb123ccdecc63d0debfc4e.png"
+      "logo": "https://financialmodelingprep.com/image-stock/GLD.png"
     },
     {
       "symbol": "UMC",
@@ -406,7 +406,7 @@
       "maintenanceBps": 750,
       "group": "china",
       "tier": "quoted",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0x0e6e67ba88e7b5d9b67636a215c76779b948de79.png"
+      "logo": "https://financialmodelingprep.com/image-stock/UMC.png"
     },
     {
       "symbol": "FUTU",
@@ -416,7 +416,7 @@
       "maintenanceBps": 750,
       "group": "china",
       "tier": "quoted",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0xeb30663bdff0622ef4e4e5cbb4e975f19f33f51d.png"
+      "logo": "https://financialmodelingprep.com/image-stock/FUTU.png"
     },
     {
       "symbol": "EWT",
@@ -426,7 +426,7 @@
       "maintenanceBps": 750,
       "group": "china",
       "tier": "quoted",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0x1c690498150252222c275a5ced69d3a6b1f52d5e.png"
+      "logo": "https://financialmodelingprep.com/image-stock/EWT.png"
     },
     {
       "symbol": "SIMO",
@@ -436,7 +436,7 @@
       "maintenanceBps": 750,
       "group": "china",
       "tier": "quoted",
-      "logo": "https://cdn.robinhood.com/ncw_assets/logos/0x77e655e37f4d913fb9540e0d541d824171a60e81.png"
+      "logo": "https://financialmodelingprep.com/image-stock/SIMO.png"
     },
     {
       "symbol": "PDD",
