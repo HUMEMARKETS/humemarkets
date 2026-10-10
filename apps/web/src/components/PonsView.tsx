@@ -5,7 +5,7 @@ import { toBaseUnits } from "@hume/sdk";
 import type { Address } from "@hume/types";
 import { Button, Panel, ReviewStep, Segmented, Skeleton, TextField, cn } from "@hume/ui";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { formatUnits } from "viem";
 import { useAccount, useBalance } from "wagmi";
 import { useAccountMode } from "@/hooks/useAccountMode";
@@ -190,7 +190,7 @@ export function PonsView() {
   const router = ponsForChain(env.chainId).router;
 
   const rows = (data ?? []).filter((t) => `${t.symbol} ${t.name}`.toLowerCase().includes(filter.trim().toLowerCase()));
-  const selected = (data ?? []).find((t) => t.address === picked);
+  const selected = rows.find((t) => t.address === picked);
 
   return (
     <Panel
@@ -236,7 +236,8 @@ export function PonsView() {
             </thead>
             <tbody>
               {rows.map((token) => (
-                <tr key={token.address} className={cn("border-t border-line", token.address === picked && "bg-accent-soft")}>
+                <Fragment key={token.address}>
+                <tr className={cn("border-t border-line", token.address === picked && "bg-accent-soft")}>
                   <th scope="row" className="px-3 py-2.5 text-left font-medium">
                     <span className="flex items-center gap-2.5">
                       <Logo token={token} />
@@ -254,12 +255,20 @@ export function PonsView() {
                     </Button>
                   </td>
                 </tr>
+                {token.address === picked ? (
+                  <tr>
+                    <td colSpan={4} className="p-0">
+                      <PonsTicket key={token.address} token={token} router={router} />
+                    </td>
+                  </tr>
+                ) : null}
+                </Fragment>
               ))}
             </tbody>
           </table>
         )}
       </div>
-      {selected ? <PonsTicket key={selected.address} token={selected} router={router} /> : (data?.length ?? 0) > 0 ? <p className="border-t border-line p-3 text-xs text-muted">{PONS_WARNING}</p> : null}
+      {!selected && (data?.length ?? 0) > 0 ? <p className="border-t border-line p-3 text-xs text-muted">{PONS_WARNING}</p> : null}
     </Panel>
   );
 }

@@ -217,3 +217,8 @@ Result: **amber**. Layout, fonts and the share image pass at 375 px and 1440 px 
 - Fix, testnet: new mock factory `0x2549b97021e6E84D117fD13Dfc7de6436C458004` and router `0x8553c25ab09220216169eF9543400E3d26C0D61A` (old pair retired, its tokens had dead logos). 20 mock copies of mainnet Pons tokens, each with a v4 pool and an https logo: BUN, ZZZ, HARMONIC, WOJAK, PARE, AGE, COPPERINU, ROUTE, HYDX, UFG, SPRING, ROBINHOOD, GAGE, BISCOTTI, GG, ZEAL, GRIFT, WIF, MINTFOLIO, CRH. Data in `deployments/pons_testnet_tokens.json`, script `DeployPonsTestnetMore.s.sol`. Tx hashes: `packages/contracts/broadcast/DeployPonsTestnet*.s.sol/46630/run-latest.json`.
 - Probe against testnet RPC: 20 tokens, 20 with a pool price and a logo.
 - Not checked: buy/sell on the new router, the mainnet DexScreener path end to end (the mainnet RPC blocks this machine's Node client), screenshots at 375 and 1440 px.
+
+## Pons: trade ticket opens under the selected token (2026-10-10) — pass
+
+- `PonsView` renders the ticket as a table row directly under the clicked token, so no scroll is needed. Checked in a browser against the testnet API at 375 and 1440 px: the ticket is the next row after the selected token, 21 logos loaded. Screenshots: `docs/evidence/screens/pons-trade-375.png`, `docs/evidence/screens/pons-trade-1440.png`.
+- Not checked: dark theme, a signed buy or sell.
