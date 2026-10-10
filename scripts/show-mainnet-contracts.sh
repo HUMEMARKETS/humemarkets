@@ -2,9 +2,12 @@
 # Shows that the HUME contracts are deployed on Robinhood Chain mainnet: reads each address from
 # packages/contracts/deployments/robinhood_mainnet.json, asks the chain for its code (and, for a proxy, the
 # implementation behind it), and prints one tidy table. Read-only, about 3 seconds. Needs cast and jq.
-#   bash scripts/show-mainnet-contracts.sh            (RPC_URL overrides the default public RPC)
+#   bash scripts/show-mainnet-contracts.sh            the table, the live state, then the explorer links
+#   bash scripts/show-mainnet-contracts.sh links      only the explorer links (proxy and implementation)
+# RPC_URL overrides the default public RPC.
 set -uo pipefail
 cd "$(dirname "$0")/.."
+MODE="${1:-all}"
 RPC="${RPC_URL:-https://rpc.mainnet.chain.robinhood.com}"
 DEP=packages/contracts/deployments/robinhood_mainnet.json
 EXPLORER=https://robinhoodchain.blockscout.com
@@ -50,13 +53,18 @@ probe() {  # index key kind
   impl="-"
   if [[ "$kind" == proxy ]]; then
     impl="$(cast storage "$addr" "$SLOT" --rpc-url "$RPC" 2>/dev/null | sed 's/^0x000000000000000000000000/0x/')"
+    [[ "$impl" =~ ^0x[0-9a-fA-F]{40}$ ]] && impl="$(cast to-check-sum-address "$impl")"
   fi
   printf '%s\t%s\t%s\n' "$addr" "$(( (${#code} - 2) / 2 ))" "$impl" > "$tmp/$i"
 }
 export -f probe; export DEP RPC SLOT tmp
 
+if [[ "$MODE" == links ]]; then
+  printf '\n%s  HUME MARKETS  %s·  explorer links%s\n\n' "$B" "$D" "$Z"
+else
 printf '\n%s  HUME MARKETS  %s·  smart contracts on Robinhood Chain mainnet%s\n' "$B" "$D" "$Z"
 printf '%s  chain 4663   rpc %s%s\n\n' "$D" "$RPC" "$Z"
+fi
 
 # One call each, all at once.
 i=0
@@ -69,6 +77,7 @@ head_block="$(cast block-number --rpc-url "$RPC" 2>/dev/null)" &
 wait
 head_block="$(cast block-number --rpc-url "$RPC" 2>/dev/null)"
 
+if [[ "$MODE" != links ]]; then
 printf '  %s%-22s %-44s %9s   %-14s  %s%s\n' "$D" "CONTRACT" "ADDRESS" "CODE" "IMPLEMENTATION" "STATUS" "$Z"
 printf '  %s%s%s\n' "$D" "$(printf '%.0s─' {1..108})" "$Z"
 ok=0
@@ -99,8 +108,26 @@ printf '  %sOwner%s               %s%s%s\n' "$D" "$Z" "$B" "0xd09D9c87ECfe008B4D
 printf '  %sLatest block%s        %s%s%s\n\n' "$D" "$Z" "$B" "${head_block:-?}" "$Z"
 
 if [[ "$ok" -eq "${#rows[@]}" ]]; then
-  printf '  %s✔ %d of %d contracts have code on Robinhood Chain mainnet%s\n' "$G$B" "$ok" "${#rows[@]}" "$Z"
+  printf '  %s✔ %d of %d contracts have code on Robinhood Chain mainnet%s\n\n' "$G$B" "$ok" "${#rows[@]}" "$Z"
 else
-  printf '  %s✘ only %d of %d contracts have code%s\n' "$R$B" "$ok" "${#rows[@]}" "$Z"
+  printf '  %s✘ only %d of %d contracts have code%s\n\n' "$R$B" "$ok" "${#rows[@]}" "$Z"
 fi
-printf '  %sExplorer%s            %s%s/address/<address>%s\n\n' "$D" "$Z" "$C" "$EXPLORER" "$Z"
+fi
+
+# Explorer links: the proxy (the address users interact with) and the implementation behind it.
+printf '%s  EXPLORER LINKS%s\n' "$B" "$Z"
+printf '  %s%s%s\n' "$D" "$(printf '%.0s─' {1..108})" "$Z"
+i=0
+for row in "${rows[@]}"; do
+  IFS='|' read -r key label kind <<<"$row"
+  IFS=$'\t' read -r addr size impl < "$tmp/$i"
+  printf '  %s%s%s\n' "$B" "$label" "$Z"
+  if [[ "$impl" != "-" && -n "$impl" ]]; then
+    printf '    %sproxy%s           %s%s/address/%s%s\n' "$D" "$Z" "$C" "$EXPLORER" "$addr" "$Z"
+    printf '    %simplementation%s  %s%s/address/%s%s\n' "$D" "$Z" "$C" "$EXPLORER" "$impl" "$Z"
+  else
+    printf '    %scontract%s        %s%s/address/%s%s\n' "$D" "$Z" "$C" "$EXPLORER" "$addr" "$Z"
+  fi
+  i=$((i + 1))
+done
+printf '  %s%s%s\n\n' "$D" "$(printf '%.0s─' {1..108})" "$Z"
