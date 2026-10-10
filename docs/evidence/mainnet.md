@@ -40,3 +40,19 @@ BTC, ETH, LINK and GLD read through `OracleRouter` on the fork and live: BTC 82,
 - Option round trip, copy trading on mainnet (both need the keeper and pricing keys on Railway).
 - HUME token address: shown after `NEXT_PUBLIC_PROTOCOL_TOKEN_ADDRESS` and `NEXT_PUBLIC_PROTOCOL_TOKEN_LIVE=true` are set on the Vercel project and it is redeployed.
 - No audit. Caps are the loss bound.
+
+## End-to-end pass on the live site (2026-10-11, after the open)
+
+Run in a browser against `https://humemarkets.com` with an injected wallet (the owner key), real transactions on chain 4663.
+
+| Check | Result |
+|---|---|
+| Markets page | Pass after a fix. Equity rows showed `–` while the session is shut; they now show the last close from Robinhood's quote endpoint (labelled "close", with its own change), and the ticker, the terminal header and the terminal list do the same. BTC, ETH, LINK, GLD show the chain price. |
+| Logos | Pass after a fix. Features and Markets listed few logos, and the Robinhood token logo is one generic mark for every asset. Each market now has a company logo (FMP ticker logos; CoinGecko for BTC, ETH, LINK): 57 of 57 load at 1440 and 375 px. |
+| Perp, through the UI | Pass. BTC long 0.04 USDG at 1x and 0.03 USDG at 5x opened with Review and Confirm, and both closed with Close. A second order that would push net open interest over the 0.20 USDG cap is refused with a sentence, as designed. |
+| Pons, through the UI | Pass. HARMONIC buy, approve and sell; the history panel lists both. |
+| Options chain | Pass after a fix. BTC, ETH and LINK chart history came from Yahoo's `BTC` (a fund at $38), so the chart axis ran from -30,000 and the model measured 300% volatility. The API now reads `BTC-USD`, `ETH-USD`, `LINK-USD` (`historySymbol` in the market list); BTC shows 29% to 50% volatility and sane prices. The chain opens on a priced underlying. |
+| Options order | Not executable at this budget: a contract is one whole underlying (a BTC call is about 1,440 USDG) and the position cap is 0.20 USDG. |
+| Portfolio, Activity, Lending, Copy, Leaderboard, Strategies | Load without error. Lending says it is not live on this network. Activity and Leaderboard fill once the indexer has caught up. |
+| Indexer | The public RPCs cap `getLogs`: dRPC refuses every range on the free plan, the official RPC is blocked for Railway, thirdweb allows 1,000 blocks. The indexer now uses thirdweb with `INDEXER_MAX_BLOCK_RANGE=1000` and `INDEXER_FROM_BLOCK=85139000` (skip the empty blocks before the open). |
+| Pricing and keeper | Both run on Railway mainnet with the owner key; the keeper reports copy trading on and feed refresh off. |
