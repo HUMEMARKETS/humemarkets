@@ -20,6 +20,9 @@ const RUN_ONCE = process.env.INDEXER_RUN_ONCE === "true";
 /// eth_getLogs at 10 blocks. Robinhood's official testnet RPC (https://rpc.testnet.chain.robinhood.com)
 /// only rejects a query that matches more than 10000 logs, so set this to about 2000 there.
 const MAX_BLOCK_RANGE = BigInt(process.env.INDEXER_MAX_BLOCK_RANGE ?? 10);
+/// Skip ahead to this block when the indexer is behind it. For a deployment whose earlier blocks hold nothing of
+/// interest (mainnet before its open), where walking them on a free RPC would take days. Unset: no skipping.
+const FROM_BLOCK = process.env.INDEXER_FROM_BLOCK ? BigInt(process.env.INDEXER_FROM_BLOCK) : undefined;
 if (MAX_BLOCK_RANGE < 1n) {
   throw new Error(`INDEXER_MAX_BLOCK_RANGE must be at least 1, got ${MAX_BLOCK_RANGE}`);
 }
@@ -130,7 +133,8 @@ async function indexRange(fromBlock: bigint, toBlock: bigint) {
 }
 
 async function tick() {
-  const from = (await lastIndexedBlock()) + 1n;
+  const resumed = (await lastIndexedBlock()) + 1n;
+  const from = FROM_BLOCK !== undefined && FROM_BLOCK > resumed ? FROM_BLOCK : resumed;
   const head = await publicClient.getBlockNumber();
   if (from > head) return;
 
