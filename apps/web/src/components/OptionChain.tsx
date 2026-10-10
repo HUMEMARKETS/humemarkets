@@ -26,6 +26,7 @@ import {
   strikeText,
 } from "@/lib/options";
 import { useOptionOrder } from "@/stores/optionOrder";
+import { firstPriced } from "@/lib/pricedDefault";
 import { useTerminal } from "@/stores/terminal";
 import type { TermKey } from "@/lib/glossary";
 import { Term } from "./Term";
@@ -145,7 +146,7 @@ export function OptionChain() {
   );
   // The shared selection may hold a perp-only market; fall back to the first with options.
   useEffect(() => {
-    if (symbols.length > 0 && !symbols.includes(symbol)) setSymbol(symbols[0]!);
+    if (symbols.length > 0 && !symbols.includes(symbol)) void firstPriced(symbols).then(setSymbol);
   }, [symbols, symbol, setSymbol]);
   // A series picked for another underlying no longer applies.
   useEffect(() => {

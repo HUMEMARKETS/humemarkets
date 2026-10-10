@@ -1,14 +1,14 @@
 "use client";
 
-import { Num, Panel, Skeleton, cn } from "@hume/ui";
+import { Num, Panel, Skeleton, cn, toneOf } from "@hume/ui";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { usePerpMarket, usePerpMarketConfig, usePerpMarkets } from "@/hooks/queries";
+import { usePerpMarket, usePerpMarketConfig, usePerpMarkets, useReferenceQuotes } from "@/hooks/queries";
 import { fmtBps, fmtPrice } from "@/lib/format";
-import { humeRead } from "@/lib/hume";
+import { firstPriced } from "@/lib/pricedDefault";
 import { symbolOf, tradeBlocker } from "@/lib/market";
 import { useTerminal } from "@/stores/terminal";
-import { Change, useStatsFor } from "./Change";
+import { Change, fmtChange, useStatsFor } from "./Change";
 
 /// Enough markets that finding one by eye is slower than typing part of its name.
 const FILTER_FROM = 6;
@@ -19,6 +19,8 @@ function MarketRow({ symbol }: { symbol: string }) {
   const { data, isPending } = usePerpMarket(symbol);
   const config = usePerpMarketConfig(symbol);
   const stats = useStatsFor(symbol);
+  const close = useReferenceQuotes().data?.[symbol];
+  const closed = !data && !isPending && close !== undefined;
 
   return (
     <li>
@@ -39,11 +41,13 @@ function MarketRow({ symbol }: { symbol: string }) {
             <span className="rounded-sm border border-down px-1 text-[10px] font-normal text-down">Paused</span>
           ) : null}
         </span>
-        <Num>{data ? fmtPrice(data.markPrice) : isPending ? <Skeleton className="w-12" /> : "–"}</Num>
+        <Num tone={closed ? "muted" : undefined} title={closed ? "Market closed: last close" : undefined}>
+          {data ? fmtPrice(data.markPrice) : isPending ? <Skeleton className="w-12" /> : closed ? close.price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "–"}
+        </Num>
         <Num tone="muted" className="text-xs" title="Funding rate">
           {fmtBps(data?.funding.currentFundingRateBps)}
         </Num>
-        <Change stats={stats} className="text-xs" />
+        {closed && close.changeBps !== null ? <Num tone={toneOf(close.changeBps)} className="text-xs">{fmtChange(close.changeBps)}</Num> : <Change stats={stats} className="text-xs" />}
       </button>
     </li>
   );
@@ -69,10 +73,7 @@ export function MarketFromUrl() {
       // The first market that has a price right now: at the weekend the equities are closed and answer
       // `MarketSessionClosed`, so the terminal would open on a market with no price. Falls back to the first listed.
       picking.current = true;
-      void Promise.allSettled(symbols.map((value) => humeRead.oracle.getIndexPrice(value))).then((results) => {
-        const open = symbols.find((_, i) => results[i]?.status === "fulfilled");
-        setSymbol(open ?? symbols[0]!);
-      });
+      void firstPriced(symbols).then(setSymbol);
     }
   }, [markets, symbol, requested, setSymbol]);
 
