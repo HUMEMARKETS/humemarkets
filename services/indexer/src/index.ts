@@ -97,7 +97,9 @@ async function upsertMarket(marketId: `0x${string}`, blockNumber: bigint) {
 /// deployment's `MarketAdded` events, and would serve an empty market list.
 async function syncMarkets() {
   const head = await publicClient.getBlockNumber();
+  console.log(`indexer: chain head is ${head}`);
   const listed = await hume.markets.list();
+  console.log(`indexer: registry lists ${listed.length} market(s)`);
   for (const market of listed) await upsertMarket(market.marketId, head);
   console.log(`indexer: ${listed.length} market(s) synced from the registry`);
 }
