@@ -1,3 +1,4 @@
+import { marketForSymbol, ROBINHOOD_MAINNET_CHAIN_ID } from "@hume/config";
 import { CANDLE_INTERVALS, type Candle, type CandleInterval } from "./analytics.js";
 
 /// Past candles for the chart, from Yahoo Finance's public chart endpoint. The indexer only holds
@@ -11,6 +12,11 @@ const REQUEST_TIMEOUT_MS = 8_000;
 const CACHE_TTL_MS = 5 * 60_000;
 /// Prices are 18-decimal fixed point in the API. Yahoo quotes need at most 8 decimals.
 const PRICE_SCALE = 10n ** 10n;
+
+/// `BTC` on Yahoo is a fund trading at $38, not the coin: the listing says which ticker holds a market's history.
+function yahooSymbol(symbol: string): string {
+  return marketForSymbol(ROBINHOOD_MAINNET_CHAIN_ID, symbol)?.historySymbol ?? symbol;
+}
 
 /// The widest range Yahoo serves for each interval.
 const YAHOO_INTERVALS: Record<CandleInterval, { interval: string; range: string }> = {
@@ -112,13 +118,14 @@ const cache = new Map<string, { at: number; candles: Candle[] }>();
 /// the chart then shows only what the indexer recorded.
 export async function fetchPastCandles(symbol: string, interval: CandleInterval): Promise<Candle[]> {
   if (process.env.EXTERNAL_CANDLE_HISTORY === "false") return [];
-  const key = `${symbol}:${interval}`;
+  const source = yahooSymbol(symbol);
+  const key = `${source}:${interval}`;
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.candles;
 
   const { interval: yahooInterval, range } = YAHOO_INTERVALS[interval];
   try {
-    const response = await fetch(`${YAHOO_URL}/${encodeURIComponent(symbol)}?interval=${yahooInterval}&range=${range}`, {
+    const response = await fetch(`${YAHOO_URL}/${encodeURIComponent(source)}?interval=${yahooInterval}&range=${range}`, {
       headers: { "user-agent": "Mozilla/5.0" },
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
@@ -150,7 +157,7 @@ async function loadUnderlyingVolume(symbol: string): Promise<void> {
   if (volumeInFlight.has(symbol)) return;
   volumeInFlight.add(symbol);
   try {
-    const response = await fetch(`${YAHOO_URL}/${encodeURIComponent(symbol)}?interval=1d&range=5d`, {
+    const response = await fetch(`${YAHOO_URL}/${encodeURIComponent(yahooSymbol(symbol))}?interval=1d&range=5d`, {
       headers: { "user-agent": "Mozilla/5.0" },
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });

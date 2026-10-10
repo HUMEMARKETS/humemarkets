@@ -29,6 +29,7 @@ interface Row {
   group: string;
   tier: string;
   logo?: string;
+  historySymbol?: string;
 }
 
 const file = JSON.parse(readFileSync(jsonPath, "utf8")) as { chainId: number; markets: Row[] };
@@ -61,6 +62,7 @@ const body = file.markets
       `group: ${JSON.stringify(row.group)}`,
       `tier: ${JSON.stringify(row.tier)}`,
       ...(row.logo ? [`logo: ${JSON.stringify(row.logo)}`] : []),
+      ...(row.historySymbol ? [`historySymbol: ${JSON.stringify(row.historySymbol)}`] : []),
     ];
     return `  { ${fields.join(", ")} },`;
   })

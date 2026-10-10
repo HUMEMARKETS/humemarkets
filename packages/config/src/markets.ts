@@ -32,6 +32,9 @@ export interface MarketListing {
   /// An https address of the asset's logo (CoinGecko for a coin, a ticker-logo CDN for a stock or ETF; Robinhood's own
   /// token logos are one generic mark for every asset, so they are not used). The page falls back to the ticker's initials if it fails.
   logo?: string;
+  /// The ticker the chart's past candles are read under, when it is not `symbol` (a coin: `BTC` is a fund on the
+  /// stock exchanges, the coin is `BTC-USD`). Display only.
+  historySymbol?: string;
 }
 
 /// The tier boundary, in one function. A `tradeable` listing settles on chain and must have a feed; a
@@ -119,9 +122,9 @@ const robinhoodMainnetMarkets: readonly MarketListing[] = [
   { symbol: "SPCX", name: "Space Exploration Technologies Corp. Class A Common Stock • Robinhood Token", token: "0x4a0E65A3EcceC6dBe60AE065F2e7bb85Fae35eEa", feed: "0xB265810950ba6c5C0Ff821c9963014a56fD8Bffb", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable", logo: "https://financialmodelingprep.com/image-stock/SPCX.png" },
   { symbol: "TSM", name: "Taiwan Semiconductor Manufacturing • Robinhood Token", token: "0x58FfE4a942d3885bAa22D7520691F611EF09e7AA", feed: "0x874cF94aa8eC88Fd9560094dD065f2fB3E41Fc2F", maxLeverage: 5, maintenanceBps: 750, group: "china", tier: "tradeable", logo: "https://financialmodelingprep.com/image-stock/TSM.png" },
   { symbol: "USO", name: "United States Oil Fund • Robinhood Token", token: "0xa30FA36Db767ad9eD3f7a60fC79526fB4d56D344", feed: "0x75a9c76Ef439e2C7c2E5a34Ab105EcFe3766431c", maxLeverage: 5, maintenanceBps: 750, group: "commodities", tier: "tradeable", logo: "https://financialmodelingprep.com/image-stock/USO.png" },
-  { symbol: "BTC", name: "Bitcoin", token: "0xa2c5184bF03d373Dc9dE4876eb4Bce595B460251", feed: "0xa2c5184bF03d373Dc9dE4876eb4Bce595B460251", maxLeverage: 5, maintenanceBps: 750, group: "crypto", tier: "tradeable", logo: "https://assets.coingecko.com/coins/images/1/small/bitcoin.png" },
-  { symbol: "ETH", name: "Ether", token: "0x78F3556b67E17Df817D51Ef5a990cDaF09E8d3A9", feed: "0x78F3556b67E17Df817D51Ef5a990cDaF09E8d3A9", maxLeverage: 5, maintenanceBps: 750, group: "crypto", tier: "tradeable", logo: "https://assets.coingecko.com/coins/images/279/small/ethereum.png" },
-  { symbol: "LINK", name: "Chainlink", token: "0xe86e3422Aa9B5e8ee9f3E41a63975bC387A8bce9", feed: "0xe86e3422Aa9B5e8ee9f3E41a63975bC387A8bce9", maxLeverage: 5, maintenanceBps: 750, group: "crypto", tier: "tradeable", logo: "https://assets.coingecko.com/coins/images/877/small/chainlink-new-logo.png" },
+  { symbol: "BTC", name: "Bitcoin", token: "0xa2c5184bF03d373Dc9dE4876eb4Bce595B460251", feed: "0xa2c5184bF03d373Dc9dE4876eb4Bce595B460251", maxLeverage: 5, maintenanceBps: 750, group: "crypto", tier: "tradeable", logo: "https://assets.coingecko.com/coins/images/1/small/bitcoin.png", historySymbol: "BTC-USD" },
+  { symbol: "ETH", name: "Ether", token: "0x78F3556b67E17Df817D51Ef5a990cDaF09E8d3A9", feed: "0x78F3556b67E17Df817D51Ef5a990cDaF09E8d3A9", maxLeverage: 5, maintenanceBps: 750, group: "crypto", tier: "tradeable", logo: "https://assets.coingecko.com/coins/images/279/small/ethereum.png", historySymbol: "ETH-USD" },
+  { symbol: "LINK", name: "Chainlink", token: "0xe86e3422Aa9B5e8ee9f3E41a63975bC387A8bce9", feed: "0xe86e3422Aa9B5e8ee9f3E41a63975bC387A8bce9", maxLeverage: 5, maintenanceBps: 750, group: "crypto", tier: "tradeable", logo: "https://assets.coingecko.com/coins/images/877/small/chainlink-new-logo.png", historySymbol: "LINK-USD" },
   { symbol: "GLD", name: "SPDR Gold Trust • Robinhood Token", token: "0xC9a981FEE1F9DEc688bb123ccDeCc63D0deBFC4e", feed: "0x470A51258068043bd43dC0a56245625C9fE86eB0", maxLeverage: 5, maintenanceBps: 750, group: "crypto", tier: "tradeable", logo: "https://financialmodelingprep.com/image-stock/GLD.png" },
   { symbol: "UMC", name: "United Microelectronics • Robinhood Token", token: "0x0E6e67Ba88e7b5d9B67636A215c76779B948dE79", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted", logo: "https://financialmodelingprep.com/image-stock/UMC.png" },
   { symbol: "FUTU", name: "Futu Holdings • Robinhood Token", token: "0xeB30663bDFf0622Ef4e4E5cBb4E975F19f33f51D", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted", logo: "https://financialmodelingprep.com/image-stock/FUTU.png" },

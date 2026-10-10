@@ -363,7 +363,8 @@
       "maintenanceBps": 750,
       "group": "crypto",
       "tier": "tradeable",
-      "logo": "https://assets.coingecko.com/coins/images/1/small/bitcoin.png"
+      "logo": "https://assets.coingecko.com/coins/images/1/small/bitcoin.png",
+      "historySymbol": "BTC-USD"
     },
     {
       "symbol": "ETH",
@@ -374,7 +375,8 @@
       "maintenanceBps": 750,
       "group": "crypto",
       "tier": "tradeable",
-      "logo": "https://assets.coingecko.com/coins/images/279/small/ethereum.png"
+      "logo": "https://assets.coingecko.com/coins/images/279/small/ethereum.png",
+      "historySymbol": "ETH-USD"
     },
     {
       "symbol": "LINK",
@@ -385,7 +387,8 @@
       "maintenanceBps": 750,
       "group": "crypto",
       "tier": "tradeable",
-      "logo": "https://assets.coingecko.com/coins/images/877/small/chainlink-new-logo.png"
+      "logo": "https://assets.coingecko.com/coins/images/877/small/chainlink-new-logo.png",
+      "historySymbol": "LINK-USD"
     },
     {
       "symbol": "GLD",
