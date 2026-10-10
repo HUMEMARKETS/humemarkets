@@ -1,11 +1,11 @@
 "use client";
 
-import { Num } from "@hume/ui";
+import { Num, toneOf } from "@hume/ui";
 import Link from "next/link";
-import { usePerpMarket, usePerpMarkets } from "@/hooks/queries";
+import { usePerpMarket, usePerpMarkets, useReferenceQuotes } from "@/hooks/queries";
 import { fmtPrice } from "@/lib/format";
 import { symbolOf } from "@/lib/market";
-import { Change, useStatsFor } from "./Change";
+import { Change, fmtChange, useStatsFor } from "./Change";
 
 /// A run should be wider than a wide screen so the loop never shows a gap; short lists repeat.
 const MIN_ITEMS_PER_RUN = 8;
@@ -13,6 +13,8 @@ const MIN_ITEMS_PER_RUN = 8;
 function Item({ symbol, hidden }: { symbol: string; hidden: boolean }) {
   const { data } = usePerpMarket(symbol);
   const stats = useStatsFor(symbol);
+  // While the session is shut the chain has no price: show the last close, as the Markets page does.
+  const quote = useReferenceQuotes().data?.[symbol];
   return (
     <li>
       <Link
@@ -21,8 +23,12 @@ function Item({ symbol, hidden }: { symbol: string; hidden: boolean }) {
         className="flex h-9 items-center gap-3 rounded-control px-3 transition-colors duration-150 hover:bg-accent-soft hover:text-accent-hover active:bg-accent active:text-accent-ink"
       >
         <span className="font-medium">{symbol}</span>
-        {data ? <Num tone="muted">{`$${fmtPrice(data.markPrice)}`}</Num> : null}
-        {stats ? <Change stats={stats} /> : null}
+        {data ? (
+          <Num tone="muted">{`$${fmtPrice(data.markPrice)}`}</Num>
+        ) : quote ? (
+          <Num tone="muted">{`$${quote.price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</Num>
+        ) : null}
+        {data && stats ? <Change stats={stats} /> : quote?.changeBps != null ? <Num tone={toneOf(quote.changeBps)}>{fmtChange(quote.changeBps)}</Num> : stats ? <Change stats={stats} /> : null}
       </Link>
     </li>
   );

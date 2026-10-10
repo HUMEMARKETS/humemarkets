@@ -2,7 +2,7 @@
 
 import { usePerpMarkets } from "@/hooks/queries";
 import { REGISTRY_ERROR, symbolOf } from "@/lib/market";
-import { SYMBOL_LOGO } from "./BrandLogos";
+import { MarketLogo } from "./MarketLogo";
 import { PanelState } from "./PanelState";
 
 /// Every market the registry lists, as a tile: the company mark where there is one, the ticker always.
@@ -16,18 +16,9 @@ export function SupportedMarkets() {
     <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
       {markets.data.map((market) => {
         const symbol = symbolOf(market.marketId);
-        const brand = SYMBOL_LOGO[symbol];
         return (
           <li key={market.marketId} className="flex items-center gap-3 rounded-panel border border-line/70 bg-surface p-3">
-            {brand ? (
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-control" style={{ background: brand.background, color: brand.ink }}>
-                <brand.Logo className="size-5" />
-              </span>
-            ) : (
-              <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-control bg-raised text-xs text-muted">
-                {symbol.slice(0, 2)}
-              </span>
-            )}
+            <MarketLogo symbol={symbol} className="size-9" />
             <span className="min-w-0">
               <span className="block font-medium">{symbol}</span>
               <span className="block text-xs text-muted">{market.active ? "Open" : "Paused"}</span>

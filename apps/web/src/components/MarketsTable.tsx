@@ -13,6 +13,7 @@ import { fmtBps, fmtPrice, fmtUsdOrDash } from "@/lib/format";
 import { groupTabs, inGroup, symbolOf, type GroupTab } from "@/lib/market";
 import { useTerminal } from "@/stores/terminal";
 import { Change, fmtChange } from "./Change";
+import { MarketLogo } from "./MarketLogo";
 import { PanelState } from "./PanelState";
 
 type Overview = ReturnType<typeof useMarketOverviews>[number]["data"];
@@ -41,6 +42,8 @@ interface Line {
   stats?: MarketStats;
   overview: Overview;
   loading: boolean;
+  /// The last reference close, shown while the chain has no price (an equity session that is shut).
+  quote?: ReferenceQuote;
 }
 
 /// A stock with no feed on this venue (most of the China group): a reference price and its change, in the same
@@ -102,7 +105,8 @@ function Figure({ loading, children }: { loading: boolean; children: ReactNode }
 function MarketRow({ line, decimals }: { line: Line; decimals: number }) {
   const router = useRouter();
   const setSymbol = useTerminal((state) => state.setSymbol);
-  const { market, symbol, stats, overview, loading } = line;
+  const { market, symbol, stats, overview, loading, quote } = line;
+  const closed = !loading && !overview?.prices && quote !== undefined;
   const perps = `/perpetuals?market=${symbol}`;
 
   return (
@@ -112,6 +116,7 @@ function MarketRow({ line, decimals }: { line: Line; decimals: number }) {
     >
       <td className={cell}>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <MarketLogo symbol={symbol} />
           {market.perpsEnabled ? (
             <Link href={perps} className="font-medium transition-colors duration-150 hover:text-accent" onClick={(event) => event.stopPropagation()}>
               {symbol}
@@ -135,10 +140,17 @@ function MarketRow({ line, decimals }: { line: Line; decimals: number }) {
         </div>
       </td>
       <td className={cell}>
-        <Figure loading={loading}>{fmtPrice(overview?.prices?.index.price)}</Figure>
+        {closed ? (
+          <span title={`Market closed. Last close from Robinhood, ${new Date(quote.asOf).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}.`}>
+            {quote.price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            <span className="ml-1 text-xs text-muted">close</span>
+          </span>
+        ) : (
+          <Figure loading={loading}>{fmtPrice(overview?.prices?.index.price)}</Figure>
+        )}
       </td>
       <td className={cell}>
-        <Change stats={stats} />
+        {closed && quote.changeBps !== null ? <Num tone={toneOf(quote.changeBps)}>{fmtChange(quote.changeBps)}</Num> : <Change stats={stats} />}
       </td>
       <td className={cn(cell, "max-md:hidden")}>{market.optionsEnabled ? fmtUsdOrDash(stats?.optionsVolume24h, decimals) : "–"}</td>
       <td className={cn(cell, "max-md:hidden")}>{market.perpsEnabled ? fmtUsdOrDash(stats?.perpVolume24h, decimals) : "–"}</td>
@@ -172,6 +184,7 @@ function ReferenceRow({ line }: { line: ReferenceLine }) {
     <tr className="border-t border-line">
       <td className={cell}>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <MarketLogo symbol={symbol} />
           <span className="font-medium">{symbol}</span>
           <span className="text-xs font-normal text-muted max-xl:hidden">{name.replace(" • Robinhood Token", "")}</span>
         </div>
@@ -216,7 +229,9 @@ export function MarketsTable() {
   const overviews = useMarketOverviews(symbols);
   const byId = new Map((stats ?? []).map((row) => [row.marketId, row]));
 
+  const { data: quotes } = useReferenceQuotes();
   const lines: Line[] = (markets ?? []).map((market, index) => ({
+    quote: quotes?.[symbols[index]!],
     market,
     symbol: symbols[index]!,
     // The group is data in `@hume/config`; a registry market it does not list shows under "All" only.
@@ -225,7 +240,6 @@ export function MarketsTable() {
     overview: overviews[index]?.data,
     loading: overviews[index]?.isPending ?? true,
   }));
-  const { data: quotes } = useReferenceQuotes();
   // The listing is the same on both networks. A symbol the registry already lists is a market, not a reference row.
   const listed = new Set(symbols);
   const references: ReferenceLine[] = REFERENCE_LISTINGS.filter((listing) => !listed.has(listing.symbol)).map((listing) => ({

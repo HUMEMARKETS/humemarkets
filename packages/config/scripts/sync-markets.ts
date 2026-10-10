@@ -28,6 +28,7 @@ interface Row {
   maintenanceBps: number;
   group: string;
   tier: string;
+  logo?: string;
 }
 
 const file = JSON.parse(readFileSync(jsonPath, "utf8")) as { chainId: number; markets: Row[] };
@@ -59,6 +60,7 @@ const body = file.markets
       `maintenanceBps: ${row.maintenanceBps}`,
       `group: ${JSON.stringify(row.group)}`,
       `tier: ${JSON.stringify(row.tier)}`,
+      ...(row.logo ? [`logo: ${JSON.stringify(row.logo)}`] : []),
     ];
     return `  { ${fields.join(", ")} },`;
   })

@@ -5,6 +5,7 @@ export {
   marketsForChain,
   marketsForGroup,
   marketsForTier,
+  logoForSymbol,
   marketForSymbol,
   groupForSymbol,
   feedForSymbol,
