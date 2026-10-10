@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { usePerpMarket, usePerpMarketConfig, usePerpMarkets } from "@/hooks/queries";
 import { fmtBps, fmtPrice } from "@/lib/format";
+import { humeRead } from "@/lib/hume";
 import { symbolOf, tradeBlocker } from "@/lib/market";
 import { useTerminal } from "@/stores/terminal";
 import { Change, useStatsFor } from "./Change";
@@ -57,14 +58,21 @@ export function MarketFromUrl() {
   const symbol = useTerminal((state) => state.symbol);
   const setSymbol = useTerminal((state) => state.setSymbol);
   const requested = useSearchParams().get("market")?.toUpperCase();
+  const picking = useRef(false);
 
   useEffect(() => {
     if (!markets?.length) return;
     const symbols = markets.map((market) => symbolOf(market.marketId));
     if (requested && symbols.includes(requested)) {
       if (symbol !== requested) setSymbol(requested);
-    } else if (!symbol) {
-      setSymbol(symbols[0]!);
+    } else if (!symbol && !picking.current) {
+      // The first market that has a price right now: at the weekend the equities are closed and answer
+      // `MarketSessionClosed`, so the terminal would open on a market with no price. Falls back to the first listed.
+      picking.current = true;
+      void Promise.allSettled(symbols.map((value) => humeRead.oracle.getIndexPrice(value))).then((results) => {
+        const open = symbols.find((_, i) => results[i]?.status === "fulfilled");
+        setSymbol(open ?? symbols[0]!);
+      });
     }
   }, [markets, symbol, requested, setSymbol]);
 
