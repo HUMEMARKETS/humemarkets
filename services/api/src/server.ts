@@ -42,7 +42,7 @@ export function buildServer() {
     registerPriceRoutes(instance, hume);
     registerPortfolioRoutes(instance, hume);
     registerQuotedRoutes(instance);
-    registerPonsRoutes(instance, hume, createPublicClient({ transport: http(rpcUrl, { batch: true }) }) as PublicClient, chainId);
+    registerPonsRoutes(instance, hume, createPublicClient({ transport: http(rpcUrl) }) as PublicClient, chainId); // not batched: the mainnet RPC fails `extsload` inside a JSON-RPC batch
     registerStatsRoutes(instance);
     registerAnalyticsRoutes(instance);
     registerAdvancedRoutes(instance, hume);

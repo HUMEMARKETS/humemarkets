@@ -141,6 +141,12 @@ contract SetLaunchCaps is Script {
         }
     }
 
+    function _isCrypto(string memory list, string memory path) internal view returns (bool) {
+        string memory key = string.concat(path, ".group");
+        return
+            vm.keyExistsJson(list, key) && keccak256(bytes(vm.parseJsonString(list, key))) == keccak256(bytes("crypto"));
+    }
+
     function _applyOne(RiskManager risk, PriceValidator validator, uint256 i) internal returns (bool) {
         string memory list = _list;
         string memory path = string.concat(".markets[", vm.toString(i), "]");
@@ -163,7 +169,13 @@ contract SetLaunchCaps is Script {
         if (vm.keyExistsJson(_limits, key)) staleness = vm.parseJsonUint(_limits, key);
 
         validator.setMaxPriceAge(id, staleness);
-        validator.setTradingSession(id, _caps.sessionOpen, _caps.sessionClose, _caps.sessionDays, _caps.preOpenGrace);
+        // A crypto entry (BTC, ETH, LINK, GLD) is a feed-only market that trades around the clock, so it gets no
+        // session: the session floor would close it at the weekend.
+        if (!_isCrypto(list, path)) {
+            validator.setTradingSession(
+                id, _caps.sessionOpen, _caps.sessionClose, _caps.sessionDays, _caps.preOpenGrace
+            );
+        }
 
         uint256 maxLeverage = vm.parseJsonUint(list, string.concat(path, ".maxLeverage"));
         risk.setRiskConfig(

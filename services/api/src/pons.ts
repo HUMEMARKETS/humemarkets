@@ -27,7 +27,7 @@ const LIQUIDITY_OFFSET = 3n;
 const SCAN_CHUNK = 9_000_000n; // the RPC allows 10M blocks per getLogs
 const PRICE_TTL_MS = 15_000;
 const MAX_READ_ATTEMPTS = 3;
-const READ_BATCH = 8;
+const READ_BATCH = 4;
 const DEXSCREENER = "https://api.dexscreener.com/tokens/v1";
 const DEXSCREENER_BATCH = 30;
 const ZERO = "0x0000000000000000000000000000000000000000" as Address;
@@ -59,10 +59,18 @@ interface Meta extends Omit<PonsToken, "sqrtPriceX96" | "liquidity" | "priceEth"
   tickSpacing: number;
 }
 
-/// A logo the page can load: an https address stays; `ipfs://` (no public gateway serves it any more), a `data:`
+/// Public IPFS gateways that were shut down on 2026-09-21 and answer 429 to every image.
+const DEAD_GATEWAYS = new Set(["ipfs.io", "gateway.ipfs.io", "dweb.link", "w3s.link", "nftstorage.link", "cloudflare-ipfs.com"]);
+
+/// A logo the page can load: an https address on a live host stays; `ipfs://`, a dead public gateway, a `data:`
 /// URI or a script scheme is dropped, so the page shows initials unless DexScreener has the image.
 export function logoUrl(logo: string | undefined): string | null {
-  return logo?.startsWith("https://") ? logo : null;
+  if (!logo?.startsWith("https://")) return null;
+  try {
+    return DEAD_GATEWAYS.has(new URL(logo).hostname) ? null : logo;
+  } catch {
+    return null;
+  }
 }
 
 export function poolIdOf(config: Pick<PonsConfig, "hook">, token: Address, fee: number, tickSpacing: number): Hex {
@@ -95,14 +103,17 @@ export function createPonsMarket(client: PublicClient, chainId: ChainId, ethUsd:
 
   async function scan() {
     const head = await client.getBlockNumber();
-    for (let from = scannedTo + 1n; from <= head; from += SCAN_CHUNK) {
-      const to = from + SCAN_CHUNK - 1n < head ? from + SCAN_CHUNK - 1n : head;
-      const logs = await client.getLogs({ address: config.factory, event: launchSwept, fromBlock: from, toBlock: to });
-      for (const log of logs) if (log.args.token) launches.set(log.args.token, log.args.sweptQuote ?? 0n);
+    let wanted: readonly Address[];
+    if (config.featured) {
+      wanted = config.featured;
+    } else {
+      for (let from = scannedTo + 1n; from <= head; from += SCAN_CHUNK) {
+        const to = from + SCAN_CHUNK - 1n < head ? from + SCAN_CHUNK - 1n : head;
+        const logs = await client.getLogs({ address: config.factory, event: launchSwept, fromBlock: from, toBlock: to });
+        for (const log of logs) if (log.args.token) launches.set(log.args.token, log.args.sweptQuote ?? 0n);
+      }
+      wanted = [...launches.keys()].slice(-config.listSize);
     }
-    // Mainnet has thousands of graduated tokens. Read only the `listSize` that swept the most quote at graduation
-    // (the biggest launches, free from the log); the testnet mock reports 0 for all, and has fewer than that.
-    const wanted = [...launches].sort((a, b) => (b[1] > a[1] ? 1 : b[1] < a[1] ? -1 : 0)).slice(0, config.listSize).map(([token]) => token);
     const todo = wanted.filter((token) => !checked.has(token));
     for (let i = 0; i < todo.length; i += READ_BATCH) {
       await Promise.all(

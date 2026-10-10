@@ -18,6 +18,8 @@ test("ethPerToken inverts the pool price: 1,000,000 tokens per ETH is 1e-6 ETH a
 test("logoUrl keeps https and drops ipfs://, http, data: and empty", () => {
   assert.equal(logoUrl("https://example.com/a.png"), "https://example.com/a.png");
   assert.equal(logoUrl("ipfs://bafkreiabc"), null);
+  assert.equal(logoUrl("https://ipfs.io/ipfs/bafkreiabc"), null);
+  assert.equal(logoUrl("https://gateway.pinata.cloud/ipfs/bafkreiabc"), "https://gateway.pinata.cloud/ipfs/bafkreiabc");
   assert.equal(logoUrl("http://example.com/a.png"), null);
   assert.equal(logoUrl("data:image/svg+xml;base64,AAAA"), null);
   assert.equal(logoUrl(""), null);

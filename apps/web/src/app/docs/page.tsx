@@ -398,8 +398,8 @@ put payout  = max(strike − settlement, 0) × contract size × contracts`}</For
                     >
                         <p className={bodyText}>
                             Lending is a separate engine from the trading vault. A pair locks one stock token as
-                            collateral and lends one token against it. The pair live today is TSLA collateral and USDG
-                            borrowed. A pair is isolated: its loans cannot draw on any other pair or on the trading
+                            collateral and lends one token against it. The pair live on testnet is TSLA collateral and USDG
+                            borrowed. It is not deployed on mainnet yet. A pair is isolated: its loans cannot draw on any other pair or on the trading
                             vault.
                         </p>
                         <p className={bodyText}>
@@ -422,8 +422,9 @@ liquidated when health factor < 1`}</Formula>
 
                     <Section id="pons" title="Pons market" sources={['pons/HumePonsRouter.sol']}>
                         <p className={bodyText}>
-                            Pons is a separate token launcher. The Pons page lists tokens launched there and lets you
-                            buy and sell them for ETH. This is spot trading, not a perpetual: there is no leverage and no
+                            Pons is a separate token launcher. The Pons page lists tokens launched there (on mainnet a
+                            curated list of the 60 with the deepest pools) and lets you buy and sell them for ETH. Your
+                            own buys and sells are listed under Your Pons history. This is spot trading, not a perpetual: there is no leverage and no
                             vault. Hume lists tokens and adds no fee.
                         </p>
                         <p className={bodyText}>
@@ -457,7 +458,7 @@ liquidated when health factor < 1`}</Formula>
                             <strong className="font-medium text-text">Limits of this design.</strong> The executor
                             enforces your limits, they are not written into the contract. A bug in the executor could
                             break a limit, but it cannot take money out. You can stop at any time and withdraw what is
-                            left. Copies can lag the trader by minutes. Copy trading is on testnet today.
+                            left. Copies can lag the trader by minutes. Copy trading is new and its limits are small.
                         </p>
                     </Section>
 

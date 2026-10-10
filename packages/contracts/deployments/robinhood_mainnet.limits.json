@@ -1,13 +1,13 @@
 {
   "chainId": 4663,
-  "note": "Launch caps and session-aware staleness limits for chain 4663, applied by script/SetLaunchCaps.s.sol and checked by script/check-launch-limits.sh. Every amount is in SETTLEMENT TOKEN BASE UNITS (USDG, 6 decimals), not whole tokens: the whole launch treasury is 0.295277 USDG, measured on 2026-10-04, so no cap here can be expressed in whole tokens. Without an audit these caps are the primary loss bound (DEVELOPMENT_PHASES.md Phase 4), and they are sized against the balance that exists rather than a hoped-for one. Raise them in one place, here, once mainnet is stable and the treasury is funded.",
+  "note": "Launch caps and session-aware staleness limits for chain 4663, applied by script/SetLaunchCaps.s.sol and checked by script/check-launch-limits.sh. Every amount is in SETTLEMENT TOKEN BASE UNITS (USDG, 6 decimals), not whole tokens. Without an audit these caps are the primary loss bound (DEVELOPMENT_PHASES.md Phase 4), and they are sized against the balance that exists rather than a hoped-for one. Raise them in one place, here, once mainnet is stable and the treasury is funded. Re-sized 2026-10-10 for the mainnet open: about 5.3 USDG bought with the launch budget, 4.00 of it in the pool.",
   "settlementTokenDecimals": 6,
   "caps": {
-    "maxPositionRaw": 8000,
-    "openInterestCapRaw": 32000,
-    "maxNetOpenInterestRaw": 8000,
-    "poolReserveRaw": 150000,
-    "note": "maxNetOpenInterest x 32 markets x a 50% one-sided move is 128000, which the 150000 pool reserve covers - the arithmetic check-launch-limits.sh runs with MAX_MOVE_BPS=5000. The position cap equals the net open-interest cap so a first trader can open a full position, and the per-market open-interest cap is 4x it so matched two-sided flow has room. The remaining 145277 base units stay in the owner wallet as trading collateral; they are not part of the pool."
+    "maxPositionRaw": 200000,
+    "openInterestCapRaw": 800000,
+    "maxNetOpenInterestRaw": 200000,
+    "poolReserveRaw": 4000000,
+    "note": "maxNetOpenInterest x 36 markets (32 equities and commodities plus BTC, ETH, LINK, GLD) x a 50% one-sided move is 3,600,000, which the 4,000,000 pool reserve covers - the arithmetic check-launch-limits.sh runs with MAX_MOVE_BPS=5000. The position cap equals the net open-interest cap so a first trader can open a full position, and the per-market open-interest cap is 4x it so matched two-sided flow has room. The rest of the USDG stays in the owner wallet for the canary trades."
   },
   "session": {
     "openSecond": 48600,
@@ -18,8 +18,13 @@
   },
   "staleness": {
     "defaultSeconds": 32400,
-    "overrides": {},
-    "note": "9 hours, the in-session limit for all 32 US equity markets. It is a backstop, not the binding rule: the session floor in PriceValidator is what keeps an earlier session's price out, and inside a 420-minute session a price at the 90-minute pre-open grace reaches 510 minutes of age, so the floor always binds first. The limit cannot be tightened below the session: measured over 180 rounds per feed (up to 102 days, 4 to 74 sessions each), 9 of the 32 feeds printed nothing at all during a whole session, because a Chainlink feed here only moves on a 0.5% deviation or a 24-hour heartbeat. A limit short enough to catch a dead feed mid-session would halt a quiet market instead. Per-market overrides stay available for the crypto and FX markets Phase 11 adds, which have no session and should carry the full 24 hours (86400)."
+    "overrides": {
+      "BTC": 90000,
+      "ETH": 90000,
+      "LINK": 90000,
+      "GLD": 90000
+    },
+    "note": "9 hours, the in-session limit for all 32 US equity markets. It is a backstop, not the binding rule: the session floor in PriceValidator is what keeps an earlier session's price out, and inside a 420-minute session a price at the 90-minute pre-open grace reaches 510 minutes of age, so the floor always binds first. The limit cannot be tightened below the session: measured over 180 rounds per feed (up to 102 days, 4 to 74 sessions each), 9 of the 32 feeds printed nothing at all during a whole session, because a Chainlink feed here only moves on a 0.5% deviation or a 24-hour heartbeat. A limit short enough to catch a dead feed mid-session would halt a quiet market instead. The four crypto markets (BTC, ETH, LINK, GLD) have no session and carry 90000 s (25 h): their Chainlink feeds have a 24 h heartbeat and a 0.5% deviation, and measured ages at the weekend were up to 22 h."
   },
   "credit": {
     "maxLtvBps": 6000,

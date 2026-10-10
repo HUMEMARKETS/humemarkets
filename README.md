@@ -8,12 +8,16 @@ Hume is an onchain derivatives venue for tokenized equities, built for Robinhood
 
 ## Status
 
-Hume runs on **Robinhood Chain testnet** (chain ID `46630`). It is not audited and has not been deployed to mainnet. Do not use it with real funds.
+Hume runs on **Robinhood Chain mainnet** (chain ID `4663`) at <https://humemarkets.com>, and on **Robinhood Chain testnet** (chain ID `46630`) at <https://testnet.humemarkets.com>. The header switches between them. It is **not audited and an audit is not planned**: the launch relies on tiny caps enforced on chain, owner-only liquidity and a rehearsed pause. Only put in what you can lose.
 
-- **Contracts:** deployed as `1.5.0-testnet` (2026-09-21). All 20 contracts sit behind UUPS proxies, so a later upgrade keeps every address and all state. Contracts are verified on the testnet explorer. Addresses are in `packages/contracts/deployments/` and `packages/contracts/CHANGELOG.md`.
-- **Markets:** NVDA, TSLA, AAPL, META and HOOD, each with perpetuals and options. Testnet prices come from mock feeds, and the risk limits are placeholders.
-- **Hosting:** indexer, API, pricing service and keeper run on Railway. The web app runs on Vercel at <https://hume-ten.vercel.app>.
-- **Features:** perpetuals (market and limit orders, stop-loss, take-profit, cross margin), options (option chain with bid/ask and Greeks, strategy builder), RFQ, subaccounts, portfolio and activity views. Nothing that holds or moves money is audited.
+- **Mainnet contracts:** the 20-contract UUPS stack was deployed on 2026-09-25 and is owned by `0xd09D9c87ECfe008B4D6D3cEbeAd25103c16d9a7C`. 36 markets are listed against real Robinhood tokenized-asset tokens and real Chainlink feeds: 32 US equities, ETFs and commodities, BABA, TSM and EWY for China, and four crypto and gold markets (BTC, ETH, LINK, GLD) that trade around the clock. Addresses are in `packages/contracts/deployments/robinhood_mainnet.json`.
+- **Mainnet limits:** the pool holds a few USDG and every position is capped at 0.20 USDG, so the venue is a canary, not a deep market. The caps are in `deployments/robinhood_mainnet.limits.json` and `docs/evidence/mainnet.md` says what they were sized against.
+- **Pons spot:** buy and sell graduated Pons tokens through `HumePonsRouter` against the Uniswap v4 pools, with a curated list of 60 on mainnet. Hume adds no fee.
+- **Lending:** deployed and live on testnet; not deployed on mainnet yet.
+- **Testnet:** mock feeds that HUME moves, simulated traders (marked Simulated), a mock Pons factory with 20 mock tokens. Test tokens have no value.
+- **Hosting:** the indexer, keeper, API, pricing service and PostgreSQL run on Railway, one environment per network (`mainnet` and `testnet`, each with its own database). The web app runs on Vercel. Deploy with `git push origin main:testnet` or `git push origin main:mainnet`.
+- **Features:** perpetuals (market and limit orders, stop-loss, take-profit, cross margin), options (chain, Greeks, strategy builder), RFQ, subaccounts, copy trading, leaderboard and PNL card, Pons spot, portfolio and activity views.
+- **HUME token:** launched separately. Its contract address is shown on the site once it is set in `NEXT_PUBLIC_PROTOCOL_TOKEN_ADDRESS`.
 - **SDK:** `@hume/sdk` `0.1.0` is ready to publish and is not published yet.
 
 ## Repository structure
@@ -27,7 +31,7 @@ services/
     indexer/            Contract event indexer (PostgreSQL)
     pricing/            Offchain options analytics and signed option quotes (display and quoting only, never settlement truth)
     risk-monitor/       Margin health read path
-    keeper/             Keeps testnet price feeds fresh, fills limit orders and fires stop-loss and take-profit orders
+    keeper/             Fills limit orders, fires stop-loss and take-profit orders, runs copy trading, and refreshes the mock feeds on testnet
     hedger/             Keeps an options book delta neutral with perps (dry run unless told to trade)
     simulator/          Testnet demo: moves mock prices, runs bot traders and a liquidator (see services/simulator/README.md)
 packages/
