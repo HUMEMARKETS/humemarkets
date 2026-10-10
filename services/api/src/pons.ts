@@ -1,4 +1,4 @@
-import { ponsForChain, type ChainId, type PonsConfig } from "@hume/config";
+import { IPFS_GATEWAY, ponsForChain, type ChainId, type PonsConfig } from "@hume/config";
 import { encodeAbiParameters, encodePacked, keccak256, parseAbi, parseAbiItem, type Address, type Hex, type PublicClient } from "viem";
 
 /// The Pons market: graduated Pons tokens, found from the factory's `LaunchSwept` events, with the token's own
@@ -27,6 +27,7 @@ const LIQUIDITY_OFFSET = 3n;
 const SCAN_CHUNK = 9_000_000n; // the RPC allows 10M blocks per getLogs
 const PRICE_TTL_MS = 15_000;
 const MAX_READ_ATTEMPTS = 3;
+const READ_BATCH = 8;
 const ZERO = "0x0000000000000000000000000000000000000000" as Address;
 
 export interface PonsToken {
@@ -56,6 +57,14 @@ interface Meta extends Omit<PonsToken, "sqrtPriceX96" | "liquidity" | "priceEth"
   tickSpacing: number;
 }
 
+/// A token's own logo as an https address the page can load: `ipfs://<cid>` goes through the gateway, a web
+/// address stays, anything else (a `data:` URI, a script scheme) is dropped so the page shows initials.
+export function logoUrl(logo: string | undefined): string | null {
+  if (!logo) return null;
+  if (logo.startsWith("ipfs://")) return `${IPFS_GATEWAY}${logo.slice("ipfs://".length).replace(/^ipfs\//, "")}`;
+  return logo.startsWith("https://") ? logo : null;
+}
+
 export function poolIdOf(config: Pick<PonsConfig, "hook">, token: Address, fee: number, tickSpacing: number): Hex {
   return keccak256(
     encodeAbiParameters(
@@ -77,30 +86,38 @@ export function createPonsMarket(client: PublicClient, chainId: ChainId, ethUsd:
   const config = ponsForChain(chainId);
   const metas = new Map<Address, Meta>();
   const failures = new Map<Address, number>();
+  const launches = new Map<Address, bigint>();
+  const checked = new Set<Address>();
   let scannedTo = BigInt(config.fromBlock) - 1n;
   let priced: { at: number; tokens: PonsToken[] } | undefined;
   let scanning: Promise<void> | undefined;
 
   async function scan() {
     const head = await client.getBlockNumber();
-    const found: Address[] = [];
     for (let from = scannedTo + 1n; from <= head; from += SCAN_CHUNK) {
       const to = from + SCAN_CHUNK - 1n < head ? from + SCAN_CHUNK - 1n : head;
       const logs = await client.getLogs({ address: config.factory, event: launchSwept, fromBlock: from, toBlock: to });
-      for (const log of logs) if (log.args.token) found.push(log.args.token);
+      for (const log of logs) if (log.args.token) launches.set(log.args.token, log.args.sweptQuote ?? 0n);
     }
-    for (const token of new Set([...found, ...failures.keys()])) {
-      if (metas.has(token)) continue;
-      try {
-        const meta = await readMeta(token);
-        if (meta) metas.set(token, meta);
-        failures.delete(token);
-      } catch {
-        // A token the factory cannot describe is retried on the next scans, then dropped.
-        const count = (failures.get(token) ?? 0) + 1;
-        if (count < MAX_READ_ATTEMPTS) failures.set(token, count);
-        else failures.delete(token);
-      }
+    // Mainnet has thousands of graduated tokens. Read only the `listSize` that swept the most quote at graduation
+    // (the biggest launches, free from the log); the testnet mock reports 0 for all, and has fewer than that.
+    const wanted = [...launches].sort((a, b) => (b[1] > a[1] ? 1 : b[1] < a[1] ? -1 : 0)).slice(0, config.listSize).map(([token]) => token);
+    const todo = wanted.filter((token) => !checked.has(token));
+    for (let i = 0; i < todo.length; i += READ_BATCH) {
+      await Promise.all(
+        todo.slice(i, i + READ_BATCH).map(async (token) => {
+          try {
+            const meta = await readMeta(token);
+            if (meta) metas.set(token, meta);
+            checked.add(token);
+          } catch {
+            // A token the factory cannot describe is retried on the next scans, then dropped.
+            const count = (failures.get(token) ?? 0) + 1;
+            failures.set(token, count);
+            if (count >= MAX_READ_ATTEMPTS) checked.add(token);
+          }
+        }),
+      );
     }
     scannedTo = head;
   }
@@ -127,7 +144,7 @@ export function createPonsMarket(client: PublicClient, chainId: ChainId, ethUsd:
       symbol: ok(symbol, "???"),
       decimals: ok(decimals, 18),
       totalSupply: ok<bigint>(totalSupply, 0n).toString(),
-      logo: text(tokenInfo?.[1]),
+      logo: logoUrl(tokenInfo?.[1]),
       description: text(tokenInfo?.[2]),
       website: text(tokenInfo?.[3].website),
       twitter: text(tokenInfo?.[3].twitter),

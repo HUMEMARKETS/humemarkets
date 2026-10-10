@@ -13,7 +13,12 @@ export interface PonsConfig {
   poolManager: Address;
   /// First block to scan for `LaunchSwept` events (the factory's deployment block, or earlier).
   fromBlock: number;
+  /// How many launches the list reads, largest first (by quote swept at graduation). Mainnet has thousands.
+  listSize: number;
 }
+
+/// Pons logos are `ipfs://` addresses; the page loads them through this public gateway.
+export const IPFS_GATEWAY = "https://ipfs.io/ipfs/";
 
 const pons: Record<ChainId, PonsConfig> = {
   [ROBINHOOD_TESTNET_CHAIN_ID]: {
@@ -22,12 +27,14 @@ const pons: Record<ChainId, PonsConfig> = {
     hook: "0x0000000000000000000000000000000000000000",
     poolManager: "0x8366a39CC670B4001A1121B8F6A443A643e40951",
     fromBlock: 130_733_000,
+    listSize: 100,
   },
   [ROBINHOOD_MAINNET_CHAIN_ID]: {
     factory: "0x7eD598BcEf8bd9Edd8C97A195C6d13f40801EC7e",
     hook: "0xE5e702641Ea86F4ae6cC3cDaeD2B886f976Be044",
     poolManager: "0x8366a39CC670B4001A1121B8F6A443A643e40951",
     fromBlock: 0,
+    listSize: 100,
   },
 };
 

@@ -207,3 +207,11 @@ Result: **amber**. Layout, fonts and the share image pass at 375 px and 1440 px 
 - Share image (`opengraph-image`) loads Playfair and Inter from `apps/web/src/assets/fonts`. The Playfair file has its lining figures mapped onto the plain digits, since the image renderer ignores `font-feature-settings`.
 - Checked cases (mock API): gain, loss (`-$12,345.67` fits at 375 px), open, liquidated, sample. Flat was not rendered.
 - Not checked: dark theme (the card is ivory in both), live data, Copy link / Post on X / Save image clicks.
+
+## Pons list: 20 tokens with logos (2026-10-10) — pass
+
+- Cause: the testnet mock factory held 3 tokens with no logo. Mainnet logos are `ipfs://` and the page only loads https, so they would have shown as initials too.
+- Public data: yes. The Pons factory returns name, symbol, logo, description and socials on chain (`getTokenInfo`); GeckoTerminal and DexScreener index chain id `robinhood` for volume. Mainnet factory `0x7eD598BcEf8bd9Edd8C97A195C6d13f40801EC7e` has 10,177 launches, 4,979 graduated into ETH pools.
+- Testnet: 17 mock copies of the largest mainnet Pons tokens added to mock factory `0x6b0bf164575160d43125e97785BBb3Cce21f94Bf` (`DeployPonsTestnetMore.s.sol`, data in `deployments/pons_testnet_tokens.json`): NOVAAI, BUN, ZZZ, HARMONIC, WOJAK, PARE, AGE, COPPERINU, ROUTE, HYDX, UFG, SPRING, ROBINHOOD, GAGE, BISCOTTI, GG, ZEAL. Each has a v4 pool the existing router `0x36Db1af59A6B2be59420dA9D2D93ba1179B39969` trades. Tx hashes: `packages/contracts/broadcast/DeployPonsTestnetMore.s.sol/46630/run-latest.json`.
+- API: `/v1/pons/tokens` maps `ipfs://` to the gateway in `packages/config/src/pons.ts` and reads only the 100 largest launches (mainnet would otherwise read 4,979). Probe against testnet RPC: 20 tokens, all with a pool price, 17 with a logo.
+- Not checked: screenshots at 375 and 1440 px.
