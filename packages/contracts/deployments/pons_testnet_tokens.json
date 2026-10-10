@@ -1,15 +1,7 @@
 [
   {
-    "description": "Hong Kong Group's application in the field of artificial intelligence and science and technology",
-    "logo": "ipfs://bafybeib2aspxbl443kxnvf5vuhq6pfcfeotm5pcw66sy25qlhodwpsjdsq",
-    "name": "NovaAI",
-    "perEth": 5618,
-    "symbol": "NOVAAI",
-    "website": ""
-  },
-  {
     "description": "Protecting the trenches, one bundle at a time. Launched on mosh.trade.",
-    "logo": "https://ipfs.io/ipfs/bafkreieze2bpf4nioez3zpnwxeccbtmz62leeiw5dgotksrl7j7umja5xi",
+    "logo": "https://cdn.dexscreener.com/cms/images/Qg8DtP-7cTLYq_Vb?width=128&height=128&quality=95&format=auto",
     "name": "Bundle Cat",
     "perEth": 43088,
     "symbol": "BUN",
@@ -17,7 +9,7 @@
   },
   {
     "description": "\"independent investigators finding that dozens of wikis may have been edited by this same swarm\"\n\n\"Once the agents realized what was happening, they started prefacing all their wiki edits with 'ZZZ' to push them to the bottom of the queue\"\n",
-    "logo": "ipfs://bafybeibu52cvzvhxiujhhmxspeizjmkbae2v4ovfncft66oizaqfuacbwm",
+    "logo": "https://cdn.dexscreener.com/cms/images/yp7FveTMUrDj5mHh?width=128&height=128&quality=95&format=auto",
     "name": "ZZZ",
     "perEth": 243721,
     "symbol": "ZZZ",
@@ -25,7 +17,7 @@
   },
   {
     "description": "An autonomous harmonic agent that proves its mathematics before it speaks. It claims its own creator fees, buys its own coin, and burns every token it buys.",
-    "logo": "ipfs://bafybeihwhtdsirohwhynymewgskfdxyt7xo7yn55jxnwyuqwqc74zhwt44",
+    "logo": "https://cdn.dexscreener.com/cms/images/ofUkWlazIVmr_q_N?width=128&height=128&quality=95&format=auto",
     "name": "Harmonic Agent",
     "perEth": 609334,
     "symbol": "HARMONIC",
@@ -33,7 +25,7 @@
   },
   {
     "description": "Wojak is the ultimate retail investor avatar.",
-    "logo": "https://ipfs.io/ipfs/QmTJx28JXiDDra3jYZtSAWwGAzTYX4YiWi8LNLxuGs1v2M",
+    "logo": "https://cdn.dexscreener.com/cms/images/lzpn2fi9mEFRTI8B?width=128&height=128&quality=95&format=auto",
     "name": "Wojak",
     "perEth": 684252,
     "symbol": "WOJAK",
@@ -41,7 +33,7 @@
   },
   {
     "description": "PARE splits a tokenized stock into two things you can trade separately: the stock itself (at a discount), and the stream of dividends it earns",
-    "logo": "ipfs://bafkreifc7utzzyoomnfkaldytawlptpav7avd7dztsnjsyyveeooedsxpm",
+    "logo": "https://cdn.dexscreener.com/cms/images/i4ydR6RjqWkkhEE8?width=128&height=128&quality=95&format=auto",
     "name": "Pare",
     "perEth": 870746,
     "symbol": "PARE",
@@ -49,7 +41,7 @@
   },
   {
     "description": "a vaccine against aging",
-    "logo": "ipfs://bafkreih2eaf4u27orom4evjdbfamsafqz3yyscxoi5q7asgxjhvf6lauhu",
+    "logo": "https://cdn.dexscreener.com/cms/images/S68EyK_x9175dddj?width=128&height=128&quality=95&format=auto",
     "name": "Agemica",
     "perEth": 989051,
     "symbol": "AGE",
@@ -57,7 +49,7 @@
   },
   {
     "description": "Stack your Copper by staking Inu.",
-    "logo": "ipfs://QmfRELDhxv3hiLhMQCV8k1C1YP64hGnwh4ejJecWmvJP1Q",
+    "logo": "https://cdn.dexscreener.com/cms/images/cT1Ehe_rRfhFWJza?width=128&height=128&quality=95&format=auto",
     "name": "Copper Inu",
     "perEth": 1023659,
     "symbol": "COPPERINU",
@@ -65,7 +57,7 @@
   },
   {
     "description": "A mock of a mainnet Pons token for the testnet walkthrough. It has no value.",
-    "logo": "ipfs://bafkreig7lxqgeeznhhrgqg7ejjp45twmt2cbqf72kck6bdid5e6eh3hljm",
+    "logo": "https://cdn.dexscreener.com/cms/images/HtHLF9vKhiie6lYD?width=128&height=128&quality=95&format=auto",
     "name": "Route",
     "perEth": 1243797,
     "symbol": "ROUTE",
@@ -73,7 +65,7 @@
   },
   {
     "description": "Unified Marketplace for Tokenized Assets & RWAs",
-    "logo": "ipfs://bafkreigbxrglcod573zzkgjoc547xhwvygqoy5psaw6hu7jr6vyauvxtwa",
+    "logo": "https://cdn.dexscreener.com/cms/images/fLZxoavb_EnexGWd?width=128&height=128&quality=95&format=auto",
     "name": "HyperDex",
     "perEth": 1308667,
     "symbol": "HYDX",
@@ -81,7 +73,7 @@
   },
   {
     "description": "UFG will use creator fees to fund an ETH treasury. Holders can burn UFG for pro-rata ETH in the treasury while a 2% exit fee remains in the treasury for the remaining holders. \n\nThe longer you wait the more you get!",
-    "logo": "ipfs://bafkreihdvmblgxnvenbjlypsnwx53wwkctc46ejb7gntdnss33zg3ku6te",
+    "logo": "https://cdn.dexscreener.com/cms/images/lPqdNYRRoWyMIjvT?width=128&height=128&quality=95&format=auto",
     "name": "United Founders Group",
     "perEth": 1421543,
     "symbol": "UFG",
@@ -89,7 +81,7 @@
   },
   {
     "description": "Meet TickerSpring: earn trading fees through tokenized stock vaults, explore markets, and access lending—all in one place. Coming next: looping, delta-neutral strategies, and something new at the intersection of AI and DeFi. 🌱",
-    "logo": "ipfs://bafkreihaldpp2vvr7kfhql5n7ddfw6mqtljq6vbu56tmeiya6wtplj7gzi",
+    "logo": "https://cdn.dexscreener.com/cms/images/UrlztLn7pHD1Cfp6?width=128&height=128&quality=95&format=auto",
     "name": "Ticker Spring",
     "perEth": 1455073,
     "symbol": "SPRING",
@@ -97,7 +89,7 @@
   },
   {
     "description": "A mock of a mainnet Pons token for the testnet walkthrough. It has no value.",
-    "logo": "ipfs://bafkreiemawaepdsjep74dazdzl4jaw5way5loj2zbjclkerwl6ugzmc5u4",
+    "logo": "https://cdn.dexscreener.com/cms/images/XL_eouvCqLrb3iI3?width=128&height=128&quality=95&format=auto",
     "name": "Robinhood",
     "perEth": 2152545,
     "symbol": "ROBINHOOD",
@@ -105,7 +97,7 @@
   },
   {
     "description": "GAGE powers gage.cash, a peer-to-peer lending protocol on Robinhood Chain.",
-    "logo": "https://azure-definite-otter-782.mypinata.cloud/ipfs/bafkreigvxavx3slsp42aoubhtr2x6doicx22nhiwv2us5dq7wum3kd6wre",
+    "logo": "https://cdn.dexscreener.com/cms/images/UZ2oQJdupvKX2Gse?width=128&height=128&quality=95&format=auto",
     "name": "GAGE",
     "perEth": 2173158,
     "symbol": "GAGE",
@@ -113,7 +105,7 @@
   },
   {
     "description": "BISCOTTI. robot. dog. has a wallet. biscotti.eth. does not have pockets. he spends his dough on being a good boy in public. first robot with money. the money is for treats. the treats are for friends.",
-    "logo": "https://5yl5kvk4axu7sjzu.public.blob.vercel-storage.com/grok-image-65dfe281-e33c-4333-bc03-73d15e302ace-pu64lTpEWul8Xzyu0NpQReO6TjRwcq.jpg",
+    "logo": "https://cdn.dexscreener.com/cms/images/3jds3gTJr0XaM6IU?width=128&height=128&quality=95&format=auto",
     "name": "Biscotti",
     "perEth": 2303175,
     "symbol": "BISCOTTI",
@@ -121,7 +113,7 @@
   },
   {
     "description": "Somewhere, a machine is running. Looping.",
-    "logo": "ipfs://bafybeiabgu7hfbzzynyayygbtac2f5osiw2pmsqw7x7tc6wchq4xgv5iwa",
+    "logo": "https://cdn.dexscreener.com/cms/images/iYuJcV_hvfDCvVqM?width=128&height=128&quality=95&format=auto",
     "name": "Looping",
     "perEth": 2526951,
     "symbol": "GG",
@@ -129,10 +121,42 @@
   },
   {
     "description": "Bringing Zcash to Robinhood Chain. Trading fees buy real ZEC into a public reserve; zZEC trading fees burn $ZEAL. Two loops, one direction.",
-    "logo": "ipfs://bafkreic63xj5ey2b3kv4yn2hh2byf5mboxcetapqfok6u3pjccfrvubj7u",
+    "logo": "https://cdn.dexscreener.com/cms/images/9Xga-Mid6A2CKfs5?width=128&height=128&quality=95&format=auto",
     "name": "ZEAL",
     "perEth": 2540458,
     "symbol": "ZEAL",
     "website": ""
+  },
+  {
+    "description": "Open-world crime game. Chase money, trade the city, own what you earn. A dual-sink economy built into the world.",
+    "logo": "https://cdn.dexscreener.com/cms/images/VCQiB94DWlie5hlx?width=128&height=128&quality=95&format=auto",
+    "name": "grift.world",
+    "perEth": 2607769,
+    "symbol": "GRIFT",
+    "website": "https://www.grift.world/"
+  },
+  {
+    "description": "Finance is the last unflat thing. That's your leverage.",
+    "logo": "https://cdn.dexscreener.com/cms/images/BrwiDl5zmhE4WXZ7?width=128&height=128&quality=95&format=auto",
+    "name": "World is Flat",
+    "perEth": 2734676,
+    "symbol": "WIF",
+    "website": ""
+  },
+  {
+    "description": "Mint your own tokenized portfolio.\r\nBuild, trade & own onchain baskets of stocks, ETFs and more ",
+    "logo": "https://cdn.dexscreener.com/cms/images/UezMGhl06xS0Kbcs?width=128&height=128&quality=95&format=auto",
+    "name": "Mintfolio",
+    "perEth": 3405384,
+    "symbol": "MINTFOLIO",
+    "website": "https://mintfolio.io/"
+  },
+  {
+    "description": "Build your dream PC.\nPlay, upgrade & compete.",
+    "logo": "https://cdn.dexscreener.com/cms/images/vIyiE5PMnh06WHmu?width=128&height=128&quality=95&format=auto",
+    "name": "ComputersRH Coin",
+    "perEth": 3539954,
+    "symbol": "CRH",
+    "website": "https://www.computersrh.xyz/play"
   }
 ]

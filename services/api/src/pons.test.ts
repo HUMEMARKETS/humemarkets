@@ -15,10 +15,9 @@ test("ethPerToken inverts the pool price: 1,000,000 tokens per ETH is 1e-6 ETH a
   assert.equal(ethPerToken(0n, 18), null);
 });
 
-test("logoUrl sends ipfs:// through the gateway, keeps https, drops everything else", () => {
-  assert.equal(logoUrl("ipfs://bafkreiabc"), "https://ipfs.io/ipfs/bafkreiabc");
-  assert.equal(logoUrl("ipfs://ipfs/QmAbc"), "https://ipfs.io/ipfs/QmAbc");
+test("logoUrl keeps https and drops ipfs://, http, data: and empty", () => {
   assert.equal(logoUrl("https://example.com/a.png"), "https://example.com/a.png");
+  assert.equal(logoUrl("ipfs://bafkreiabc"), null);
   assert.equal(logoUrl("http://example.com/a.png"), null);
   assert.equal(logoUrl("data:image/svg+xml;base64,AAAA"), null);
   assert.equal(logoUrl(""), null);

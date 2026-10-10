@@ -12,5 +12,5 @@ export {
   assertTierInvariant,
   type MarketListing,
 } from "./markets.js";
-export { IPFS_GATEWAY, ponsForChain, type PonsConfig } from "./pons.js";
+export { ponsForChain, type PonsConfig } from "./pons.js";
 export { loadDotEnv, requireEnv } from "./env.js";

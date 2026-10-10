@@ -1,4 +1,4 @@
-import { IPFS_GATEWAY, ponsForChain, type ChainId, type PonsConfig } from "@hume/config";
+import { ponsForChain, type ChainId, type PonsConfig } from "@hume/config";
 import { encodeAbiParameters, encodePacked, keccak256, parseAbi, parseAbiItem, type Address, type Hex, type PublicClient } from "viem";
 
 /// The Pons market: graduated Pons tokens, found from the factory's `LaunchSwept` events, with the token's own
@@ -28,6 +28,8 @@ const SCAN_CHUNK = 9_000_000n; // the RPC allows 10M blocks per getLogs
 const PRICE_TTL_MS = 15_000;
 const MAX_READ_ATTEMPTS = 3;
 const READ_BATCH = 8;
+const DEXSCREENER = "https://api.dexscreener.com/tokens/v1";
+const DEXSCREENER_BATCH = 30;
 const ZERO = "0x0000000000000000000000000000000000000000" as Address;
 
 export interface PonsToken {
@@ -57,12 +59,10 @@ interface Meta extends Omit<PonsToken, "sqrtPriceX96" | "liquidity" | "priceEth"
   tickSpacing: number;
 }
 
-/// A token's own logo as an https address the page can load: `ipfs://<cid>` goes through the gateway, a web
-/// address stays, anything else (a `data:` URI, a script scheme) is dropped so the page shows initials.
+/// A logo the page can load: an https address stays; `ipfs://` (no public gateway serves it any more), a `data:`
+/// URI or a script scheme is dropped, so the page shows initials unless DexScreener has the image.
 export function logoUrl(logo: string | undefined): string | null {
-  if (!logo) return null;
-  if (logo.startsWith("ipfs://")) return `${IPFS_GATEWAY}${logo.slice("ipfs://".length).replace(/^ipfs\//, "")}`;
-  return logo.startsWith("https://") ? logo : null;
+  return logo?.startsWith("https://") ? logo : null;
 }
 
 export function poolIdOf(config: Pick<PonsConfig, "hook">, token: Address, fee: number, tickSpacing: number): Hex {
@@ -88,6 +88,7 @@ export function createPonsMarket(client: PublicClient, chainId: ChainId, ethUsd:
   const failures = new Map<Address, number>();
   const launches = new Map<Address, bigint>();
   const checked = new Set<Address>();
+  const looked = new Set<Address>();
   let scannedTo = BigInt(config.fromBlock) - 1n;
   let priced: { at: number; tokens: PonsToken[] } | undefined;
   let scanning: Promise<void> | undefined;
@@ -119,7 +120,29 @@ export function createPonsMarket(client: PublicClient, chainId: ChainId, ethUsd:
         }),
       );
     }
+    await fillLogos();
     scannedTo = head;
+  }
+
+  /// Gives a token with no loadable logo DexScreener's copy of its image, once per token.
+  async function fillLogos() {
+    if (!config.dexscreenerChain) return;
+    const bare = [...metas.values()].filter((m) => m.logo === null && !looked.has(m.address));
+    for (let i = 0; i < bare.length; i += DEXSCREENER_BATCH) {
+      const batch = bare.slice(i, i + DEXSCREENER_BATCH);
+      try {
+        const response = await fetch(`${DEXSCREENER}/${config.dexscreenerChain}/${batch.map((m) => m.address).join(",")}`);
+        if (!response.ok) continue;
+        const pairs = (await response.json()) as { baseToken: { address: string }; info?: { imageUrl?: string } }[];
+        for (const meta of batch) {
+          const found = pairs.find((p) => p.baseToken.address.toLowerCase() === meta.address.toLowerCase() && p.info?.imageUrl);
+          meta.logo = logoUrl(found?.info?.imageUrl);
+          looked.add(meta.address);
+        }
+      } catch {
+        // DexScreener down: the next scan tries again, and the page shows initials meanwhile.
+      }
+    }
   }
 
   async function readMeta(token: Address): Promise<Meta | undefined> {

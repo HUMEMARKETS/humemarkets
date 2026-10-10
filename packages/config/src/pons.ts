@@ -15,18 +15,19 @@ export interface PonsConfig {
   fromBlock: number;
   /// How many launches the list reads, largest first (by quote swept at graduation). Mainnet has thousands.
   listSize: number;
+  /// DexScreener's chain id. Pons logos are `ipfs://` addresses and the public IPFS gateways are shut down, so
+  /// the API takes DexScreener's copy of the image. Absent where DexScreener does not index the chain.
+  dexscreenerChain?: string;
 }
 
-/// Pons logos are `ipfs://` addresses; the page loads them through this public gateway.
-export const IPFS_GATEWAY = "https://ipfs.io/ipfs/";
 
 const pons: Record<ChainId, PonsConfig> = {
   [ROBINHOOD_TESTNET_CHAIN_ID]: {
-    factory: "0x6b0bf164575160d43125e97785BBb3Cce21f94Bf",
-    router: "0x36Db1af59A6B2be59420dA9D2D93ba1179B39969",
+    factory: "0x2549b97021e6E84D117fD13Dfc7de6436C458004",
+    router: "0x8553c25ab09220216169eF9543400E3d26C0D61A",
     hook: "0x0000000000000000000000000000000000000000",
     poolManager: "0x8366a39CC670B4001A1121B8F6A443A643e40951",
-    fromBlock: 130_733_000,
+    fromBlock: 132_339_000,
     listSize: 100,
   },
   [ROBINHOOD_MAINNET_CHAIN_ID]: {
@@ -35,6 +36,7 @@ const pons: Record<ChainId, PonsConfig> = {
     poolManager: "0x8366a39CC670B4001A1121B8F6A443A643e40951",
     fromBlock: 0,
     listSize: 100,
+    dexscreenerChain: "robinhood",
   },
 };
 
