@@ -1,0 +1,8 @@
+# The mainnet site on Netlify (humemarkets.com). Vercel's free plan stops after 100 deploys a day; this host has
+# no such limit. The NEXT_PUBLIC_* values are site variables (`scripts/deploy-web-netlify.sh` sets them).
+[build]
+  command = "pnpm --filter @hume/web build"
+  publish = "apps/web/.next"
+
+[build.environment]
+  NODE_VERSION = "24"
