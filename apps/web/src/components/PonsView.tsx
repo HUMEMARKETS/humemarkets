@@ -75,7 +75,19 @@ function PonsTicket({ token, router }: { token: PonsRow; router?: Address }) {
   const places = side === "buy" ? 18 : token.decimals;
   const valid = /^\d+(\.\d+)?$/.test(amount) && (amount.split(".")[1]?.length ?? 0) <= places && Number(amount) > 0;
   const base = valid ? toBaseUnits(amount, places) : 0n;
-  const pool: PoolSnapshot | undefined = token.sqrtPriceX96 && token.liquidity ? { sqrtPriceX96: token.sqrtPriceX96, liquidity: token.liquidity } : undefined;
+  // The list is cached for 15 s, and in a thin pool one trade moves the price by tens of percent, so the quote
+  // reads the pool itself every few seconds (and again after each trade) and uses the list only until it arrives.
+  const live = useQuery({
+    queryKey: ["pons-pool", token.address, env.apiUrl],
+    queryFn: async (): Promise<PoolSnapshot> => {
+      const response = await fetch(`${env.apiUrl}/v1/pons/pool/${token.address}`);
+      if (!response.ok) throw new Error("pool unavailable");
+      return response.json();
+    },
+    refetchInterval: 4_000,
+    retry: false,
+  });
+  const pool: PoolSnapshot | undefined = live.data ?? (token.sqrtPriceX96 && token.liquidity ? { sqrtPriceX96: token.sqrtPriceX96, liquidity: token.liquidity } : undefined);
   const estimate = pool && valid ? (side === "buy" ? estimateBuy(pool, base) : estimateSell(pool, base)) : undefined;
   const minimum = estimate ? minimumOut(estimate.out) : undefined;
   const outDecimals = side === "buy" ? token.decimals : 18;

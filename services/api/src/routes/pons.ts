@@ -29,6 +29,19 @@ export function registerPonsRoutes(app: FastifyInstance, hume: Hume, client: Pub
     }
   });
 
+  /// A listed token's pool price and liquidity right now (no cache), for the ticket's quote.
+  app.get<{ Params: { token: string } }>("/v1/pons/pool/:token", async (request, reply) => {
+    if (!ADDRESS.test(request.params.token)) return reply.code(400).send({ error: "token must be an address" });
+    try {
+      await tokens(); // makes sure the token list has been read at least once
+      const pool = await tokens.pool(request.params.token as Address);
+      return pool ?? reply.code(404).send({ error: "not a listed Pons token" });
+    } catch (error) {
+      request.log.error({ err: error }, "pons: pool read failed");
+      return reply.code(502).send({ error: "chain unavailable" });
+    }
+  });
+
   /// One wallet's Pons buys and sells through `HumePonsRouter`, newest first, read from the router's logs.
   /// `timestamp` is the block's time in seconds. Without a router on this chain the list is empty.
   app.get<{ Params: { wallet: string } }>("/v1/pons/history/:wallet", async (request, reply) => {

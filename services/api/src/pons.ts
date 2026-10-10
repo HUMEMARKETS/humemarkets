@@ -178,7 +178,27 @@ export function createPonsMarket(client: PublicClient, chainId: ChainId, ethUsd:
     };
   }
 
-  return async function tokens(now = Date.now()): Promise<PonsToken[]> {
+  /// The pool's current sqrt price and in-range liquidity, straight from the `PoolManager`.
+  async function readPool(poolId: Hex) {
+    const base = BigInt(keccak256(encodePacked(["bytes32", "uint256"], [poolId, POOLS_SLOT])));
+    const slotAt = (offset: bigint) => `0x${(base + offset).toString(16).padStart(64, "0")}` as Hex;
+    const [slot0, inRange] = await Promise.all([
+      client.readContract({ address: config.poolManager, abi: poolManagerAbi, functionName: "extsload", args: [slotAt(0n)] }),
+      client.readContract({ address: config.poolManager, abi: poolManagerAbi, functionName: "extsload", args: [slotAt(LIQUIDITY_OFFSET)] }),
+    ]);
+    return { sqrtPriceX96: BigInt(slot0) & ((1n << 160n) - 1n), liquidity: BigInt(inRange) & ((1n << 128n) - 1n) };
+  }
+
+  /// Uncached pool state of one listed token, for a ticket that must quote against the pool as it is now (the
+  /// 15 s list is stale right after a trade, and in a thin pool one trade moves the price by tens of percent).
+  async function pool(token: Address) {
+    const meta = metas.get(token) ?? [...metas.values()].find((m) => m.address.toLowerCase() === token.toLowerCase());
+    if (!meta) return undefined;
+    const { sqrtPriceX96, liquidity } = await readPool(meta.poolId);
+    return { sqrtPriceX96: sqrtPriceX96.toString(), liquidity: liquidity.toString() };
+  }
+
+  const tokens = async function tokens(now = Date.now()): Promise<PonsToken[]> {
     if (priced && now - priced.at < PRICE_TTL_MS) return priced.tokens;
     scanning ??= scan().finally(() => {
       scanning = undefined;
@@ -191,14 +211,7 @@ export function createPonsMarket(client: PublicClient, chainId: ChainId, ethUsd:
         let sqrtPriceX96: bigint | null = null;
         let liquidity: bigint | null = null;
         try {
-          const base = BigInt(keccak256(encodePacked(["bytes32", "uint256"], [meta.poolId, POOLS_SLOT])));
-          const slotAt = (offset: bigint) => `0x${(base + offset).toString(16).padStart(64, "0")}` as Hex;
-          const [slot0, inRange] = await Promise.all([
-            client.readContract({ address: config.poolManager, abi: poolManagerAbi, functionName: "extsload", args: [slotAt(0n)] }),
-            client.readContract({ address: config.poolManager, abi: poolManagerAbi, functionName: "extsload", args: [slotAt(LIQUIDITY_OFFSET)] }),
-          ]);
-          sqrtPriceX96 = BigInt(slot0) & ((1n << 160n) - 1n);
-          liquidity = BigInt(inRange) & ((1n << 128n) - 1n);
+          ({ sqrtPriceX96, liquidity } = await readPool(meta.poolId));
           price = ethPerToken(sqrtPriceX96, meta.decimals);
         } catch {
           price = null;
@@ -213,6 +226,7 @@ export function createPonsMarket(client: PublicClient, chainId: ChainId, ethUsd:
     priced = { at: now, tokens: list };
     return list;
   };
+  return Object.assign(tokens, { pool });
 }
 
 /// The router's two events, both with the wallet as the first indexed argument.
