@@ -12,6 +12,22 @@ const config: NextConfig = {
   // Workspace packages ship TypeScript source; Next compiles them.
   transpilePackages: ["@hume/sdk", "@hume/config", "@hume/types", "@hume/ui"],
   reactStrictMode: true,
+  // The site signs wallet transactions, so nothing may frame it (clickjacking). No script-src: Next injects inline
+  // scripts and a nonce setup is not worth it yet; these directives cannot break a page.
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "Content-Security-Policy", value: "frame-ancestors 'none'; base-uri 'self'; object-src 'none'" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+        ],
+      },
+    ];
+  },
   // Workspace packages import their own files as "./x.js" while the source is x.ts / x.tsx.
   webpack(webpackConfig) {
     webpackConfig.resolve.extensionAlias = {
