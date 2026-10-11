@@ -17,9 +17,12 @@ if [[ $# -ge 1 ]]; then
   echo "HUME token address set to $1"
 fi
 
+# `vercel api` takes one object per call, not an array.
 tmp="$(mktemp)"
-python3 -c 'import json,os; print(json.dumps([{"key":k,"value":v,"type":"plain","target":["production","preview"]} for k,v in os.environ.items() if k.startswith("NEXT_PUBLIC_")]))' > "$tmp"
-vercel api "/v10/projects/$VERCEL_PROJECT_ID/env?upsert=true" -X POST --input "$tmp" --raw >/dev/null
+while IFS= read -r body; do
+  printf '%s' "$body" > "$tmp"
+  vercel api "/v10/projects/$VERCEL_PROJECT_ID/env?upsert=true" -X POST --input "$tmp" --raw >/dev/null
+done < <(python3 -c 'import json,os; [print(json.dumps({"key":k,"value":v,"type":"plain","target":["production","preview"]})) for k,v in os.environ.items() if k.startswith("NEXT_PUBLIC_")]')
 rm -f "$tmp"
 
 wt="$(mktemp -d)"
