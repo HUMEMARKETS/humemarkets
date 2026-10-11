@@ -62,6 +62,23 @@ forge test                                  # in packages/contracts
 forge fmt --check
 ```
 
+## Code graph
+
+`graphify-out/` holds a local code-only graph (TS, Solidity, scripts; no docs or screenshots). It is
+the first reference for learning the codebase: consult it before any grep, glob or file read that
+explores structure, and before surveying the repo or spawning an Explore agent.
+
+- **Orientation** (new session, unfamiliar area): read only the summary and god nodes,
+  `sed -n '/^## Summary/,/^## Community Hubs/p;/^## God Nodes/,/^## Surprising/p' graphify-out/GRAPH_REPORT.md`,
+  then narrow with `graphify query`.
+- **Structure questions** (who calls X, what depends on Y, how A reaches B):
+  `graphify query "..." --budget 1500`, `graphify path "A" "B"` or `graphify explain "X"`. Read only the
+  line range it returns (`source_location`).
+- Fall back to grep or file reads only when the graph has no answer: docs, screenshots, config values,
+  or a file newer than the graph.
+- Never open `graphify-out/graph.json` (8 MB) or read all of `GRAPH_REPORT.md` (1,400 lines).
+- After code edits run `/graphify --update`. Solidity cross-file edges are approximate.
+
 ## Phase index
 
 Line ranges in `docs/DEVELOPMENT_PHASES.md` (start of phase to start of next). Offsets drift when the
