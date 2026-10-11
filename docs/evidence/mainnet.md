@@ -38,7 +38,7 @@ BTC, ETH, LINK and GLD read through `OracleRouter` on the fork and live: BTC 82,
 
 - Lending: the credit stack is not deployed on mainnet (it needs a price feeder for its oracle and USDG to lend). The page says so.
 - Option round trip, copy trading on mainnet (both need the keeper and pricing keys on Railway).
-- HUME token address: shown after `NEXT_PUBLIC_PROTOCOL_TOKEN_ADDRESS` and `NEXT_PUBLIC_PROTOCOL_TOKEN_LIVE=true` are set on the Vercel project and it is redeployed.
+- HUME token address `0xfc6d48974ac0a538624ca97380c9a3753664c85b`: recorded in `packages/config` (`protocolTokens`); `scripts/deploy-web-netlify.sh` sets `NEXT_PUBLIC_PROTOCOL_TOKEN_LIVE=true`, copies every `NEXT_PUBLIC_*` value to the Netlify site and fails if the live pages lack the address.
 - No audit. Caps are the loss bound.
 
 ## End-to-end pass on the live site (2026-10-11, after the open)

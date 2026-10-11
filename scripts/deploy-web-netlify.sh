@@ -31,9 +31,23 @@ if [[ $# -ge 1 ]]; then
   echo "HUME token address set to $1"
 fi
 
+# The site keeps its own copy of every NEXT_PUBLIC_* value, so a build started anywhere else (the Netlify
+# dashboard, a CLI run without this script) cannot drop the chain, the API or the CA. Public values only.
+vars="$(mktemp)"
+env | grep -E '^NEXT_PUBLIC_' > "$vars"
+npx netlify-cli env:import --replace-existing --filter @hume/web --site "$SITE" "$vars" </dev/null >/dev/null
+rm -f "$vars"
+
 wt="$(mktemp -d)"
 git worktree add --detach "$wt" HEAD -q
 trap 'git worktree remove --force "$wt"' EXIT
 cd "$wt"
 pnpm install --frozen-lockfile >/dev/null
 npx netlify-cli deploy --build --prod --site "$SITE" --filter @hume/web 2>&1 | grep -E "Production URL|Error|error" || true
+
+# Guard: the live site must carry the HUME CA (the argument, else the one recorded in packages/config).
+ca="${1:-$(grep -A1 'protocolTokens:' packages/config/src/deployments.ts | grep -oE '0x[0-9a-fA-F]{40}')}"
+for page in "" markets features; do
+  curl -fsS "https://humemarkets.com/$page?v=$(date +%s)" | grep -qi "$ca" || { echo "FAIL: CA $ca missing on /$page" >&2; exit 1; }
+done
+echo "CA $ca live on /, /markets, /features"
