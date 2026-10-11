@@ -164,7 +164,7 @@ const robinhoodMainnetImplementations: ImplementationRecord = {
     rfqManager: "0xCC321f37FF752B03D04c3dF9BC93c3Da96c256D2",
     riskManager: "0x16239Dc67101fE6A20E27FFC7222aeD48A37571F",
     subaccountFactory: "0xC3eF7f7901B8ea4bd4EcC8CD8E795f4Bf51b8a9F",
-    vault: "0xfe97357eBa1dED613A3E7A560c35cF2DB360e939",
+    vault: "0x1DF1ab609a1f1a67a3ACa6D915Af82B283055aED",
   },
 };
 
