@@ -295,6 +295,7 @@ Set by Phase 3, enforced from here on.
 | Anything inside the app       | **No animation over 200 ms.** Transitions are 150 ms (`duration-150`), the existing default |
 | Dense data: tables, the chain, the order book | **No animation at all.** Section 5: Zupiter's motion is rejected here |
 | The landing page `/`          | Motion allowed: the section fade (0.7 s), the scene turn and scroll travel in the WebGL canvas, the voxel assembly the first time a station is seen (0.55 s per voxel, staggered), the ticker on app pages (70 s loop). The render loop pauses when the tab is hidden or the canvas is off screen |
+| `/features` price tape        | One exception to the app ceiling, for the three product previews only (all labelled `SAMPLE DATA`): a scripted price replays as ticks, one step every 1.2 s, and each step is a state change of 150 ms or less. It stops on pointer or focus in a preview, off screen and in a hidden tab, has a Pause button, and does not start under reduced motion. The visitor can drag it. Nothing else on the page moves |
 | `prefers-reduced-motion`      | Every animation collapses to 0.01 ms; the landing scene starts with motion off, so idle motion, pointer tilt and drag coasting stop and smooth scrolling is off. There is no override |
 
 One exception, already in the code and kept: a fill confirmation (`fill-pop`, 350 ms) is a success

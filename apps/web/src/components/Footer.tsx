@@ -3,6 +3,7 @@ import { APP_GUTTER } from '@/lib/frame';
 import { MORE_LINKS } from '@/lib/nav';
 import { X_URL } from '@/lib/social';
 import { cn, interactive } from '@hume/ui';
+import { ArrowIcon } from './ArrowIcon';
 import { FooterCa } from './FooterCa';
 import { Logo } from './Logo';
 import { ChainName } from './NetworkText';
@@ -34,6 +35,7 @@ export function Footer() {
                     {MORE_LINKS.map((link) => (
                         <Link key={link.href} href={link.href} className={footLink}>
                             {link.label}
+                            <ArrowIcon />
                         </Link>
                     ))}
                     <StatusBadge label={<ChainName />} />

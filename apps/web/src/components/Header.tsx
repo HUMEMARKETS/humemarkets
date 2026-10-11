@@ -13,6 +13,7 @@ import { ArrowIcon } from "./ArrowIcon";
 import { HeaderCa } from "./HeaderCa";
 import { Logo } from "./Logo";
 import { MenuIcon } from "./MenuIcon";
+import { NavIcon } from "./NavIcon";
 import { NetworkMenu } from "./NetworkMenu";
 import { ThemeToggle } from "./ThemeToggle";
 import { WalletButton } from "./WalletButton";
@@ -30,13 +31,13 @@ const navLink = (current: boolean) =>
   );
 
 const menuLink = (current: boolean) =>
-  cn("flex h-11 items-center px-3 text-sm font-medium", current ? "bg-accent text-accent-ink" : cn("text-text", menuItem));
+  cn("flex h-11 items-center gap-2.5 px-3 text-sm font-medium", current ? "bg-accent text-accent-ink" : cn("text-text", menuItem));
 
 /// On a phone the menu is a full-width sheet. From `md` it is a card under the menu button: two columns,
 /// inset rows with the control radius, the same raised surface as the other menus.
 const sheetLink = (current: boolean) =>
   cn(
-    "flex h-12 items-center px-4 text-base font-medium md:mx-2 md:h-10 md:rounded-control md:px-3 md:text-sm",
+    "flex h-12 items-center gap-3 px-4 text-base font-medium md:mx-2 md:h-10 md:rounded-control md:px-3 md:text-sm",
     current ? "bg-accent text-accent-ink" : cn("bg-raised text-muted", menuItem),
   );
 
@@ -67,6 +68,7 @@ function NavGroup({ label, items, pathname, open, onToggle, onClose }: { label: 
             return (
               <li key={item.href}>
                 <Link href={item.href} aria-current={current ? "page" : undefined} className={menuLink(current)}>
+                  <NavIcon name={item.icon} />
                   {item.label}
                 </Link>
               </li>
@@ -145,14 +147,17 @@ export function Header() {
         <div className="flex items-center gap-3 sm:gap-6">
           {landing ? (
             <nav aria-label="Landing" className="hidden items-center gap-6 text-sm xl:flex">
-              <Link href="/features" className="text-muted transition-colors duration-150 hover:text-text">
+              <Link href="/features" className="inline-flex items-center gap-2 text-muted transition-colors duration-150 hover:text-text">
                 Features
+                <ArrowIcon />
               </Link>
-              <a href="#contracts" className="text-muted transition-colors duration-150 hover:text-text">
+              <a href="#contracts" className="inline-flex items-center gap-2 text-muted transition-colors duration-150 hover:text-text">
                 Contracts
+                <ArrowIcon />
               </a>
-              <Link href="/markets" className="text-muted transition-colors duration-150 hover:text-text">
+              <Link href="/markets" className="inline-flex items-center gap-2 text-muted transition-colors duration-150 hover:text-text">
                 Markets
+                <ArrowIcon />
               </Link>
             </nav>
           ) : null}
@@ -210,12 +215,14 @@ export function Header() {
                     <p aria-hidden="true" className={sheetHeading}>{entry.label}</p>
                     {entry.items.map((item) => (
                       <Link key={item.href} href={item.href} aria-current={isCurrent(pathname, item.href) ? "page" : undefined} className={sheetLink(isCurrent(pathname, item.href))}>
+                        <NavIcon name={item.icon} />
                         {item.label}
                       </Link>
                     ))}
                   </div>
                 ) : (
                   <Link key={entry.href} href={entry.href} aria-current={isCurrent(pathname, entry.href) ? "page" : undefined} className={cn(sheetLink(isCurrent(pathname, entry.href)), "md:my-1")}>
+                    <NavIcon name={entry.icon} />
                     {entry.label}
                   </Link>
                 ),
@@ -226,6 +233,7 @@ export function Header() {
                 <p aria-hidden="true" className={sheetHeading}>More</p>
                 {MORE_LINKS.map((item) => (
                   <Link key={item.href} href={item.href} aria-current={isCurrent(pathname, item.href) ? "page" : undefined} className={sheetLink(isCurrent(pathname, item.href))}>
+                    <NavIcon name={item.icon} />
                     {item.label}
                   </Link>
                 ))}

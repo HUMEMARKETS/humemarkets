@@ -6,6 +6,7 @@ import { ContractsTable } from '@/components/ContractsTable';
 import { ChainName } from '@/components/NetworkText';
 import { ArrowIcon } from '@/components/ArrowIcon';
 import { DocsLiveParameters } from '@/components/DocsLiveParameters';
+import { PriceTapeStage, TapeHold } from '@/components/PriceTape';
 import { OptionsPreview, PerpPreview, VaultPreview } from '@/components/ProductPreviews';
 import { SupportedMarkets } from '@/components/SupportedMarkets';
 import { TrustStrip } from '@/components/TrustStrip';
@@ -208,6 +209,7 @@ export default function FeaturesPage() {
         <AppPage title="Features" description="What HUME does, what it costs, and how to check it yourself.">
             <TrustStrip className="mb-12" />
 
+            <PriceTapeStage>
             {MODULES.map((section, index) => (
                 <Block key={section.id} id={section.id} eyebrow={section.eyebrow} title={section.title.join(' ')}>
                     <div className={cn('grid gap-8 lg:grid-cols-2 lg:gap-12', index % 2 === 1 && 'lg:[&>*:first-child]:order-2')}>
@@ -228,10 +230,11 @@ export default function FeaturesPage() {
                                 </Link>
                             ) : null}
                         </div>
-                        <div>{PREVIEWS[section.id]}</div>
+                        <TapeHold>{PREVIEWS[section.id]}</TapeHold>
                     </div>
                 </Block>
             ))}
+            </PriceTapeStage>
 
             <Block id="more" eyebrow="04 / More on HUME" title="Markets, spot and community.">
                 <ul className="grid gap-4 sm:grid-cols-2">

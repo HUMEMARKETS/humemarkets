@@ -1,8 +1,8 @@
 "use client";
 
 import { Num, Panel, Segmented, Stat, TextField, cn, fieldBorder } from "@hume/ui";
-import { analyzeStrategy, payoffCurve, strategyLegs, STRATEGY_KINDS, type Leg, type OptionQuote, type StrategyKind } from "@hume/sdk";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { analyzeStrategy, payoffAt, payoffCurve, strategyLegs, STRATEGY_KINDS, type Leg, type OptionQuote, type StrategyKind } from "@hume/sdk";
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { formatUnits } from "viem";
 import { useIndexPrice, useListedExpiries, useOptionChain, useOptionUnderlyings, usePerpMarketConfig } from "@/hooks/queries";
 import { useAccountMode } from "@/hooks/useAccountMode";
@@ -27,8 +27,11 @@ const toNumber = (value: bigint) => Number(formatUnits(value, 18));
 const selectClass = cn(fieldBorder, "h-8 rounded-md border bg-raised px-2 text-sm text-text hover:bg-accent-soft");
 
 /// A payoff-at-expiry line chart. Green above zero, red below, with the price and break-evens on
-/// the axis. Drawn as plain SVG: it is a display of the analysis, nothing here is signed.
-export function PayoffChart({ legs, low, high, spot, breakEvens }: { legs: Leg[]; low: number; high: number; spot: number; breakEvens: number[] }) {
+/// the axis. Drawn as plain SVG: it is a display of the analysis, nothing here is signed. With
+/// `onSpotChange` the "now" line can be moved, by pointer or arrow keys, along the curve.
+export function PayoffChart({ legs, low, high, spot, breakEvens, onSpotChange }: { legs: Leg[]; low: number; high: number; spot: number; breakEvens: number[]; onSpotChange?: (price: number) => void }) {
+  const uid = useId().replace(/:/g, "");
+  const [dragging, setDragging] = useState(false);
   // Drawn at the pixel width it is shown at, so the axis labels stay 12 px on a phone instead of shrinking with the drawing.
   const box = useRef<HTMLDivElement>(null);
   const [measured, setMeasured] = useState(640);
@@ -50,21 +53,36 @@ export function PayoffChart({ legs, low, high, spot, breakEvens }: { legs: Leg[]
   const x = (price: number) => pad + ((price - low) / (high - low)) * (width - 2 * pad);
   const y = (value: number) => pad + ((top - value) / span) * (height - 2 * pad);
   const path = curve.map(([price, value], index) => `${index === 0 ? "M" : "L"}${x(price).toFixed(1)},${y(value).toFixed(1)}`).join(" ");
+  const svg = useRef<SVGSVGElement>(null);
+  const move = (event: PointerEvent<SVGElement>) => {
+    const box = svg.current?.getBoundingClientRect();
+    if (!box || !onSpotChange) return;
+    const ratio = (event.clientX - box.left - pad) / (width - 2 * pad);
+    onSpotChange(Math.min(high, Math.max(low, low + ratio * (high - low))));
+  };
+  const onKey = (event: KeyboardEvent<SVGElement>) => {
+    const step = ((high - low) / 60) * (event.shiftKey ? 5 : 1);
+    const next = event.key === "ArrowRight" || event.key === "ArrowUp" ? spot + step : event.key === "ArrowLeft" || event.key === "ArrowDown" ? spot - step : event.key === "Home" ? low : event.key === "End" ? high : undefined;
+    if (next === undefined) return;
+    event.preventDefault();
+    onSpotChange?.(Math.min(high, Math.max(low, next)));
+  };
+  const spotValue = payoffAt(legs, spot);
 
   return (
     <div ref={box} className="w-full min-w-0 overflow-hidden">
-      <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Payoff at expiry" className="block max-w-full">
+      <svg ref={svg} width={width} height={height} viewBox={`0 0 ${width} ${height}`} role={onSpotChange ? "group" : "img"} aria-label="Payoff at expiry" className="block max-w-full">
         <line x1={pad} x2={width - pad} y1={y(0)} y2={y(0)} stroke="currentColor" strokeOpacity={0.35} />
-        <clipPath id="above">
+        <clipPath id={`${uid}-above`}>
           <rect x={0} y={0} width={width} height={y(0)} />
         </clipPath>
-        <clipPath id="below">
+        <clipPath id={`${uid}-below`}>
           <rect x={0} y={y(0)} width={width} height={height} />
         </clipPath>
-        <path d={path} fill="none" className="stroke-up" strokeWidth={2} clipPath="url(#above)" />
-        <path d={path} fill="none" className="stroke-down" strokeWidth={2} clipPath="url(#below)" />
+        <path d={path} fill="none" className="stroke-up" strokeWidth={2} clipPath={`url(#${uid}-above)`} />
+        <path d={path} fill="none" className="stroke-down" strokeWidth={2} clipPath={`url(#${uid}-below)`} />
         <line x1={x(spot)} x2={x(spot)} y1={pad} y2={height - pad} stroke="currentColor" strokeOpacity={0.4} strokeDasharray="3 3" />
-        <text x={x(spot)} y={pad - 8} textAnchor="middle" className="fill-muted text-xs">
+        <text x={x(spot)} y={pad - 8} textAnchor={x(spot) < pad + 40 ? "start" : x(spot) > width - pad - 40 ? "end" : "middle"} className="fill-muted text-xs">
           now {spot.toFixed(2)}
         </text>
         {breakEvens.map((price) => (
@@ -75,6 +93,43 @@ export function PayoffChart({ legs, low, high, spot, breakEvens }: { legs: Leg[]
             </text>
           </g>
         ))}
+        {onSpotChange ? (
+          <>
+            <rect
+              x={pad}
+              y={pad}
+              width={width - 2 * pad}
+              height={height - 2 * pad}
+              fill="transparent"
+              style={{ touchAction: "pan-y", cursor: "ew-resize" }}
+              onPointerDown={(event) => {
+                event.currentTarget.setPointerCapture(event.pointerId);
+                setDragging(true);
+                move(event);
+              }}
+              onPointerMove={(event) => {
+                if (dragging) move(event);
+              }}
+              onPointerUp={() => setDragging(false)}
+              onPointerCancel={() => setDragging(false)}
+            />
+            <rect
+              x={x(spot) - 5}
+              y={y(spotValue) - 5}
+              width={10}
+              height={10}
+              className="fill-text"
+              tabIndex={0}
+              role="slider"
+              aria-label="Price at expiry"
+              aria-valuemin={low}
+              aria-valuemax={high}
+              aria-valuenow={Math.round(spot * 100) / 100}
+              onKeyDown={onKey}
+              style={{ pointerEvents: "none" }}
+            />
+          </>
+        ) : null}
         <text x={pad} y={height - 6} className="fill-muted text-xs">
           {low.toFixed(0)}
         </text>

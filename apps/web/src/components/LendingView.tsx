@@ -69,7 +69,7 @@ export function LtvBar({ ltv, maxLtv, liquidationLtv }: { ltv: bigint; maxLtv: b
   return (
     <div className="mt-4">
       <div role="img" aria-label={`Loan to value ${pct(ltv)}. Borrow limit ${pct(maxLtv)}. Liquidation at ${pct(liquidationLtv)}.`} className="relative h-2 rounded-sharp bg-line">
-        <div className={cn("h-full rounded-sharp", tone)} style={{ width: `${clamp(ltv)}%` }} />
+        <div className={cn("h-full rounded-sharp transition-[width] duration-150", tone)} style={{ width: `${clamp(ltv)}%` }} />
         <span aria-hidden="true" className="absolute -top-1 h-4 w-px bg-text" style={{ left: `${clamp(maxLtv)}%` }} />
         <span aria-hidden="true" className="absolute -top-1 h-4 w-0.5 bg-down" style={{ left: `${clamp(liquidationLtv)}%` }} />
       </div>
