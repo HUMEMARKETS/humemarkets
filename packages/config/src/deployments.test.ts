@@ -50,7 +50,7 @@ test("only mainnet records a protocol token, and it is a valid address", () => {
   const token = protocolTokens[ROBINHOOD_MAINNET_CHAIN_ID];
   assert.ok(token);
   assert.match(token.address, /^0x[0-9a-fA-F]{40}$/);
-  assert.equal(token.symbol, "ALPHA");
+  assert.equal(token.symbol, "HUME");
 });
 
 test("the recorded implementations match the deployment files, and every one sits behind a recorded proxy", () => {
