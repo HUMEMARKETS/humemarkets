@@ -715,7 +715,7 @@
       "maintenanceBps": 750,
       "group": "china",
       "tier": "quoted",
-      "logo": "https://financialmodelingprep.com/image-stock/CQQQ.png"
+      "logo": "https://assets.parqet.com/logos/symbol/CQQQ?format=png"
     },
     {
       "symbol": "NFLX",
@@ -765,7 +765,7 @@
       "maintenanceBps": 750,
       "group": "us-equities",
       "tier": "quoted",
-      "logo": "https://financialmodelingprep.com/image-stock/BA.png"
+      "logo": "https://assets.parqet.com/logos/symbol/BA?format=png"
     },
     {
       "symbol": "ADBE",
