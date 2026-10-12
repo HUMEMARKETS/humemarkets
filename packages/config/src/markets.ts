@@ -87,7 +87,7 @@ export function validateMarkets(listings: readonly MarketListing[]): readonly Ma
 /// The first 39 are `tradeable`. The 35 equities are not a shortlist — `REFERENCE.md` Section 2 Finding 1 measured
 /// that only 33 of the 194 tokenized assets on this chain have a Chainlink feed at all; DELL, USAR and SGOV got one
 /// later. The seven US names at the end (NFLX, AVGO, CRM, COST, BA, ADBE, QCOM) are tokenized but have no feed yet, so
-/// they are `quoted` until Chainlink publishes one. Ten China and Greater China names (TCEHY to CQQQ) are quoted with no token at all. Groups are display only: `china` (BABA, TSM, EWY), `commodities`
+/// they are `quoted` until Chainlink publishes one. Ten China names (TCEHY to CQQQ) are quoted with no token at all. Groups are display only: `china` (BABA, TSM, EWY), `commodities`
 /// (SLV, USO) and `etf` (SPY, QQQ, SGOV) regroup markets that already trade, and the rest are `us-equities`. The `crypto` group
 /// (BTC, ETH, LINK, GLD) is feed-only: a perp needs only a feed (Finding 5), and these stay fresh at any hour.
 const robinhoodMainnetMarkets: readonly MarketListing[] = [
