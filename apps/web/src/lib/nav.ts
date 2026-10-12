@@ -27,6 +27,7 @@ export const NAV: NavEntry[] = [
 /// Pages with no slot in the bar. The footer lists them, and so does the mobile sheet, because the
 /// terminals have no footer.
 export const MORE_LINKS: NavLink[] = [
+  { label: "How it works", href: "/how-it-works", icon: "how" },
   { label: "Activity", href: "/activity", icon: "activity" },
   { label: "Docs", href: "/docs", icon: "docs" },
   { label: "Features", href: "/features", icon: "features" },

@@ -272,6 +272,105 @@ body {
   animation: nav-progress-run 1.1s ease-in-out infinite;
 }
 
+/* How it works (docs/UI_CONTRACT.md Section 8): the demo cursor, the reward pop-up and its confetti. Under
+   reduced motion every duration collapses, and the confetti, which ends transparent, simply never shows. */
+@keyframes how-pop {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes how-star {
+  0% {
+    opacity: 0;
+    transform: scale(0) rotate(-45deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.45) rotate(8deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+@keyframes how-glow {
+  from {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.25);
+  }
+}
+
+@keyframes how-confetti {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) rotate(0) scale(0.4);
+  }
+  4% {
+    opacity: 1;
+  }
+  20% {
+    opacity: 1;
+    transform: translate(calc(var(--x) * 0.6), calc(var(--up) * -1)) rotate(calc(var(--r) * 0.3)) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--x), var(--fall)) rotate(var(--r));
+  }
+}
+
+@keyframes how-ring {
+  50% {
+    box-shadow: 0 0 0 7px transparent;
+  }
+}
+
+@keyframes how-ripple {
+  from {
+    opacity: 0.7;
+    transform: translate(-50%, -50%) scale(0.2);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(2.4);
+  }
+}
+
+.how-pop {
+  animation: how-pop 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.1) backwards;
+}
+
+.how-star {
+  animation: how-star 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.2) backwards;
+}
+
+.how-glow {
+  animation: how-glow 1s ease-out 0.3s backwards;
+}
+
+.how-confetti {
+  animation: how-confetti 2.4s cubic-bezier(0.2, 0.6, 0.4, 1) both;
+}
+
+.how-ring {
+  box-shadow: 0 0 0 0 var(--color-accent-line);
+  animation: how-ring 1s ease-in-out infinite;
+}
+
+.how-ripple {
+  animation: how-ripple 0.5s ease-out forwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

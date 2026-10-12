@@ -147,6 +147,10 @@ export function Header() {
         <div className="flex items-center gap-3 sm:gap-6">
           {landing ? (
             <nav aria-label="Landing" className="hidden items-center gap-6 text-sm xl:flex">
+              <Link href="/how-it-works" className="inline-flex items-center gap-2 text-muted transition-colors duration-150 hover:text-text">
+                How It Works
+                <ArrowIcon />
+              </Link>
               <Link href="/features" className="inline-flex items-center gap-2 text-muted transition-colors duration-150 hover:text-text">
                 Features
                 <ArrowIcon />

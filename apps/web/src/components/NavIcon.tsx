@@ -12,7 +12,8 @@ export type NavIconName =
   | "portfolio"
   | "activity"
   | "docs"
-  | "features";
+  | "features"
+  | "how";
 
 /// The one solid square on each icon: the point that matters (the strike, the crown, the latest tick). It
 /// echoes the square marker on the landing rail, and it is what makes the set read as Hume's own.
@@ -93,6 +94,13 @@ const ICONS: Record<NavIconName, ReactNode> = {
     <>
       <path d="M3 1.5h6.5L13 5v9.5H3zM9.5 1.5V5H13M5.5 8.5h5M5.5 11.5h2" />
       {node(10.5, 11.5)}
+    </>
+  ),
+  how: (
+    <>
+      <circle cx="8" cy="8" r="6.25" />
+      <path d="M6.5 5.25v5.5L11 8z" />
+      {node(12.4, 3.6)}
     </>
   ),
   features: (
