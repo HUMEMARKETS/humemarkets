@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button, Panel, ReviewStep, Row, TextField } from "@hume/ui";
 import { useEffect, useState } from "react";
 import { useAccount, useSwitchChain } from "wagmi";
-import { usePerpMarketConfig, useSettlementDecimals, useVaultBalances } from "@/hooks/queries";
+import { useOptionContractSize, usePerpMarketConfig, useSettlementDecimals, useVaultBalances } from "@/hooks/queries";
 import { useDebounced } from "@/hooks/useDebounced";
 import { useAccountMode } from "@/hooks/useAccountMode";
 import { useWalletHume } from "@/hooks/useHume";
@@ -94,6 +94,7 @@ export function OptionTicket() {
   // whoever is asking, so the ticket says so for the underlying on screen.
   const underlying = useTerminal((state) => state.symbol);
   const paused = tradeBlocker(usePerpMarketConfig(selection?.symbol ?? underlying)?.active);
+  const contractSize = useOptionContractSize(selection?.symbol ?? underlying).data;
 
   const onRightChain = isConnected && chainId === chain.id;
   const problem = paused
@@ -242,6 +243,12 @@ export function OptionTicket() {
           invalid={contracts !== "" && !/^[1-9]\d*$/.test(contracts)}
           hint={balances ? `Available ${fmtUsd(balances.available, decimals)}` : undefined}
         />
+
+        {selection && contractSize !== undefined ? (
+          <p className="text-xs text-faint">
+            1 contract = {contractSize.toLocaleString("en-US", { maximumFractionDigits: 8 })} {selection.symbol}
+          </p>
+        ) : null}
 
         {p ? (
           <dl className="border-t border-line pt-2">

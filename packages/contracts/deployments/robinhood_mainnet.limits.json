@@ -30,9 +30,9 @@
     "maxLtvBps": 6000,
     "liquidationLtvBps": 7000,
     "maxLeverageBps": 25000,
-    "supplyCap": 1000000000000000,
-    "borrowCap": 8000,
-    "oracleStalenessSeconds": 32400,
-    "note": "Credit stack risk parameters for the TSLA/USDG pair (Phase 9). maxLtvBps 6000 = 60% max loan-to-value, liquidationLtvBps 7000 = 70% liquidation threshold. supplyCap is in TSLA base units (18 decimals): 1e15 = 0.001 TSLA, conservative at ~$0.37. borrowCap is in USDG base units (6 decimals): 8000 = 0.008 USDG, matching the perps maxPositionRaw. Both are the smallest coherent values given the unfunded USDG treasury; raise them once USDG is funded. Oracle staleness matches the perps default (9 hours)."
+    "supplyCap": 50000000000000000,
+    "borrowCap": 800000,
+    "oracleStalenessSeconds": 345600,
+    "note": "supplyCap is in TSLA base units (18 decimals): 5e16 = 0.05 TSLA. borrowCap is in USDG base units (6 decimals): 800000 = 0.80 USDG, the whole seed. Staleness is 4 days because the equity feed is shut from Friday's close to Monday's open (about 65 hours) and a holiday can add a day."
   }
 }

@@ -204,6 +204,17 @@ export function useOptionUnderlyings() {
   });
 }
 
+/// Units of the underlying in one option contract (18-decimal on chain). The owner can change it per underlying,
+/// so the ticket reads it instead of assuming one whole unit.
+export function useOptionContractSize(symbol: string) {
+  return useQuery({
+    queryKey: ["option-contract-size", symbol],
+    queryFn: async () => Number(await humeRead.options.contractSize(symbol)) / 1e18,
+    enabled: Boolean(symbol),
+    staleTime: 60_000,
+  });
+}
+
 /// Index price, the spot the strike ladder is centred on.
 export function useIndexPrice(symbol: string) {
   return useQuery({

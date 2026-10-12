@@ -36,7 +36,7 @@ BTC, ETH, LINK and GLD read through `OracleRouter` on the fork and live: BTC 82,
 
 ## Not done
 
-- Lending: the credit stack is not deployed on mainnet (it needs a price feeder for its oracle and USDG to lend). The page says so.
+- Lending: deployed 2026-10-12, see "Lending and option sizes (2026-10-12)" below.
 - Option round trip, copy trading on mainnet (both need the keeper and pricing keys on Railway).
 - HUME token address `0xfc6d48974ac0a538624ca97380c9a3753664c85b`: recorded in `packages/config` (`protocolTokens`); `scripts/deploy-web-netlify.sh` sets `NEXT_PUBLIC_PROTOCOL_TOKEN_LIVE=true`, copies every `NEXT_PUBLIC_*` value to the Netlify site and fails if the live pages lack the address.
 - No audit. Caps are the loss bound.
@@ -79,3 +79,24 @@ Read back: all three `isActive` true, `maxNetOpenInterest` 200000; `check-launch
 ## 2026-10-12: ten China and Greater China quoted rows, reference price fix
 
 TCEHY, XIACY, BYDDY, MPNGY, LKNCY, PONY, WB, IQ, EWH, CQQQ added as `quoted` rows (no token, no feed, never listed on chain), so there is no chain step and no transaction hash. Chainlink's chain-4663 directory has no new China-region feed and the asset list no new China-region token, so none can be tradeable. `parseReferenceQuote` now reads the last trade when the book is wider than 5% of its mid (BIDU had shown 318.50, +279%, from a stub book of bid 82 and ask 555; now 85.35, +1.70%). Screens: `mainnet-china10-markets-375.png`, `mainnet-china10-markets-1440.png`.
+
+## Lending and option sizes (2026-10-12)
+
+Run by the owner with `BROADCAST=1 bash scripts/enable-mainnet-credit-options.sh` (the agent's mainnet sends were blocked). Gas price capped at 0.025 gwei; ETH 0.000437 before, 0.000251 after.
+
+| What | Value / transaction |
+| --- | --- |
+| CompositeSanityOracle | `0x47BDbCaD5989da46F9DFaaBB577514C277F55208` |
+| HumeCreditRegistry | `0x18EB2C50C8Fe3C5dB879f664Cc67fa74A8311D21` |
+| HumeCreditRouter | `0x04C2376ca7Fd72095F65B976A6FA01186ed7fDc1` |
+| HumeCreditVault | `0x2F5BA12520657cA38478676e61D225337562C45B` |
+| HumeCreditPair TSLA/USDG | `0x04DB09382c37Fe3D8cD237D92F96E654e1288e78`, unpaused; supply cap 0.05 TSLA, borrow cap 0.80 USDG |
+| Oracle TSLA price 384.66 | `0x96aa7387843a5023644af4657eace525996add9cf2e420e1b66ff54491b43ad9` |
+| Oracle USDG price 1.00 | `0xd58c660f241d3e587f245d5c98e399eda6fc250bc5f09f633b3416c0779eae43` |
+| ETH contract size 0.00003 | `0x29f4b4a0d1de4088f5177bb3a0c777cc840eef85bf8bd80f1a1d798eb2a7251c` |
+| BTC contract size 0.000001 | `0xae6358bb7c2ba07532b77300ae3b68e213c6b3fc21c113107b0432d7bffd6e52` |
+| GLD contract size 0.0002 | `0xe64521a9c25e71abd0622d0369da4c1cc36542d7356ae7e9cf399ff25f39b81e` |
+| LINK contract size 0.005 | `0x3fa154347be2b0921a4cc0ef821b73f47b475c745d7fd9585b9ddd55de9f1a77` |
+| Pair seed 0.80 USDG | `0xa8d070a809563706bd11edc24be24312267a3a789cf7be0450a34828a9f71f19` (the pair has no withdraw: this USDG is lent out for good) |
+
+Read back after the run: pair holds 800000 raw USDG, oracle TSLA 384.66, the four contract sizes as above. Not done: a borrow and a repay (the owner holds no TSLA as far as known), an option order (needs the pricing key on Railway), and explorer verification of the credit contracts. The keeper copies the TSLA Chainlink price into the credit oracle when `KEEPER_CREDIT_FEED=true`.

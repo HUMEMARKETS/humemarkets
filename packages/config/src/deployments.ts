@@ -101,6 +101,11 @@ const robinhoodMainnetAddresses: ContractAddresses = {
   crossMargin: "0xea3Ce04FA538FE6C0AEd377Cd0Cc86FE4CD0A28F",
   subaccountFactory: "0x7bd8f7D7E615A692821d6A31275dB38BC6836980",
   rfqManager: "0xE4B6aA5FdC12491e89D999FDe17e69340e19344C",
+  creditOracle: "0x47BDbCaD5989da46F9DFaaBB577514C277F55208",
+  creditRegistry: "0x18EB2C50C8Fe3C5dB879f664Cc67fa74A8311D21",
+  creditRouter: "0x04C2376ca7Fd72095F65B976A6FA01186ed7fDc1",
+  creditVault: "0x2F5BA12520657cA38478676e61D225337562C45B",
+  creditPairTslaUsdg: "0x04DB09382c37Fe3D8cD237D92F96E654e1288e78",
 };
 
 /// The code behind each proxy of a chain's deployment, and the empty UUPS placeholder `DeployAll` also deploys.

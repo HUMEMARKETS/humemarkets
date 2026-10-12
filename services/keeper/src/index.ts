@@ -3,11 +3,12 @@ loadDotEnv();
 
 import { requireEnv, resolveAddresses, resolveChainId } from "@hume/config";
 import { Hume } from "@hume/sdk";
-import { createPublicClient, createWalletClient, http, type Hex } from "viem";
+import { createPublicClient, createWalletClient, http, stringToHex, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { chains } from "@hume/config";
 import postgres from "postgres";
 import { createCopyExecutor } from "./copy.js";
+import { createCreditFeed } from "./creditFeed.js";
 import { createKeeper } from "./keeper.js";
 
 const chainId = resolveChainId(process.env.CHAIN_ID);
@@ -42,7 +43,22 @@ const copy = process.env.DATABASE_URL
     })
   : undefined;
 
-console.log(`keeper: ${account.address} on chain ${chainId}, every ${intervalMs}ms (feed refresh ${refreshFeeds ? "on" : "off"}, copy trading ${copy ? "on" : "off"})`);
+/// Mainnet only (`KEEPER_CREDIT_FEED=true`): the credit oracle has no feed of its own, so the keeper copies the collateral's
+/// Chainlink price into it. Testnet's simulator does this job there.
+const addresses = resolveAddresses(chainId);
+const creditFeed =
+  process.env.KEEPER_CREDIT_FEED === "true" && addresses.creditOracle && addresses.creditPairTslaUsdg
+    ? createCreditFeed({
+        publicClient: createPublicClient({ chain: chains[chainId], transport }),
+        walletClient: createWalletClient({ account, chain: chains[chainId], transport }),
+        oracleRouter: addresses.oracleRouter,
+        creditOracle: addresses.creditOracle,
+        creditPair: addresses.creditPairTslaUsdg,
+        collateralMarketId: stringToHex(process.env.KEEPER_CREDIT_MARKET ?? "TSLA", { size: 32 }),
+      })
+    : undefined;
+
+console.log(`keeper: ${account.address} on chain ${chainId}, every ${intervalMs}ms (feed refresh ${refreshFeeds ? "on" : "off"}, copy trading ${copy ? "on" : "off"}, credit feed ${creditFeed ? "on" : "off"})`);
 for (;;) {
   try {
     await keeper.tick();
@@ -53,6 +69,11 @@ for (;;) {
     await copy?.tick();
   } catch (error) {
     console.error("keeper: copy pass failed", error);
+  }
+  try {
+    await creditFeed?.();
+  } catch (error) {
+    console.error("keeper: credit price feed failed", error);
   }
   if (runOnce) process.exit(0);
   await new Promise((resolve) => setTimeout(resolve, intervalMs));
