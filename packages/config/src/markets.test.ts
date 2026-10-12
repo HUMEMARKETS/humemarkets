@@ -46,9 +46,9 @@ test("the checked-in literal matches deployments/robinhood_mainnet.markets.json"
   );
 });
 
-test("39 mainnet markets are tradeable with a feed, and 28 names (21 China, 7 US) are quoted without one", () => {
+test("39 mainnet markets are tradeable with a feed, and 38 names (31 China, 7 US) are quoted without one", () => {
   const all = marketsForChain(ROBINHOOD_MAINNET_CHAIN_ID);
-  assert.equal(all.length, 67);
+  assert.equal(all.length, 77);
   for (const market of all) {
     if (market.tier === "quoted") {
       assert.equal(market.feed, undefined, market.symbol);
@@ -63,8 +63,8 @@ test("39 mainnet markets are tradeable with a feed, and 28 names (21 China, 7 US
 
 test("marketsForGroup returns each group's set, the groups partition the list, and an empty group is []", () => {
   const symbols = (group: MarketGroup) => marketsForGroup(ROBINHOOD_MAINNET_CHAIN_ID, group).map((m) => m.symbol);
-  // China is 3 tradeable names plus 21 quoted ones, 24 in all, so the group reads as a full list on every network.
-  assert.equal(symbols("china").length, 24);
+  // China is 3 tradeable names plus 31 quoted ones, 34 in all, so the group reads as a full list on every network.
+  assert.equal(symbols("china").length, 34);
   assert.deepEqual(symbols("china").slice(0, 7), ["BABA", "EWY", "TSM", "UMC", "FUTU", "EWT", "SIMO"]);
   assert.deepEqual(symbols("commodities"), ["SLV", "USO"]);
   assert.deepEqual(symbols("etf"), ["SPY", "QQQ", "SGOV"]);
@@ -83,7 +83,7 @@ test("marketsForGroup returns each group's set, the groups partition the list, a
 test("marketsForTier returns the tier's set, and the tiers partition the list", () => {
   assert.equal(marketsForTier(ROBINHOOD_MAINNET_CHAIN_ID, "tradeable").length, 39);
   const quoted = marketsForTier(ROBINHOOD_MAINNET_CHAIN_ID, "quoted").map((m) => m.symbol);
-  assert.equal(quoted.length, 28);
+  assert.equal(quoted.length, 38);
   assert.deepEqual(quoted.slice(0, 4), ["UMC", "FUTU", "EWT", "SIMO"]);
   assert.deepEqual(marketsForTier(ROBINHOOD_MAINNET_CHAIN_ID, "listed"), []);
   const total = LISTING_TIERS.reduce((sum, tier) => sum + marketsForTier(ROBINHOOD_MAINNET_CHAIN_ID, tier).length, 0);

@@ -15,6 +15,13 @@ test("the last trade stands in for a missing side, and no price or no time is no
   assert.equal(parseReferenceQuote({ bid_price: "1", ask_price: "1", updated_at: "t" })?.changeBps, null);
 });
 
+test("a stub book after hours reads the last trade; a tight book stays the mid; a wide book with no last trade stays the mid", () => {
+  const stub = parseReferenceQuote({ bid_price: "82", ask_price: "555", last_trade_price: "85.345", previous_close: "83.92", updated_at: "t" });
+  assert.deepEqual(stub, { price: 85.345, changeBps: 170, asOf: "t" });
+  assert.equal(parseReferenceQuote({ bid_price: "54.12", ask_price: "54.75", last_trade_price: "54.6", updated_at: "t" })?.price, 54.435);
+  assert.equal(parseReferenceQuote({ bid_price: "82", ask_price: "555", updated_at: "t" })?.price, 318.5);
+});
+
 test("many symbols in one request; an unknown symbol, a null result or a failed request is absent, never a throw", async () => {
   const realFetch = globalThis.fetch;
   let url = "";

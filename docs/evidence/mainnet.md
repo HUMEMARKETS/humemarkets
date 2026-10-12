@@ -75,3 +75,7 @@ Signer: owner `0xd09D9c87ECfe008B4D6D3cEbeAd25103c16d9a7C`. New Chainlink feeds 
 | Launch caps for the three (`SetLaunchCaps.s.sol`, `SYMBOLS=DELL,USAR,SGOV`) | position 0.20 USDG, open interest 0.80 USDG, net 0.20 USDG, staleness 32,400 s | 12 tx, first `0x2b400991…dfaa`, last `0x06dd3465…9bbb` (block 86245822) |
 
 Read back: all three `isActive` true, `maxNetOpenInterest` 200000; `check-launch-limits.sh` ok for DELL, USAR, SGOV and the pool. Sizing: 39 x 0.20 x 50% = 3.9 of 4.00 USDG. Prices answer `MarketSessionClosed` outside the session (read on a Sunday), as designed. NFLX, AVGO, CRM, COST, BA, ADBE, QCOM are quoted rows with no feed. Web live on humemarkets.com with all ten (screens `mainnet-us10-live-375.png`, `mainnet-us10-live-1440.png`).
+
+## 2026-10-12: ten China and Greater China quoted rows, reference price fix
+
+TCEHY, XIACY, BYDDY, MPNGY, LKNCY, PONY, WB, IQ, EWH, CQQQ added as `quoted` rows (no token, no feed, never listed on chain), so there is no chain step and no transaction hash. Chainlink's chain-4663 directory has no new China-region feed and the asset list no new China-region token, so none can be tradeable. `parseReferenceQuote` now reads the last trade when the book is wider than 5% of its mid (BIDU had shown 318.50, +279%, from a stub book of bid 82 and ask 555; now 85.35, +1.70%). Screens: `mainnet-china10-markets-375.png`, `mainnet-china10-markets-1440.png`.

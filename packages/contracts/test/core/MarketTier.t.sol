@@ -53,11 +53,11 @@ contract MarketTierTest is Test {
     }
 
     /// @notice The real mainnet market file: 39 tradeable rows (36 from the live listing run, DELL, USAR and SGOV added
-    /// 2026-10-12) and 28 display-only rows (21 China, 7 US) that the listing run skips.
+    /// 2026-10-12) and 38 display-only rows (31 China, 7 US) that the listing run skips.
     function test_MainnetMarketFileHoldsTradeableAndQuotedRows() public view {
         string memory list = vm.readFile("deployments/robinhood_mainnet.markets.json");
         uint256 count = abi.decode(vm.parseJson(list, ".markets[*].symbol"), (string[])).length;
-        assertEq(count, 67, "the mainnet market file should hold 67 rows");
+        assertEq(count, 77, "the mainnet market file should hold 77 rows");
         uint256 tradeable;
         for (uint256 i; i < count; i++) {
             string memory path = string.concat(".markets[", vm.toString(i), "]");

@@ -87,7 +87,7 @@ export function validateMarkets(listings: readonly MarketListing[]): readonly Ma
 /// The first 39 are `tradeable`. The 35 equities are not a shortlist — `REFERENCE.md` Section 2 Finding 1 measured
 /// that only 33 of the 194 tokenized assets on this chain have a Chainlink feed at all; DELL, USAR and SGOV got one
 /// later. The seven US names at the end (NFLX, AVGO, CRM, COST, BA, ADBE, QCOM) are tokenized but have no feed yet, so
-/// they are `quoted` until Chainlink publishes one. Groups are display only: `china` (BABA, TSM, EWY), `commodities`
+/// they are `quoted` until Chainlink publishes one. Ten China and Greater China names (TCEHY to CQQQ) are quoted with no token at all. Groups are display only: `china` (BABA, TSM, EWY), `commodities`
 /// (SLV, USO) and `etf` (SPY, QQQ, SGOV) regroup markets that already trade, and the rest are `us-equities`. The `crypto` group
 /// (BTC, ETH, LINK, GLD) is feed-only: a perp needs only a feed (Finding 5), and these stay fresh at any hour.
 const robinhoodMainnetMarkets: readonly MarketListing[] = [
@@ -151,6 +151,16 @@ const robinhoodMainnetMarkets: readonly MarketListing[] = [
   { symbol: "FXI", name: "iShares China Large-Cap ETF", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted", logo: "https://financialmodelingprep.com/image-stock/FXI.png" },
   { symbol: "MCHI", name: "iShares MSCI China ETF", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted", logo: "https://financialmodelingprep.com/image-stock/MCHI.png" },
   { symbol: "ASHR", name: "Xtrackers Harvest CSI 300 China A-Shares ETF", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted", logo: "https://financialmodelingprep.com/image-stock/ASHR.png" },
+  { symbol: "TCEHY", name: "Tencent Holdings", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted", logo: "https://financialmodelingprep.com/image-stock/TCEHY.png" },
+  { symbol: "XIACY", name: "Xiaomi", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted", logo: "https://financialmodelingprep.com/image-stock/XIACY.png" },
+  { symbol: "BYDDY", name: "BYD Company", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted", logo: "https://financialmodelingprep.com/image-stock/BYDDY.png" },
+  { symbol: "MPNGY", name: "Meituan", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted", logo: "https://financialmodelingprep.com/image-stock/MPNGY.png" },
+  { symbol: "LKNCY", name: "Luckin Coffee", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted", logo: "https://financialmodelingprep.com/image-stock/LKNCY.png" },
+  { symbol: "PONY", name: "Pony AI", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted", logo: "https://financialmodelingprep.com/image-stock/PONY.png" },
+  { symbol: "WB", name: "Weibo", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted", logo: "https://financialmodelingprep.com/image-stock/WB.png" },
+  { symbol: "IQ", name: "iQIYI", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted", logo: "https://financialmodelingprep.com/image-stock/IQ.png" },
+  { symbol: "EWH", name: "iShares MSCI Hong Kong ETF", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted", logo: "https://financialmodelingprep.com/image-stock/EWH.png" },
+  { symbol: "CQQQ", name: "Invesco China Technology ETF", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted", logo: "https://financialmodelingprep.com/image-stock/CQQQ.png" },
   { symbol: "NFLX", name: "Netflix • Robinhood Token", token: "0xE0444EF8BF4eD74f74FD73686e2ddF4C1c5591E8", maxLeverage: 1, maintenanceBps: 750, group: "us-equities", tier: "quoted", logo: "https://financialmodelingprep.com/image-stock/NFLX.png" },
   { symbol: "AVGO", name: "Broadcom • Robinhood Token", token: "0x156E175DD063a8cE274C50654eF40e0032b3fbcF", maxLeverage: 1, maintenanceBps: 750, group: "us-equities", tier: "quoted", logo: "https://financialmodelingprep.com/image-stock/AVGO.png" },
   { symbol: "CRM", name: "Salesforce • Robinhood Token", token: "0xd95B44124e475743a7589e68F3D74008A5536D44", maxLeverage: 1, maintenanceBps: 750, group: "us-equities", tier: "quoted", logo: "https://financialmodelingprep.com/image-stock/CRM.png" },
