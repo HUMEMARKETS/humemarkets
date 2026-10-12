@@ -7,7 +7,7 @@
     "openInterestCapRaw": 800000,
     "maxNetOpenInterestRaw": 200000,
     "poolReserveRaw": 4000000,
-    "note": "maxNetOpenInterest x 36 markets (32 equities and commodities plus BTC, ETH, LINK, GLD) x a 50% one-sided move is 3,600,000, which the 4,000,000 pool reserve covers - the arithmetic check-launch-limits.sh runs with MAX_MOVE_BPS=5000. The position cap equals the net open-interest cap so a first trader can open a full position, and the per-market open-interest cap is 4x it so matched two-sided flow has room. The rest of the USDG stays in the owner wallet for the canary trades."
+    "note": "maxNetOpenInterest x 39 markets (35 equities, ETFs and commodities plus BTC, ETH, LINK, GLD) x a 50% one-sided move is 3,900,000, which the 4,000,000 pool reserve covers - the arithmetic check-launch-limits.sh runs with MAX_MOVE_BPS=5000. The position cap equals the net open-interest cap so a first trader can open a full position, and the per-market open-interest cap is 4x it so matched two-sided flow has room. The rest of the USDG stays in the owner wallet for the canary trades."
   },
   "session": {
     "openSecond": 48600,
@@ -24,7 +24,7 @@
       "LINK": 90000,
       "GLD": 90000
     },
-    "note": "9 hours, the in-session limit for all 32 US equity markets. It is a backstop, not the binding rule: the session floor in PriceValidator is what keeps an earlier session's price out, and inside a 420-minute session a price at the 90-minute pre-open grace reaches 510 minutes of age, so the floor always binds first. The limit cannot be tightened below the session: measured over 180 rounds per feed (up to 102 days, 4 to 74 sessions each), 9 of the 32 feeds printed nothing at all during a whole session, because a Chainlink feed here only moves on a 0.5% deviation or a 24-hour heartbeat. A limit short enough to catch a dead feed mid-session would halt a quiet market instead. The four crypto markets (BTC, ETH, LINK, GLD) have no session and carry 90000 s (25 h): their Chainlink feeds have a 24 h heartbeat and a 0.5% deviation, and measured ages at the weekend were up to 22 h."
+    "note": "9 hours, the in-session limit for all 35 US equity markets. It is a backstop, not the binding rule: the session floor in PriceValidator is what keeps an earlier session's price out, and inside a 420-minute session a price at the 90-minute pre-open grace reaches 510 minutes of age, so the floor always binds first. The limit cannot be tightened below the session: measured over 180 rounds per feed (up to 102 days, 4 to 74 sessions each), 9 of the 32 feeds printed nothing at all during a whole session, because a Chainlink feed here only moves on a 0.5% deviation or a 24-hour heartbeat. A limit short enough to catch a dead feed mid-session would halt a quiet market instead. The four crypto markets (BTC, ETH, LINK, GLD) have no session and carry 90000 s (25 h): their Chainlink feeds have a 24 h heartbeat and a 0.5% deviation, and measured ages at the weekend were up to 22 h."
   },
   "credit": {
     "maxLtvBps": 6000,

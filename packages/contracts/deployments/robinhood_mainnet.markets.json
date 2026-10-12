@@ -1,6 +1,6 @@
 {
   "chainId": 4663,
-  "note": "Underlying tokens from api.robinhood.com/rhj/assets, feeds from Chainlink's Robinhood Chain directory; checked on chain 2026-09-25. Leverage: 10x for SPY and QQQ, 3x (10% maintenance) for the most volatile names, 5x (7.5%) for the rest. Every entry carries its group (one of us-equities, china, commodities, etf, crypto, pons) and its listing tier (one of tradeable, quoted, listed): this file is the source of both, read through @hume/config, never written as a literal in app code. A tradeable entry must have a feed, and a quoted or listed entry must have none - that boundary is what stops a display price reaching settlement. Only tradeable entries are listed on chain by script/AddMarketsMainnet.s.sol. Seventeen China names (PDD to ASHR) have no tokenized asset on Robinhood Chain, so they carry no token: they are quoted rows only, priced from Robinhood's public quote endpoint, and are never listed on chain.",
+  "note": "Underlying tokens from api.robinhood.com/rhj/assets, feeds from Chainlink's Robinhood Chain directory; checked on chain 2026-09-25. Leverage: 10x for SPY and QQQ, 3x (10% maintenance) for the most volatile names, 5x (7.5%) for the rest. Every entry carries its group (one of us-equities, china, commodities, etf, crypto, pons) and its listing tier (one of tradeable, quoted, listed): this file is the source of both, read through @hume/config, never written as a literal in app code. A tradeable entry must have a feed, and a quoted or listed entry must have none - that boundary is what stops a display price reaching settlement. Only tradeable entries are listed on chain by script/AddMarketsMainnet.s.sol. Seventeen China names (PDD to ASHR) have no tokenized asset on Robinhood Chain, so they carry no token: they are quoted rows only, priced from Robinhood's public quote endpoint, and are never listed on chain. On 2026-10-12 DELL, USAR and SGOV (new Chainlink feeds) joined as tradeable; NFLX, AVGO, CRM, COST, BA, ADBE and QCOM are tokenized but have no feed yet, so they are quoted until Chainlink publishes one (promote by adding the feed and setting tier tradeable).",
   "markets": [
     {
       "symbol": "NVDA",
@@ -402,6 +402,39 @@
       "logo": "https://financialmodelingprep.com/image-stock/GLD.png"
     },
     {
+      "symbol": "DELL",
+      "name": "Dell • Robinhood Token",
+      "token": "0x941AE714EC6D8130c7B75d67160Ca08f1e7d11Dd",
+      "feed": "0x1C6c8cADBe02E19129c39dDB92281cE4c0bf206b",
+      "maxLeverage": 5,
+      "maintenanceBps": 750,
+      "group": "us-equities",
+      "tier": "tradeable",
+      "logo": "https://financialmodelingprep.com/image-stock/DELL.png"
+    },
+    {
+      "symbol": "USAR",
+      "name": "USA Rare Earth • Robinhood Token",
+      "token": "0xd917B029C761D264c6A312BBbcDA868658eF86a6",
+      "feed": "0xA994d3684e8400A6c8078226925779FdeE682DD9",
+      "maxLeverage": 3,
+      "maintenanceBps": 1000,
+      "group": "us-equities",
+      "tier": "tradeable",
+      "logo": "https://financialmodelingprep.com/image-stock/USAR.png"
+    },
+    {
+      "symbol": "SGOV",
+      "name": "iShares 0-3 Month Treasury Bond • Robinhood Token",
+      "token": "0x92FD66527192E3e61d4DDd13322Aa222DE86F9B5",
+      "feed": "0xa0DF4ee0fFf975306345875E3548Fcc519577A11",
+      "maxLeverage": 5,
+      "maintenanceBps": 750,
+      "group": "etf",
+      "tier": "tradeable",
+      "logo": "https://financialmodelingprep.com/image-stock/SGOV.png"
+    },
+    {
       "symbol": "UMC",
       "name": "United Microelectronics • Robinhood Token",
       "token": "0x0E6e67Ba88e7b5d9B67636A215c76779B948dE79",
@@ -593,6 +626,76 @@
       "group": "china",
       "tier": "quoted",
       "logo": "https://financialmodelingprep.com/image-stock/ASHR.png"
+    },
+    {
+      "symbol": "NFLX",
+      "name": "Netflix • Robinhood Token",
+      "token": "0xE0444EF8BF4eD74f74FD73686e2ddF4C1c5591E8",
+      "maxLeverage": 1,
+      "maintenanceBps": 750,
+      "group": "us-equities",
+      "tier": "quoted",
+      "logo": "https://financialmodelingprep.com/image-stock/NFLX.png"
+    },
+    {
+      "symbol": "AVGO",
+      "name": "Broadcom • Robinhood Token",
+      "token": "0x156E175DD063a8cE274C50654eF40e0032b3fbcF",
+      "maxLeverage": 1,
+      "maintenanceBps": 750,
+      "group": "us-equities",
+      "tier": "quoted",
+      "logo": "https://financialmodelingprep.com/image-stock/AVGO.png"
+    },
+    {
+      "symbol": "CRM",
+      "name": "Salesforce • Robinhood Token",
+      "token": "0xd95B44124e475743a7589e68F3D74008A5536D44",
+      "maxLeverage": 1,
+      "maintenanceBps": 750,
+      "group": "us-equities",
+      "tier": "quoted",
+      "logo": "https://financialmodelingprep.com/image-stock/CRM.png"
+    },
+    {
+      "symbol": "COST",
+      "name": "Costco • Robinhood Token",
+      "token": "0x4EA005168D7F09a7A0Ba9D1DEf21a479950E44C2",
+      "maxLeverage": 1,
+      "maintenanceBps": 750,
+      "group": "us-equities",
+      "tier": "quoted",
+      "logo": "https://financialmodelingprep.com/image-stock/COST.png"
+    },
+    {
+      "symbol": "BA",
+      "name": "Boeing • Robinhood Token",
+      "token": "0x4D21483a44Bf67a86b77E3dA301411880797D452",
+      "maxLeverage": 1,
+      "maintenanceBps": 750,
+      "group": "us-equities",
+      "tier": "quoted",
+      "logo": "https://financialmodelingprep.com/image-stock/BA.png"
+    },
+    {
+      "symbol": "ADBE",
+      "name": "Adobe • Robinhood Token",
+      "token": "0x232B8ed6377BE97813853B0Ac104c4Cda8378d1B",
+      "maxLeverage": 1,
+      "maintenanceBps": 750,
+      "group": "us-equities",
+      "tier": "quoted",
+      "logo": "https://financialmodelingprep.com/image-stock/ADBE.png"
+    },
+    {
+      "symbol": "QCOM",
+      "name": "Qualcomm • Robinhood Token",
+      "token": "0x0f17206447090e464C277571124dD2688E48AEA9",
+      "maxLeverage": 1,
+      "maintenanceBps": 750,
+      "group": "us-equities",
+      "tier": "quoted",
+      "logo": "https://financialmodelingprep.com/image-stock/QCOM.png"
     }
   ]
 }

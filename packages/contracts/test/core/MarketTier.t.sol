@@ -52,17 +52,17 @@ contract MarketTierTest is Test {
         assertTrue(harness.isTradeable(list, ".markets[0]"), "an entry with no tier key must still list");
     }
 
-    /// @notice The real mainnet market file: 36 tradeable rows (the live listing run) and 4 display-only
-    /// China rows (UMC, FUTU, EWT, SIMO) that the listing run skips.
+    /// @notice The real mainnet market file: 39 tradeable rows (36 from the live listing run, DELL, USAR and SGOV added
+    /// 2026-10-12) and 28 display-only rows (21 China, 7 US) that the listing run skips.
     function test_MainnetMarketFileHoldsTradeableAndQuotedRows() public view {
         string memory list = vm.readFile("deployments/robinhood_mainnet.markets.json");
         uint256 count = abi.decode(vm.parseJson(list, ".markets[*].symbol"), (string[])).length;
-        assertEq(count, 40, "the mainnet market file should hold 40 rows");
+        assertEq(count, 67, "the mainnet market file should hold 67 rows");
         uint256 tradeable;
         for (uint256 i; i < count; i++) {
             string memory path = string.concat(".markets[", vm.toString(i), "]");
             if (harness.isTradeable(list, path)) tradeable++;
         }
-        assertEq(tradeable, 36, "36 rows are tier tradeable");
+        assertEq(tradeable, 39, "39 rows are tier tradeable");
     }
 }

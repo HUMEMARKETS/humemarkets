@@ -46,7 +46,7 @@ interface Line {
   quote?: ReferenceQuote;
 }
 
-/// A stock with no feed on this venue (most of the China group): a reference price and its change, in the same
+/// A stock with no feed on this venue (most of the China group, and seven US stocks): a reference price and its change, in the same
 /// columns as a market and with no trade control. The list is the same on Testnet and on Mainnet.
 interface ReferenceLine {
   reference: true;

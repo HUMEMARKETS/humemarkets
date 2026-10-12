@@ -84,10 +84,11 @@ export function validateMarkets(listings: readonly MarketListing[]): readonly Ma
 /// arrangement as the addresses above it: regenerate with `pnpm --filter @hume/config sync:markets`
 /// after editing that file, and `markets.test.ts` fails if the two ever drift.
 ///
-/// All 36 are `tradeable`. The 32 equities are not a shortlist — `REFERENCE.md` Section 2 Finding 1 measured
-/// that only 33 of the 194 tokenized assets on this chain have a Chainlink feed at all, and GLD is the
-/// one unused. Groups are display only: `china` (BABA, TSM, EWY), `commodities` (SLV, USO) and `etf`
-/// (SPY, QQQ) regroup markets that already trade, and the rest are `us-equities`. The `crypto` group
+/// The first 39 are `tradeable`. The 35 equities are not a shortlist — `REFERENCE.md` Section 2 Finding 1 measured
+/// that only 33 of the 194 tokenized assets on this chain have a Chainlink feed at all; DELL, USAR and SGOV got one
+/// later. The seven US names at the end (NFLX, AVGO, CRM, COST, BA, ADBE, QCOM) are tokenized but have no feed yet, so
+/// they are `quoted` until Chainlink publishes one. Groups are display only: `china` (BABA, TSM, EWY), `commodities`
+/// (SLV, USO) and `etf` (SPY, QQQ, SGOV) regroup markets that already trade, and the rest are `us-equities`. The `crypto` group
 /// (BTC, ETH, LINK, GLD) is feed-only: a perp needs only a feed (Finding 5), and these stay fresh at any hour.
 const robinhoodMainnetMarkets: readonly MarketListing[] = [
   { symbol: "NVDA", name: "NVIDIA • Robinhood Token", token: "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC", feed: "0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable", logo: "https://financialmodelingprep.com/image-stock/NVDA.png" },
@@ -126,6 +127,9 @@ const robinhoodMainnetMarkets: readonly MarketListing[] = [
   { symbol: "ETH", name: "Ether", token: "0x78F3556b67E17Df817D51Ef5a990cDaF09E8d3A9", feed: "0x78F3556b67E17Df817D51Ef5a990cDaF09E8d3A9", maxLeverage: 5, maintenanceBps: 750, group: "crypto", tier: "tradeable", logo: "https://assets.coingecko.com/coins/images/279/small/ethereum.png", historySymbol: "ETH-USD" },
   { symbol: "LINK", name: "Chainlink", token: "0xe86e3422Aa9B5e8ee9f3E41a63975bC387A8bce9", feed: "0xe86e3422Aa9B5e8ee9f3E41a63975bC387A8bce9", maxLeverage: 5, maintenanceBps: 750, group: "crypto", tier: "tradeable", logo: "https://assets.coingecko.com/coins/images/877/small/chainlink-new-logo.png", historySymbol: "LINK-USD" },
   { symbol: "GLD", name: "SPDR Gold Trust • Robinhood Token", token: "0xC9a981FEE1F9DEc688bb123ccDeCc63D0deBFC4e", feed: "0x470A51258068043bd43dC0a56245625C9fE86eB0", maxLeverage: 5, maintenanceBps: 750, group: "crypto", tier: "tradeable", logo: "https://financialmodelingprep.com/image-stock/GLD.png" },
+  { symbol: "DELL", name: "Dell • Robinhood Token", token: "0x941AE714EC6D8130c7B75d67160Ca08f1e7d11Dd", feed: "0x1C6c8cADBe02E19129c39dDB92281cE4c0bf206b", maxLeverage: 5, maintenanceBps: 750, group: "us-equities", tier: "tradeable", logo: "https://financialmodelingprep.com/image-stock/DELL.png" },
+  { symbol: "USAR", name: "USA Rare Earth • Robinhood Token", token: "0xd917B029C761D264c6A312BBbcDA868658eF86a6", feed: "0xA994d3684e8400A6c8078226925779FdeE682DD9", maxLeverage: 3, maintenanceBps: 1000, group: "us-equities", tier: "tradeable", logo: "https://financialmodelingprep.com/image-stock/USAR.png" },
+  { symbol: "SGOV", name: "iShares 0-3 Month Treasury Bond • Robinhood Token", token: "0x92FD66527192E3e61d4DDd13322Aa222DE86F9B5", feed: "0xa0DF4ee0fFf975306345875E3548Fcc519577A11", maxLeverage: 5, maintenanceBps: 750, group: "etf", tier: "tradeable", logo: "https://financialmodelingprep.com/image-stock/SGOV.png" },
   { symbol: "UMC", name: "United Microelectronics • Robinhood Token", token: "0x0E6e67Ba88e7b5d9B67636A215c76779B948dE79", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted", logo: "https://financialmodelingprep.com/image-stock/UMC.png" },
   { symbol: "FUTU", name: "Futu Holdings • Robinhood Token", token: "0xeB30663bDFf0622Ef4e4E5cBb4E975F19f33f51D", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted", logo: "https://financialmodelingprep.com/image-stock/FUTU.png" },
   { symbol: "EWT", name: "iShares MSCI Taiwan Capped ETF • Robinhood Token", token: "0x1c690498150252222C275A5CEd69d3A6b1f52D5E", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted", logo: "https://financialmodelingprep.com/image-stock/EWT.png" },
@@ -147,6 +151,13 @@ const robinhoodMainnetMarkets: readonly MarketListing[] = [
   { symbol: "FXI", name: "iShares China Large-Cap ETF", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted", logo: "https://financialmodelingprep.com/image-stock/FXI.png" },
   { symbol: "MCHI", name: "iShares MSCI China ETF", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted", logo: "https://financialmodelingprep.com/image-stock/MCHI.png" },
   { symbol: "ASHR", name: "Xtrackers Harvest CSI 300 China A-Shares ETF", maxLeverage: 1, maintenanceBps: 750, group: "china", tier: "quoted", logo: "https://financialmodelingprep.com/image-stock/ASHR.png" },
+  { symbol: "NFLX", name: "Netflix • Robinhood Token", token: "0xE0444EF8BF4eD74f74FD73686e2ddF4C1c5591E8", maxLeverage: 1, maintenanceBps: 750, group: "us-equities", tier: "quoted", logo: "https://financialmodelingprep.com/image-stock/NFLX.png" },
+  { symbol: "AVGO", name: "Broadcom • Robinhood Token", token: "0x156E175DD063a8cE274C50654eF40e0032b3fbcF", maxLeverage: 1, maintenanceBps: 750, group: "us-equities", tier: "quoted", logo: "https://financialmodelingprep.com/image-stock/AVGO.png" },
+  { symbol: "CRM", name: "Salesforce • Robinhood Token", token: "0xd95B44124e475743a7589e68F3D74008A5536D44", maxLeverage: 1, maintenanceBps: 750, group: "us-equities", tier: "quoted", logo: "https://financialmodelingprep.com/image-stock/CRM.png" },
+  { symbol: "COST", name: "Costco • Robinhood Token", token: "0x4EA005168D7F09a7A0Ba9D1DEf21a479950E44C2", maxLeverage: 1, maintenanceBps: 750, group: "us-equities", tier: "quoted", logo: "https://financialmodelingprep.com/image-stock/COST.png" },
+  { symbol: "BA", name: "Boeing • Robinhood Token", token: "0x4D21483a44Bf67a86b77E3dA301411880797D452", maxLeverage: 1, maintenanceBps: 750, group: "us-equities", tier: "quoted", logo: "https://financialmodelingprep.com/image-stock/BA.png" },
+  { symbol: "ADBE", name: "Adobe • Robinhood Token", token: "0x232B8ed6377BE97813853B0Ac104c4Cda8378d1B", maxLeverage: 1, maintenanceBps: 750, group: "us-equities", tier: "quoted", logo: "https://financialmodelingprep.com/image-stock/ADBE.png" },
+  { symbol: "QCOM", name: "Qualcomm • Robinhood Token", token: "0x0f17206447090e464C277571124dD2688E48AEA9", maxLeverage: 1, maintenanceBps: 750, group: "us-equities", tier: "quoted", logo: "https://financialmodelingprep.com/image-stock/QCOM.png" },
 ];
 
 /// No market list is recorded for testnet: `deployments/robinhood_testnet.markets.json` does not
