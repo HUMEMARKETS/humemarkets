@@ -7,9 +7,10 @@ const oracleAbi = parseAbi([
   "function forcePrice(address asset, uint256 price)",
 ]);
 const pairAbi = parseAbi(["function collateralToken() view returns (address)"]);
-const chainlinkAbi = parseAbi([
+/// The router's primary source is `ChainlinkFeedAdapter`, not the aggregator: it answers `latestPrice` and `decimals`.
+const feedAbi = parseAbi([
   "function decimals() view returns (uint8)",
-  "function latestRoundData() view returns (uint80, int256 answer, uint256, uint256 updatedAt, uint80)",
+  "function latestPrice() view returns (uint256 price, uint256 updatedAt)",
 ]);
 const routerAbi = parseAbi(["function primarySource(bytes32 marketId) view returns (address)"]);
 
@@ -31,7 +32,7 @@ export interface CreditFeedDeps {
 }
 
 /// Copies the collateral's Chainlink price into the credit oracle, which has no feed of its own. Skips while the
-/// Chainlink answer is not newer than the oracle's price (the equity session is shut): the stored price then stays the
+/// feed's answer is not newer than the oracle's price (the equity session is shut): the stored price then stays the
 /// last close, and the oracle's own staleness limit (4 days on mainnet) decides when borrowing stops. The owner is the oracle's feeder.
 export function createCreditFeed(deps: CreditFeedDeps) {
   const { publicClient, walletClient, creditOracle } = deps;
@@ -43,16 +44,15 @@ export function createCreditFeed(deps: CreditFeedDeps) {
       publicClient.readContract({ address: deps.creditPair, abi: pairAbi, functionName: "collateralToken" }),
       publicClient.readContract({ address: deps.oracleRouter, abi: routerAbi, functionName: "primarySource", args: [deps.collateralMarketId] }),
     ]);
-    const [decimals, round] = await Promise.all([
-      publicClient.readContract({ address: feed, abi: chainlinkAbi, functionName: "decimals" }),
-      publicClient.readContract({ address: feed, abi: chainlinkAbi, functionName: "latestRoundData" }),
+    const [decimals, [answer, updatedAt]] = await Promise.all([
+      publicClient.readContract({ address: feed, abi: feedAbi, functionName: "decimals" }),
+      publicClient.readContract({ address: feed, abi: feedAbi, functionName: "latestPrice" }),
     ]);
-    const answer = round[1];
     if (answer <= 0n) return false;
     const next = answer * 10n ** BigInt(18 - decimals);
     const [price, lastUpdated] = await publicClient.readContract({ address: creditOracle, abi: oracleAbi, functionName: "prices", args: [collateral] });
     // The feed has not printed since the oracle was last written: pushing it again would only reset the stale clock.
-    if (round[3] <= lastUpdated && price !== 0n) return false;
+    if (updatedAt <= lastUpdated && price !== 0n) return false;
     if (next === price) return false;
 
     const maxBps = await publicClient.readContract({ address: creditOracle, abi: oracleAbi, functionName: "maxDeviationBps" });
