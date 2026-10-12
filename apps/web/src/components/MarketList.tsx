@@ -63,12 +63,18 @@ export function MarketFromUrl() {
   const setSymbol = useTerminal((state) => state.setSymbol);
   const requested = useSearchParams().get("market")?.toUpperCase();
   const picking = useRef(false);
+  // The URL is applied once per value. The URL keeps `?market=` after the user picks another market
+  // in the list, so applying it on every `symbol` change would snap the terminal back to it.
+  const applied = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     if (!markets?.length) return;
     const symbols = markets.map((market) => symbolOf(market.marketId));
     if (requested && symbols.includes(requested)) {
-      if (symbol !== requested) setSymbol(requested);
+      if (applied.current !== requested) {
+        applied.current = requested;
+        if (symbol !== requested) setSymbol(requested);
+      }
     } else if (!symbol && !picking.current) {
       // The first market that has a price right now: at the weekend the equities are closed and answer
       // `MarketSessionClosed`, so the terminal would open on a market with no price. Falls back to the first listed.
