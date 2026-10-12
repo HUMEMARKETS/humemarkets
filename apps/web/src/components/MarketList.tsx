@@ -1,8 +1,9 @@
 "use client";
 
-import { Num, Panel, Skeleton, cn, toneOf } from "@hume/ui";
+import { Num, Panel, Skeleton, cn, menuItem, toneOf } from "@hume/ui";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useDismiss } from "@/hooks/useDismiss";
 import { usePerpMarket, usePerpMarketConfig, usePerpMarkets, useReferenceQuotes } from "@/hooks/queries";
 import { fmtBps, fmtPrice } from "@/lib/format";
 import { firstPriced } from "@/lib/pricedDefault";
@@ -88,6 +89,54 @@ export function MarketFromUrl() {
   return null;
 }
 
+/// The group filter. A native `<select>` opens the browser's own list, which ignores the theme, so this
+/// is a menu in the NetworkMenu style: raised fill, hairline border, accent tint on hover and selection.
+function GroupMenu({ tabs, value, onChange }: { tabs: Array<{ id: GroupTab; label: string }>; value: GroupTab; onChange: (value: GroupTab) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const close = useCallback(() => setOpen(false), []);
+  useDismiss(ref, open, close);
+  const current = tabs.find((tab) => tab.id === value)?.label ?? "All";
+
+  return (
+    <div ref={ref} className="relative shrink-0">
+      <button
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={`Market group: ${current}. Open the group menu.`}
+        onClick={() => setOpen((state) => !state)}
+        className="flex h-9 items-center gap-2 rounded-control border border-line bg-raised px-2.5 text-sm font-medium text-text transition-colors duration-150 hover:border-accent hover:bg-accent-soft hover:text-accent-hover"
+      >
+        {current}
+        <svg aria-hidden="true" viewBox="0 0 10 6" className={cn("h-1.5 w-2.5 fill-none stroke-current transition-transform duration-150", open && "rotate-180")} strokeWidth="1.5">
+          <path d="M1 1l4 4 4-4" />
+        </svg>
+      </button>
+      {open ? (
+        <div role="menu" className="absolute left-0 top-full z-50 mt-1 max-h-[min(20rem,60vh)] w-44 overflow-y-auto rounded-panel border border-line bg-raised py-1">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              role="menuitemradio"
+              aria-checked={tab.id === value}
+              className={cn(menuItem, "flex min-h-11 w-full items-center justify-between px-3 text-left text-sm", tab.id === value && "bg-accent-soft font-medium")}
+              onClick={() => {
+                onChange(tab.id);
+                close();
+              }}
+            >
+              {tab.label}
+              {tab.id === value ? <span aria-hidden="true" className="size-1.5 rounded-full bg-accent" /> : null}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function MarketList() {
   const { data: markets, isPending, error } = usePerpMarkets();
   const [filter, setFilter] = useState("");
@@ -117,20 +166,7 @@ export function MarketList() {
     <Panel title="Markets" className="h-full">
       {symbols.length >= FILTER_FROM ? (
         <div className="flex gap-2 border-b border-line p-2">
-          {tabs.length > 2 ? (
-            <select
-              aria-label="Market group"
-              value={group}
-              onChange={(event) => setGroup(event.target.value as GroupTab)}
-              className="h-9 shrink-0 rounded-md border border-line bg-ground px-2 text-sm hover:border-accent-line focus:border-accent"
-            >
-              {tabs.map((tab) => (
-                <option key={tab.id} value={tab.id}>
-                  {tab.label}
-                </option>
-              ))}
-            </select>
-          ) : null}
+          {tabs.length > 2 ? <GroupMenu tabs={tabs} value={group} onChange={setGroup} /> : null}
           <input
             type="search"
             aria-label="Filter markets"
