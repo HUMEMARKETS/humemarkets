@@ -64,3 +64,14 @@ The explorer showed `AlphaMarketsVault` on the HumeVault proxy: the implementati
 ## Web: navigation icons and the features price tape (2026-10-11)
 
 Web only, no transaction. The 12 menu icons (dropdowns, mobile sheet) are hairline wireframe SVG in `NavIcon`; the landing bar and the footer use the up-right arrow. `/features` has one price tape that moves the perpetual, option and vault previews together (all labelled `SAMPLE DATA`); it pauses on hover, focus, off screen, in a hidden tab and under reduced motion. Gate: typecheck, lint, test, `check-hex.sh` pass. Screenshots: `screens/features-tape-1440.png`, `screens/features-tape-375.png`, `screens/landing-nav-1440.png`. Also synced `packages/config` to the HumeVault implementation `0x1DF1…5aED` (its test had been failing since the upgrade).
+
+## 2026-10-12: DELL, USAR, SGOV listed (39 markets), 7 US names quoted
+
+Signer: owner `0xd09D9c87ECfe008B4D6D3cEbeAd25103c16d9a7C`. New Chainlink feeds DELL `0x1C6c…06b`, USAR `0xA994…2DD9`, SGOV `0xa0DF…A11`.
+
+| Step | Result | Hashes |
+|---|---|---|
+| List DELL, USAR, SGOV (`AddMarketsMainnet.s.sol`, `scripts/list-mainnet-markets.sh`) | 39 markets on chain (was 36) | 18 tx, first `0xabb70d76…8b32`, last `0x97f9ad54…7dcc` (block 86244676) |
+| Launch caps for the three (`SetLaunchCaps.s.sol`, `SYMBOLS=DELL,USAR,SGOV`) | position 0.20 USDG, open interest 0.80 USDG, net 0.20 USDG, staleness 32,400 s | 12 tx, first `0x2b400991…dfaa`, last `0x06dd3465…9bbb` (block 86245822) |
+
+Read back: all three `isActive` true, `maxNetOpenInterest` 200000; `check-launch-limits.sh` ok for DELL, USAR, SGOV and the pool. Sizing: 39 x 0.20 x 50% = 3.9 of 4.00 USDG. Prices answer `MarketSessionClosed` outside the session (read on a Sunday), as designed. NFLX, AVGO, CRM, COST, BA, ADBE, QCOM are quoted rows with no feed. Web live on humemarkets.com with all ten (screens `mainnet-us10-live-375.png`, `mainnet-us10-live-1440.png`).
