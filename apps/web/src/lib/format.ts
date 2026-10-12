@@ -27,10 +27,9 @@ export function fmtUsd(value: bigint | undefined, decimals: number, digits = 2):
   return `$${fmt(value, decimals, digits)}`;
 }
 
-/// A whole-dollar figure, or "–" when there is none. A zero counts as none: the API answers "0" for a
-/// market with no trade in its events, and "$0" would read as a measured value.
+/// A whole-dollar figure, or "–" when the API gave none. A measured zero shows "$0".
 export function fmtUsdOrDash(value: bigint | undefined, decimals: number): string {
-  return value ? fmtUsd(value, decimals, 0) : "–";
+  return value === undefined ? "–" : fmtUsd(value, decimals, 0);
 }
 
 /// A signed figure shows no sign, and no colour, when it rounds to zero at the precision shown:

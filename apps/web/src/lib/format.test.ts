@@ -49,8 +49,8 @@ test("a figure that rounds to zero shows no sign and no colour", () => {
   assert.equal(signTone(undefined, 6), "muted");
 });
 
-test("a volume of zero or none is a dash, never $0", () => {
-  assert.equal(fmtUsdOrDash(0n, 6), "–");
+test("a measured zero volume is $0, a missing one is a dash", () => {
+  assert.equal(fmtUsdOrDash(0n, 6), "$0");
   assert.equal(fmtUsdOrDash(undefined, 6), "–");
   assert.equal(fmtUsdOrDash(5_000_000_000n, 6), "$5,000");
 });
