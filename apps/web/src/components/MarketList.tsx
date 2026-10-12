@@ -6,7 +6,9 @@ import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { usePerpMarket, usePerpMarketConfig, usePerpMarkets, useReferenceQuotes } from "@/hooks/queries";
 import { fmtBps, fmtPrice } from "@/lib/format";
 import { firstPriced } from "@/lib/pricedDefault";
-import { symbolOf, tradeBlocker } from "@/lib/market";
+import { env } from "@/lib/env";
+import { groupTabs, inGroup, symbolOf, tradeBlocker, type GroupTab } from "@/lib/market";
+import { groupForSymbol } from "@hume/config";
 import { useTerminal } from "@/stores/terminal";
 import { Change, fmtChange, useStatsFor } from "./Change";
 
@@ -89,10 +91,15 @@ export function MarketFromUrl() {
 export function MarketList() {
   const { data: markets, isPending, error } = usePerpMarkets();
   const [filter, setFilter] = useState("");
+  const [group, setGroup] = useState<GroupTab>("all");
   const list = useRef<HTMLUListElement>(null);
 
   const symbols = (markets ?? []).map((market) => symbolOf(market.marketId));
-  const shown = symbols.filter((value) => value.includes(filter.trim().toUpperCase()));
+  const rows = symbols.map((symbol) => ({ symbol, group: groupForSymbol(env.chainId, symbol) }));
+  const tabs = groupTabs(rows);
+  const shown = inGroup(rows, group)
+    .map((row) => row.symbol)
+    .filter((value) => value.includes(filter.trim().toUpperCase()));
 
   // Up and Down walk the list without leaving the keyboard; Enter or Space then picks the market.
   function onKeyDown(event: KeyboardEvent<HTMLUListElement>) {
@@ -109,14 +116,28 @@ export function MarketList() {
   return (
     <Panel title="Markets" className="h-full">
       {symbols.length >= FILTER_FROM ? (
-        <div className="border-b border-line p-2">
+        <div className="flex gap-2 border-b border-line p-2">
+          {tabs.length > 2 ? (
+            <select
+              aria-label="Market group"
+              value={group}
+              onChange={(event) => setGroup(event.target.value as GroupTab)}
+              className="h-9 shrink-0 rounded-md border border-line bg-ground px-2 text-sm hover:border-accent-line focus:border-accent"
+            >
+              {tabs.map((tab) => (
+                <option key={tab.id} value={tab.id}>
+                  {tab.label}
+                </option>
+              ))}
+            </select>
+          ) : null}
           <input
             type="search"
             aria-label="Filter markets"
             placeholder="Filter markets"
             value={filter}
             onChange={(event) => setFilter(event.target.value)}
-            className="h-9 w-full rounded-md border border-line bg-ground px-2 text-sm placeholder:text-faint hover:border-accent-line focus:border-accent"
+            className="h-9 min-w-0 flex-1 rounded-md border border-line bg-ground px-2 text-sm placeholder:text-faint hover:border-accent-line focus:border-accent"
           />
         </div>
       ) : null}
