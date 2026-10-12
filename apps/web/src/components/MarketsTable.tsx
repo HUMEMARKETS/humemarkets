@@ -4,7 +4,7 @@ import { groupForSymbol, marketsForTier, ROBINHOOD_MAINNET_CHAIN_ID } from "@hum
 import { Num, Panel, Skeleton, Tabs, cn, chip, toneOf } from "@hume/ui";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState, type ReactNode } from "react";
+import { Fragment, useMemo, useState, type ReactNode } from "react";
 import type { MarketStats, ReferenceQuote } from "@hume/sdk";
 import { isMarketGroup, type MarketConfig, type MarketGroup } from "@hume/types";
 import { useAllMarkets, useMarketOverviews, useMarketStats, useReferenceQuotes, useSettlementDecimals } from "@/hooks/queries";
@@ -59,6 +59,9 @@ interface ReferenceLine {
 type Row = Line | ReferenceLine;
 
 const isReference = (row: Row): row is ReferenceLine => "reference" in row;
+
+/// A market you can open a position on right now. A paused market or a quote-only stock sorts below these.
+const isTradable = (row: Row): boolean => !isReference(row) && row.market.active && (row.market.perpsEnabled || row.market.optionsEnabled);
 
 const REFERENCE_LISTINGS = marketsForTier(ROBINHOOD_MAINNET_CHAIN_ID, "quoted");
 
@@ -250,11 +253,15 @@ export function MarketsTable() {
     quote: quotes?.[listing.symbol],
   }));
   const rows: Row[] = [...lines, ...references];
-  const shown = sorted(
+  const matching = sorted(
     inGroup(rows, group).filter((row) => row.symbol.includes(filter.trim().toUpperCase())),
     sort.key,
     sort.direction,
   );
+  // Tradable on top, the rest below, each part in the chosen sort order.
+  const tradable = matching.filter(isTradable);
+  const notTradable = matching.filter((row) => !isTradable(row));
+  const shown = [...tradable, ...notTradable];
 
   function sortBy(key: SortKey) {
     setSort((current) => ({ key, direction: current.key === key && current.direction === "asc" ? "desc" : key === "asset" ? "asc" : "desc" }));
@@ -319,8 +326,21 @@ export function MarketsTable() {
               </tr>
             </thead>
             <tbody>
-              {shown.map((row) =>
-                isReference(row) ? <ReferenceRow key={row.symbol} line={row} /> : <MarketRow key={row.market.marketId} line={row} decimals={decimals} />,
+              {[tradable, notTradable].map((part, index) =>
+                part.length === 0 ? null : (
+                  <Fragment key={index}>
+                    {tradable.length > 0 && notTradable.length > 0 ? (
+                      <tr className="border-t border-line bg-ground">
+                        <th colSpan={columns.length + 1} scope="colgroup" className="px-3 py-2 text-left text-xs font-normal text-muted max-md:px-2">
+                          {index === 0 ? `Tradable · ${part.length}` : `Not tradable yet · ${part.length}`}
+                        </th>
+                      </tr>
+                    ) : null}
+                    {part.map((row) =>
+                      isReference(row) ? <ReferenceRow key={row.symbol} line={row} /> : <MarketRow key={row.market.marketId} line={row} decimals={decimals} />,
+                    )}
+                  </Fragment>
+                ),
               )}
             </tbody>
           </table>
@@ -334,7 +354,7 @@ export function MarketsTable() {
         <p className="border-t border-line p-3 text-down">The statistics service is not responding, so 24h change and volumes are hidden.</p>
       ) : (
         <p className="border-t border-line p-3 text-xs text-muted">
-          Volumes are for the last 24 hours, in USD. Options volume is the premium paid on new positions. A row with no trade buttons shows a reference price from Robinhood.
+          Volumes are for the last 24 hours, in USD. Options volume is the premium paid on new positions. Markets below “Not tradable yet” show a reference price from Robinhood and have no trade buttons.
         </p>
       )}
     </Panel>
