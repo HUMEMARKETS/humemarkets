@@ -1,12 +1,13 @@
 "use client";
 
-import { Num, Skeleton, Stat, cn, fieldBorder, toneOf } from "@hume/ui";
-import type { ReactNode } from "react";
+import { Num, Skeleton, Stat, chip, cn, fieldBorder, toneOf } from "@hume/ui";
+import { useEffect, type ReactNode } from "react";
 import { useNow } from "@/hooks/useNow";
 import { usePerpMarket, usePerpMarketConfig, usePerpMarkets, useReferenceQuotes } from "@/hooks/queries";
 import { fmtBps, fmtCountdown, fmtPrice } from "@/lib/format";
 import { symbolOf, tradeBlocker } from "@/lib/market";
 import { useTerminal } from "@/stores/terminal";
+import { useWatchlist } from "@/stores/watchlist";
 import { Change, fmtChange, useStatsFor } from "./Change";
 import { Term } from "./Term";
 
@@ -19,6 +20,9 @@ export function MarketHeader() {
   const { data: markets } = usePerpMarkets();
   const stats = useStatsFor(symbol);
   const now = useNow();
+  const { symbols: watched, ready, load, toggle } = useWatchlist();
+  useEffect(load, [load]);
+  const watching = watched.includes(symbol);
 
   const paused = tradeBlocker(usePerpMarketConfig(symbol)?.active);
   // The read failed for good (a stale feed, usually): say so with a dash, not a placeholder that never fills.
@@ -76,12 +80,20 @@ export function MarketHeader() {
           </>
         )}
       </div>
-      <dl className="grid grid-cols-2 gap-x-6 gap-y-2 sm:flex sm:flex-wrap sm:gap-x-8 lg:flex-1">
-        <Stat label="Index price">{figure(data && fmtPrice(data.indexPrice), "w-14")}</Stat>
-        <Stat label={<Term term="fundingRate">Funding rate</Term>}>{figure(data && fmtBps(data.funding.currentFundingRateBps), "w-14")}</Stat>
-        <Stat label="Next funding">{data && now ? fmtCountdown(data.funding.nextFundingTimestamp, now) : figure(undefined, "w-14")}</Stat>
-        <Stat label="Max leverage">{figure(data && `${data.risk.maxLeverage}x`, "w-10")}</Stat>
-      </dl>
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 lg:flex-1">
+        <dl className="grid grid-cols-2 gap-x-6 gap-y-2 sm:flex sm:flex-wrap sm:gap-x-5 xl:gap-x-4">
+          <Stat label="Index price">{figure(data && fmtPrice(data.indexPrice), "w-14")}</Stat>
+          <Stat label={<Term term="fundingRate">Funding rate</Term>}>{figure(data && fmtBps(data.funding.currentFundingRateBps), "w-14")}</Stat>
+          <Stat label="Next funding">{data && now ? fmtCountdown(data.funding.nextFundingTimestamp, now) : figure(undefined, "w-14")}</Stat>
+          <Stat label="Max leverage">{figure(data && `${data.risk.maxLeverage}x`, "w-10")}</Stat>
+        </dl>
+        {symbol && ready ? (
+          <button type="button" onClick={() => toggle(symbol)} className={cn(chip, "h-8 px-2.5 text-xs font-medium")}>
+            <span aria-hidden="true" className="mr-1">{watching ? "★" : "☆"}</span>
+            {watching ? "Remove from watchlist" : "Add to watchlist"}
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }

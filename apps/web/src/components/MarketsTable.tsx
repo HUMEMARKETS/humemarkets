@@ -4,7 +4,7 @@ import { groupForSymbol, marketsForTier, ROBINHOOD_MAINNET_CHAIN_ID } from "@hum
 import { Num, Panel, Skeleton, Tabs, cn, chip, toneOf } from "@hume/ui";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Fragment, useMemo, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { MarketStats, ReferenceQuote } from "@hume/sdk";
 import { isMarketGroup, type MarketConfig, type MarketGroup } from "@hume/types";
 import { useAllMarkets, useMarketOverviews, useMarketStats, useReferenceQuotes, useSettlementDecimals } from "@/hooks/queries";
@@ -12,9 +12,17 @@ import { env } from "@/lib/env";
 import { fmtBps, fmtPrice, fmtUsdOrDash } from "@/lib/format";
 import { groupTabs, inGroup, symbolOf, type GroupTab } from "@/lib/market";
 import { useTerminal } from "@/stores/terminal";
+import { useWatchlist } from "@/stores/watchlist";
 import { Change, fmtChange } from "./Change";
 import { MarketLogo } from "./MarketLogo";
 import { PanelState } from "./PanelState";
+
+type View = "markets" | "watchlist";
+
+const views: Array<{ id: View; label: string }> = [
+  { id: "markets", label: "Markets" },
+  { id: "watchlist", label: "Watchlist" },
+];
 
 type Overview = ReturnType<typeof useMarketOverviews>[number]["data"];
 
@@ -225,6 +233,9 @@ export function MarketsTable() {
   const params = useSearchParams();
   const [filter, setFilter] = useState(params.get("q") ?? "");
   const [sort, setSort] = useState<{ key: SortKey; direction: "asc" | "desc" }>({ key: "asset", direction: "asc" });
+  const [view, setView] = useState<View>(params.get("view") === "watchlist" ? "watchlist" : "markets");
+  const { symbols: watched, ready: watchReady, load } = useWatchlist();
+  useEffect(load, [load]);
   const groupParam = params.get("group") ?? "";
   const [group, setGroup] = useState<GroupTab>(isMarketGroup(groupParam) ? groupParam : "all");
 
@@ -252,7 +263,8 @@ export function MarketsTable() {
     group: listing.group,
     quote: quotes?.[listing.symbol],
   }));
-  const rows: Row[] = [...lines, ...references];
+  const everyRow: Row[] = [...lines, ...references];
+  const rows = view === "watchlist" ? everyRow.filter((row) => watched.includes(row.symbol)) : everyRow;
   const matching = sorted(
     inGroup(rows, group).filter((row) => row.symbol.includes(filter.trim().toUpperCase())),
     sort.key,
@@ -272,7 +284,7 @@ export function MarketsTable() {
   return (
     <Panel
       className="flex-1"
-      title="All markets"
+      title={<Tabs label="Markets sections" tabs={views} value={view} onChange={(next) => { setView(next); setGroup("all"); }} />}
       actions={
         symbols.length >= FILTER_FROM || filter ? (
           <input
@@ -288,12 +300,16 @@ export function MarketsTable() {
     >
       {tabs.length > 0 ? <Tabs tabs={tabs} value={group} onChange={setGroup} label="Market groups" className="border-b border-line px-2" /> : null}
       <div className="flex flex-1 flex-col overflow-x-auto">
-        {isPending ? (
+        {isPending || (view === "watchlist" && !watchReady) ? (
           <PanelState>Loading markets…</PanelState>
         ) : error ? (
           <PanelState>Could not read markets from the chain. Check NEXT_PUBLIC_RPC_URL.</PanelState>
         ) : markets.length === 0 ? (
           <PanelState>No markets are listed on the registry yet.</PanelState>
+        ) : view === "watchlist" && rows.length === 0 ? (
+          <PanelState action={<Link href="/perpetuals" className={linkClass}>Open the terminal</Link>}>
+            Your watchlist is empty. Open a market in the terminal and press Add to watchlist to pin it here.
+          </PanelState>
         ) : shown.length === 0 ? (
           <PanelState>No market matches “{filter}”.</PanelState>
         ) : (
