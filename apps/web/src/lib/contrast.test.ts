@@ -28,6 +28,11 @@ test("the light tokens keep the ratios recorded in globals.css", () => {
 });
 
 for (const [name, theme] of [["light", light], ["dark", dark]] as const) {
+  test(`${name}: the gold watchlist star clears 3:1 on every surface`, () => {
+    for (const surface of ["ground", "surface", "raised"]) {
+      assert.ok(ratio(theme.gold!, theme[surface]!) >= 3, `${name} gold on ${surface}: ${ratio(theme.gold!, theme[surface]!).toFixed(2)}`);
+    }
+  });
   test(`${name}: text, muted, faint and the accent ink clear 4.5:1 where they are used`, () => {
     for (const surface of ["ground", "surface", "raised"]) {
       for (const ink of ["text", "muted", "faint"]) {

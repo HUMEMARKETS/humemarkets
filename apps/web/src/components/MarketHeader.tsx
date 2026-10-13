@@ -11,6 +11,15 @@ import { useWatchlist } from "@/stores/watchlist";
 import { Change, fmtChange, useStatsFor } from "./Change";
 import { Term } from "./Term";
 
+/// The watchlist star in the palette's gold: an outline when the market is not pinned, filled when it is.
+function Star({ filled }: { filled: boolean }) {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="mr-1 size-4 text-gold" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth={2} strokeLinejoin="round">
+      <path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3 6.1 20.6l1.3-6.6L2.5 9.4l6.6-.8z" />
+    </svg>
+  );
+}
+
 /// The market's identity and the one number that matters most, the mark price, set large. Under
 /// 1280px the market list is not on screen, so a picker here takes its place.
 export function MarketHeader() {
@@ -89,7 +98,7 @@ export function MarketHeader() {
         </dl>
         {symbol && ready ? (
           <button type="button" onClick={() => toggle(symbol)} className={cn(chip, "h-8 px-2.5 text-xs font-medium")}>
-            <span aria-hidden="true" className="mr-1">{watching ? "★" : "☆"}</span>
+            <Star filled={watching} />
             {watching ? "Remove from watchlist" : "Add to watchlist"}
           </button>
         ) : null}

@@ -54,6 +54,8 @@
      chart fades them to an alpha for the volume bars. */
   --color-candle-up: #0e8a4a;
   --color-candle-down: #d63a3a;
+  /* The watchlist star only: gold, 3.72:1 on surface so the icon clears 3:1. */
+  --color-gold: #9a6f00;
   /* Fixed in both themes: the PNL card is always ivory, to match its share image. */
   --color-ivory: #f3f1ea;
   --color-charcoal: #0b0b0b;
@@ -110,6 +112,7 @@
   --color-accent-soft: #262523;
   --color-candle-up: #00e676;
   --color-candle-down: #ff3b4e;
+  --color-gold: #f0b90b;
   --shadow-lift: 0 20px 45px -20px rgb(0 0 0 / 0.7);
 }
 

@@ -93,6 +93,7 @@ table is `docs/evidence/ui-rework/palette.md`.
 | **Ivory**    | `#F3F1EA` | Light ground; dark-theme text and accent; the PNL card in both themes     |
 | **Charcoal** | `#0B0B0B` | Light-theme text and accent; dark ground                                 |
 | **Stone**    | `#A8A29A` | Dark-theme secondary text. Its light twin is `#57534C`                    |
+| **Gold**     | `#9A6F00` / `#F0B90B` | The watchlist star only (light / dark). 3.72:1 and 10.22:1 on surface; amended 2026-10-14 at the operator's request |
 
 #### Measured contrast, not assumed
 
