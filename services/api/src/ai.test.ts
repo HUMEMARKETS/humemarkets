@@ -257,6 +257,11 @@ test("explain_term reads the glossary and says so when a term is unknown", async
   await assert.rejects(tool.run({ term: "moon" }), /no glossary entry/);
 });
 
+test("get_candles with no candles in the window tells the model why, so it can say the market is closed", async () => {
+  const tool = makeTools(fakeDeps()).find((candidate) => candidate.name === "get_candles")!;
+  await assert.rejects(tool.run({ symbol: "NVDA", interval: "1h", limit: 6 }), /market may be closed or its feed stale/);
+});
+
 test("get_news without a news source says it is unavailable", async () => {
   const tool = makeTools(fakeDeps({ news: async () => undefined })).find((candidate) => candidate.name === "get_news")!;
   await assert.rejects(tool.run({ symbol: "NVDA" }), /unavailable/);

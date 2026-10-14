@@ -276,7 +276,7 @@ export function makeTools(deps: ToolDeps): Tool[] {
         const limit = Math.min(48, Math.max(1, Number.isInteger(args.limit) ? (args.limit as number) : 24));
         const bars = await candles(market.symbol, interval, limit);
         const last = bars[bars.length - 1];
-        if (!last) throw new ToolFailure("no candles yet");
+        if (!last) throw new ToolFailure("no candles in this window: the market may be closed or its feed stale; say so, or try interval 1d with a larger limit");
         const first = bars[0]!;
         return {
           source: "Hume index-price candles",
