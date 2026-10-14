@@ -111,12 +111,12 @@ export function AiAssistant() {
         title="Ask HUME AI"
         onClick={() => setOpen(true)}
         className={cn(
-          "group fixed right-4 z-20 grid size-14 place-items-center rounded-full bg-charcoal shadow-accent-glow ring-1 ring-gold/70 transition-shadow duration-150 hover:ring-2 hover:ring-gold focus-visible:ring-2 focus-visible:ring-gold lg:bottom-6 lg:right-6",
+          "group fixed right-4 z-20 grid size-16 place-items-center rounded-full bg-charcoal shadow-accent-glow ring-1 ring-gold/70 transition-shadow duration-150 hover:ring-2 hover:ring-gold focus-visible:ring-2 focus-visible:ring-gold lg:bottom-6 lg:right-6",
           barBelow ? "bottom-20" : "bottom-4",
         )}
       >
-        <Image src={mark} alt="" className="h-8 w-auto transition-transform duration-150 group-hover:rotate-90 group-focus-visible:rotate-90" />
-        <svg aria-hidden="true" viewBox="0 0 24 24" className="absolute -right-0.5 -top-0.5 size-4 fill-gold">
+        <Image src={mark} alt="" className="h-9 w-auto transition-transform duration-150 group-hover:rotate-90 group-focus-visible:rotate-90" />
+        <svg aria-hidden="true" viewBox="0 0 24 24" className="absolute -right-0.5 -top-0.5 size-5 fill-gold">
           <path d="M12 2C12.8 8 16 11.2 22 12C16 12.8 12.8 16 12 22C11.2 16 8 12.8 2 12C8 11.2 11.2 8 12 2Z" />
         </svg>
       </button>
