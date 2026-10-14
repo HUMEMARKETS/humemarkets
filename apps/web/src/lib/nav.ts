@@ -10,6 +10,7 @@ const copyOn = process.env.NEXT_PUBLIC_FEATURE_COPY_TRADING === "true";
 
 export const NAV: NavEntry[] = [
   { label: "Markets", href: "/markets", icon: "markets" },
+  { label: "News", href: "/news", icon: "news" },
   {
     label: "Trade",
     items: [

@@ -1,6 +1,7 @@
 "use client";
 
 import { Num, Skeleton, Stat, chip, cn, fieldBorder, toneOf } from "@hume/ui";
+import Link from "next/link";
 import { useEffect, type ReactNode } from "react";
 import { useNow } from "@/hooks/useNow";
 import { usePerpMarket, usePerpMarketConfig, usePerpMarkets, useReferenceQuotes } from "@/hooks/queries";
@@ -101,6 +102,11 @@ export function MarketHeader() {
             <Star filled={watching} />
             {watching ? "Remove from watchlist" : "Add to watchlist"}
           </button>
+        ) : null}
+        {symbol ? (
+          <Link href={`/news?ticker=${encodeURIComponent(symbol)}`} className={cn(chip, "h-8 px-2.5 text-xs font-medium")}>
+            News
+          </Link>
         ) : null}
       </div>
     </div>

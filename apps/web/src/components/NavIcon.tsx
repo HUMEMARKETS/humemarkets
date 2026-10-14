@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 export type NavIconName =
   | "markets"
+  | "news"
   | "perpetuals"
   | "options"
   | "strategies"
@@ -29,6 +30,13 @@ const ICONS: Record<NavIconName, ReactNode> = {
       <ellipse cx="8" cy="8" rx="2.75" ry="6.25" />
       <path d="M1.75 8h12.5" />
       {node(12.4, 3.6)}
+    </>
+  ),
+  news: (
+    <>
+      <path d="M2 2.5h9.5v11H4a2 2 0 0 1-2-2zM11.5 5.5H14v6a2 2 0 0 1-2 2" />
+      <path d="M4.5 5.5h4M4.5 8h4" />
+      {node(7.5, 10.9)}
     </>
   ),
   perpetuals: (
