@@ -47,6 +47,7 @@ for (const [label, width, height] of [["1440", 1440, 900], ["375", 375, 812]]) {
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.locator("main").evaluate((main) => main.scrollTo(0, 0));
 
+  if (width >= 640) check(`@${label} updated time is US Eastern`, /Updated \d\d:\d\d E[SD]T/.test(await page.locator("main").innerText()));
   const first = rows.first();
   check(`@${label} first row href is an API item url`, (await first.getAttribute("href")) === api.items[0].url);
   check(`@${label} link opens a new tab safely`, (await first.getAttribute("target")) === "_blank" && /noopener/.test(await first.getAttribute("rel")) && /noreferrer/.test(await first.getAttribute("rel")));

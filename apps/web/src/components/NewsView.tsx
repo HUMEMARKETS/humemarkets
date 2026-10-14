@@ -8,7 +8,7 @@ import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useNow } from "@/hooks/useNow";
 import { useOnline } from "@/hooks/useOnline";
-import { fmtAgo, groupByDay, initials, trending, type NewsItem } from "@/lib/news";
+import { fmtAgo, fmtClock, groupByDay, initials, trending, type NewsItem } from "@/lib/news";
 import { ArrowIcon } from "./ArrowIcon";
 import { PanelState } from "./PanelState";
 
@@ -37,8 +37,6 @@ const newsQuery = (ticker: string) => ({
   refetchInterval: 5 * 60_000,
   retry: 1,
 });
-
-const clock = (iso: string) => new Date(iso).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
 
 /// A market with a perpetual. A display-only market (PDD, JD) has no terminal to open, so it earns no badge.
 const hasPerp = (symbol: string) => marketForSymbol(ROBINHOOD_MAINNET_CHAIN_ID, symbol)?.tier === "tradeable";
@@ -211,7 +209,7 @@ export function NewsView() {
           }}
         />
         <div className="flex items-center gap-3">
-          {news.data ? <p className="hidden text-xs text-muted sm:block">Updated {clock(news.data.updatedAt)}</p> : null}
+          {news.data ? <p className="hidden text-xs text-muted sm:block">Updated {fmtClock(news.data.updatedAt)}</p> : null}
           <input
             type="search"
             aria-label="Filter by ticker"
@@ -237,7 +235,7 @@ export function NewsView() {
 
       {news.data && (news.isError || !online) ? (
         <div role="status" className="flex flex-wrap items-center justify-between gap-2 rounded-panel border border-line bg-raised px-3 py-1 text-xs text-muted">
-          <p>{online ? `Showing news from ${clock(news.data.updatedAt)}. The refresh failed, so this list may be old.` : `You are offline. Showing news from ${clock(news.data.updatedAt)}.`}</p>
+          <p>{online ? `Showing news from ${fmtClock(news.data.updatedAt)}. The refresh failed, so this list may be old.` : `You are offline. Showing news from ${fmtClock(news.data.updatedAt)}.`}</p>
           {online ? retry : null}
         </div>
       ) : null}

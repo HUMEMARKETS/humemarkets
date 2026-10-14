@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { marketsForChain, ROBINHOOD_MAINNET_CHAIN_ID, type NewsFeed } from "@hume/config";
-import { buildMatchers, collectNews, dayLabel, dedupe, fmtAgo, groupByDay, hashId, initials, isArticleUrl, findPreviewImage, matchTickers, parseFeed, plainText, safeUrl, trending, type NewsItem } from "./news";
+import { buildMatchers, collectNews, dayLabel, dedupe, fmtAgo, fmtClock, groupByDay, hashId, initials, isArticleUrl, findPreviewImage, matchTickers, parseFeed, plainText, safeUrl, trending, type NewsItem } from "./news";
 
 const matchers = buildMatchers(marketsForChain(ROBINHOOD_MAINNET_CHAIN_ID));
 const tickers = (title: string) => matchTickers(title, matchers);
@@ -138,4 +138,10 @@ test("the preview image comes from og:image, else twitter:image, as an https add
   assert.equal(findPreviewImage('<meta property="og:image" content="http://img.example.com/insecure.jpg"><meta name="twitter:image" content="https://img.example.com/ok.jpg">', page), "https://img.example.com/ok.jpg");
   assert.equal(findPreviewImage('<meta property="og:image" content="javascript:alert(1)">', page), undefined);
   assert.equal(findPreviewImage("<html>no meta here</html>", page), undefined);
+});
+
+test("the clock reads US Eastern time, in summer and in winter", () => {
+  assert.equal(fmtClock("2026-10-14T13:47:00Z"), "09:47 EDT");
+  assert.equal(fmtClock("2026-12-14T14:47:00Z"), "09:47 EST");
+  assert.equal(fmtClock("2026-10-14T03:05:00Z"), "23:05 EDT");
 });

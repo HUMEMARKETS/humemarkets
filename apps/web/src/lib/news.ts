@@ -245,3 +245,8 @@ export function findPreviewImage(html: string, pageUrl: string): string | undefi
   }
   return undefined;
 }
+
+/// A time of day in US Eastern time, the market's clock, whatever the reader's own: "09:47 EDT" in summer, "09:47 EST" in winter.
+export function fmtClock(iso: string): string {
+  return new Date(iso).toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", hour12: false, timeZoneName: "short" });
+}

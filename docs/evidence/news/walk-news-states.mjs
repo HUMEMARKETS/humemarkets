@@ -73,7 +73,7 @@ for (const [label, width, height] of [["1440", 1440, 900], ["375", 375, 812]]) {
     // The page refreshes every five minutes: jump the page clock to the next refresh.
     await page.clock.fastForward(5 * 60_000 + 1000);
     await page.clock.resume();
-    await page.getByText(/Showing news from \d\d:\d\d\. The refresh failed/).waitFor({ timeout: 20000 });
+    await page.getByText(/Showing news from \d\d:\d\d E[SD]T\. The refresh failed/).waitFor({ timeout: 20000 });
     check(`@${label} stale: banner with the time, rows kept`, (await rows(page).count()) === before, `${before} rows`);
     await page.screenshot({ path: `${OUT}/news-stale-${label}.png` });
     state.mode = "ok";
