@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createServer, type Server } from "node:http";
 import { test } from "node:test";
 import Fastify from "fastify";
-import { DailyCap, HISTORY_MESSAGES, LlmError, MAX_ROUNDS, MESSAGE_CHARS, SYSTEM_PROMPT, computeLevels, makeTools, parseChat, runChat, withRiskLine, type Bar, type ToolDeps } from "./ai.js";
+import { DailyCap, HISTORY_MESSAGES, LlmError, MAX_ROUNDS, MESSAGE_CHARS, SYSTEM_PROMPT, computeLevels, makeTools, parseChat, runChat, withRiskLine, type Bar, type Tool, type ToolDeps } from "./ai.js";
 import { registerAiRoutes } from "./routes/ai.js";
 import { RateLimiter } from "./rfq.js";
 
@@ -92,6 +92,7 @@ test("the system prompt is the constant text, the open market is a user message"
     assert.deepEqual(system, { role: "system", content: SYSTEM_PROMPT });
     assert.equal(context!.role, "user");
     assert.match(context!.content!, /NVDA-PERP/);
+    assert.match(context!.content!, /Reply in English/);
   } finally {
     await llm.close();
   }
@@ -136,6 +137,21 @@ test("the time budget is shared by all rounds, not given to each", async () => {
   const llm = await fakeLlm((_, index) => ({ ...(index < 3 ? call("list_markets", {}) : say("late")), delayMs: 60 }));
   try {
     await assert.rejects(runChat({ config: { baseUrl: llm.url, apiKey: "k", model: "m" }, tools: makeTools(fakeDeps()), request: ask("slow"), timeoutMs: 150 }), (error: LlmError) => error.kind === "timeout");
+  } finally {
+    await llm.close();
+  }
+});
+
+test("the tool calls of one round run together, and answer in the model's order", async () => {
+  const slow = (name: string): Tool => ({ name, description: "", parameters: { type: "object" }, run: async () => { await new Promise((resolve) => setTimeout(resolve, 150)); return { source: name, asOf: "2026-10-14T00:00:00.000Z", data: name }; } });
+  const two: Reply = { body: { choices: [{ message: { role: "assistant", content: null, tool_calls: [{ id: "a", type: "function", function: { name: "one", arguments: "{}" } }, { id: "b", type: "function", function: { name: "two", arguments: "{}" } }] } }] } };
+  const llm = await fakeLlm((_, index) => (index === 0 ? two : say("Done.\nRisk: x.")));
+  try {
+    const started = Date.now();
+    const result = await runChat({ config: { baseUrl: llm.url, apiKey: "k", model: "m" }, tools: [slow("one"), slow("two")], request: ask("both") });
+    assert.ok(Date.now() - started < 280, "two 150 ms tools took under 280 ms");
+    assert.deepEqual(llm.seen[1]!.messages.filter((message) => message.role === "tool").map((message) => (message as { tool_call_id?: string }).tool_call_id), ["a", "b"]);
+    assert.deepEqual(result.sources.map((source) => source.tool), ["one", "two"]);
   } finally {
     await llm.close();
   }
@@ -192,9 +208,20 @@ test("the system prompt carries every rule", () => {
     ["levels come from the tool", /get_levels.*Do not compute your own/s],
     ["ends with a risk line", /End every analysis with one line that starts with "Risk:"/],
     ["refuses transactions", /Refuse to execute, place, sign or prepare any transaction/],
-    ["replies in the user's language", /Indonesian or English/],
+    ["replies in the user's language, all of it", /Indonesian or English.*one language for the whole reply/s],
+    ["a why question reads the news and never guesses a cause", /why a market moved.*get_news.*Never guess a cause/s],
   ];
   for (const [name, pattern] of rules) assert.match(SYSTEM_PROMPT, pattern, name);
+});
+
+test("the reply language is set by the code from the user's words", async () => {
+  const llm = await fakeLlm(() => say("Halo.\nRisiko: x."));
+  try {
+    await runChat({ config: { baseUrl: llm.url, apiKey: "k", model: "m" }, tools: makeTools(fakeDeps()), request: ask("Kenapa NVDA turun hari ini?") });
+    assert.match(llm.seen[0]!.messages[1]!.content!, /Reply in Indonesian/);
+  } finally {
+    await llm.close();
+  }
 });
 
 test("an answer with no risk line gets one, in the user's language", () => {
@@ -202,6 +229,8 @@ test("an answer with no risk line gets one, in the user's language", () => {
   assert.match(withRiskLine("NVDA turun.", "Kenapa NVDA turun hari ini?"), /\nRisiko: /);
   const done = "NVDA fell.\nRisk: it can fall more.";
   assert.equal(withRiskLine(done, "Why?"), done);
+  const inline = "NVDA fell. Source: Hume oracle. Risk: it can fall more.";
+  assert.equal(withRiskLine(inline, "Why?"), inline, "a risk line on the same line as the source is not added twice");
 });
 
 // ---------------------------------------------------------------------------------------------------------------

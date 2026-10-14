@@ -1,0 +1,20 @@
+{
+  "question": "Why is NVDA down today?",
+  "answer": "NVDA closed lower, down 3.35% to a last close of 220.86. The price feed is stale, so no live quote is available. Recent headlines note a broad tech sell‑off after hot inflation data, with Nvidia listed among the losers. This market‑wide pressure appears to be the primary driver of the decline; no company‑specific news was found.\n\nSupport and resistance levels can be viewed via the levels tool for precise price zones.\n\nRisk: The drop may continue if inflation concerns persist, but a rebound is possible if broader market sentiment improves.",
+  "sources": [
+    {
+      "tool": "get_market_snapshot",
+      "source": "Robinhood reference price (last close)",
+      "asOf": "2026-10-14T18:07:59Z"
+    },
+    {
+      "tool": "get_news",
+      "source": "Publisher RSS feeds via Hume Market News",
+      "asOf": "2026-10-14T18:03:34.773Z"
+    }
+  ],
+  "tools": [
+    "Robinhood reference price (last close)",
+    "Publisher RSS feeds via Hume Market News"
+  ]
+}

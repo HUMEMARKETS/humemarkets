@@ -51,7 +51,10 @@ export function AiAssistant() {
   const [draft, setDraft] = useState("");
   const panel = useRef<HTMLDivElement>(null);
   const end = useRef<HTMLDivElement>(null);
-  const messages = chat.symbol === symbol ? chat.messages : [];
+  // Another market starts a fresh conversation. The market list arriving (empty symbol to NVDA) does not: a question asked
+  // while it loads stays.
+  const sameMarket = !chat.symbol || !symbol || chat.symbol === symbol;
+  const messages = sameMarket ? chat.messages : [];
 
   const openSheet = () => {
     clearTimeout(closing.current);
@@ -67,9 +70,13 @@ export function AiAssistant() {
   };
   useEffect(() => () => clearTimeout(closing.current), []);
 
+  const lastSymbol = useRef(symbol);
   useEffect(() => {
-    setError(undefined);
-    setDraft("");
+    if (lastSymbol.current && symbol && lastSymbol.current !== symbol) {
+      setError(undefined);
+      setDraft("");
+    }
+    lastSymbol.current = symbol;
   }, [symbol]);
 
   // Modal: focus moves in, Tab wraps, Escape closes and focus goes back to the button.
@@ -114,7 +121,7 @@ export function AiAssistant() {
     setError(undefined);
     try {
       const { answer, sources } = await askAi(symbol, thread);
-      setChat((current) => (current.symbol === symbol ? { symbol, messages: [...current.messages, { role: "assistant", content: answer, sources }] } : current));
+      setChat((current) => (!current.symbol || !symbol || current.symbol === symbol ? { symbol: current.symbol || symbol, messages: [...current.messages, { role: "assistant", content: answer, sources }] } : current));
     } catch (caught) {
       setError(caught instanceof AiError ? caught : new AiError("unavailable"));
     } finally {

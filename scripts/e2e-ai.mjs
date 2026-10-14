@@ -31,12 +31,23 @@ const check = (name, ok, detail = "") => {
   console.log(`${ok ? "PASS" : "FAIL"}  ${name}${detail ? `  (${detail})` : ""}`);
 };
 
-/// Every number in a text, as values: "1,234.50" is 1234.5, "05" is 5.
-export const numbersIn = (text) => [...text.matchAll(/\d[\d,]*(?:\.\d+)?/g)].map((match) => Number(match[0].replace(/,/g, "")));
+/// Every number in a text, as values. "1,234.50" is 1234.5 (a comma before exactly three digits is a thousands comma) and
+/// "3,42" is 3.42 (an Indonesian decimal comma). "05" is 5.
+export const numbersIn = (text) =>
+  [...text.matchAll(/\d+(?:,\d{3})*(?:[.,]\d+)?/g)].map((match) => {
+    const raw = match[0];
+    return Number(/,\d{3}(?!\d)/.test(raw) ? raw.replace(/,/g, "") : raw.replace(",", "."));
+  });
+
+/// A timestamp is read as its parts (year, month, day, hour, minute, second), so a model may write "17:58" for
+/// "17:58:25.349Z" without that counting as a new number.
+const ISO = /(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?Z?/g;
 
 /// Numbers in the answer that no tool payload contains. Empty means every figure came from the data.
 export function foreignNumbers(answer, payloads) {
-  const known = new Set(numbersIn(JSON.stringify(payloads)));
+  const text = JSON.stringify(payloads);
+  const known = new Set(numbersIn(text.replace(ISO, " ")));
+  for (const stamp of text.matchAll(ISO)) for (const part of stamp.slice(1)) known.add(Number(part));
   return [...new Set(numbersIn(answer))].filter((value) => !known.has(value));
 }
 
@@ -143,6 +154,7 @@ async function real(browser, size) {
   });
   await chip.click();
   const dialog = page.getByRole("dialog", { name: "HUME AI" });
+  await dialog.getByText("Reading NVDA-PERP").waitFor({ timeout: 60_000 });
   await ask(page, QUESTION);
   await dialog.getByRole("status").waitFor();
   await shot(page, "real-loading", width);

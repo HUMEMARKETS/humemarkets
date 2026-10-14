@@ -1,0 +1,20 @@
+{
+  "question": "Why is NVDA down today?",
+  "answer": "NVDA closed lower, down 3.38% to a last close of 220.81. The market snapshot is stale, so no live price is available (Source: Robinhood reference price, as of 2026‑10‑14 18:07:52 UTC). Recent news includes a headline noting “Tech Hit Amid Hot Inflation Data; Nvidia Among The Losers” (Source: Yahoo Finance, as of 2026‑10‑14 16:54:52 UTC). This suggests that hotter‑than‑expected inflation data pressured technology stocks, contributing to NVDA’s decline.  \n\nRisk: The move may reflect broader macro‑economic concerns; further data releases could add volatility.",
+  "sources": [
+    {
+      "tool": "get_market_snapshot",
+      "source": "Robinhood reference price (last close)",
+      "asOf": "2026-10-14T18:07:52Z"
+    },
+    {
+      "tool": "get_news",
+      "source": "Publisher RSS feeds via Hume Market News",
+      "asOf": "2026-10-14T18:03:34.773Z"
+    }
+  ],
+  "tools": [
+    "Robinhood reference price (last close)",
+    "Publisher RSS feeds via Hume Market News"
+  ]
+}

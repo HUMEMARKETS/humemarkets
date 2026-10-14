@@ -14,10 +14,12 @@ export interface AiRouteOptions {
 }
 
 /// The default model must support tool calling on the provider's free tier with no card. Groq documents tool use for
-/// every model it hosts, and `llama-3.3-70b-versatile` is on its free plan. Gemini's OpenAI-compatible endpoint
-/// (`https://generativelanguage.googleapis.com/v1beta/openai`, model `gemini-2.5-flash`) works the same way.
+/// every model it hosts. `llama-3.3-70b-versatile` was the first choice and Groq withdrew it (a 404 `model_not_found`
+/// on 2026-10-15, absent from `GET /models`), so the default is `openai/gpt-oss-120b`, which Groq's tool-use page lists
+/// and which is on its free plan. Gemini's OpenAI-compatible endpoint (`https://generativelanguage.googleapis.com/v1beta/openai`,
+/// model `gemini-2.5-flash`) works the same way. A provider can retire a model: `LLM_MODEL` changes it with no deploy.
 const DEFAULT_BASE_URL = "https://api.groq.com/openai/v1";
-const DEFAULT_MODEL = "llama-3.3-70b-versatile";
+const DEFAULT_MODEL = "openai/gpt-oss-120b";
 
 function llmFromEnv(): LlmConfig | null {
   const apiKey = process.env.LLM_API_KEY;

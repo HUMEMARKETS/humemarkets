@@ -41,11 +41,11 @@ that can write, sign or send. It needs no wallet. Cost: $0 by construction (free
 ## Set it up (about 3 minutes, $0)
 
 1. **Groq** (default). Sign up at console.groq.com with an email, **do not add a card**. Create an API key.
-   Groq documents tool use for every model it hosts; `llama-3.3-70b-versatile` is the default.
+   Groq documents tool use for every model it hosts; `openai/gpt-oss-120b` is the default (`llama-3.3-70b-versatile` was the first choice and Groq withdrew it: a 404 `model_not_found`, so the sheet said "could not answer right now". `GET https://api.groq.com/openai/v1/models` with your key lists what your account can use; set `LLM_MODEL` if the default is ever retired).
    Gemini works too: a key from aistudio.google.com (free tier, no billing), `LLM_BASE_URL`
    `https://generativelanguage.googleapis.com/v1beta/openai`, `LLM_MODEL` `gemini-2.5-flash`.
    Free-tier limits change; read the provider's page before raising `AI_DAILY_CAP`. A free tier also has a tokens-per-minute
-   cap (6,000 to 12,000 on Groq's 70B model); tool results are kept small for that reason.
+   cap (8,000 on Groq's gpt-oss models; a burst of questions in one minute is answered "busy"); tool results are kept small for that reason.
 2. **Railway**, the `api` service of the `testnet` environment first: set `LLM_API_KEY` (the key), `NEWS_API_URL`
    (`https://testnet.humemarkets.com`; on mainnet `https://www.humemarkets.com`). Optional: `LLM_BASE_URL`, `LLM_MODEL`,
    `AI_DAILY_CAP`. Never set the key in Vercel, a file or a commit.
@@ -65,3 +65,14 @@ MODE=real API_URL=https://<testnet api> PLAYWRIGHT_DIR=~/.npm/_npx/<hash> node s
 It asks "Why is NVDA down today?" on NVDA-PERP at 375 px and 1440 px, checks each source line has a UTC time, the answer
 ends with a risk line, and **every number in the answer is a number in a tool payload**. `MODE=states` (default) scripts
 the API answer in the browser and shows every state of the sheet without a key.
+
+## Try it on this machine
+
+```bash
+export LLM_API_KEY=<your free key>      # this shell only
+bash scripts/ai-local.sh up             # scratch Postgres, API on :4000, web on :3000
+# open http://localhost:3000/perpetuals?market=NVDA and click the round HUME button
+bash scripts/ai-local.sh down
+```
+
+If the sheet says "could not answer right now", read `.ai-local/api.log`: the line `api: ai provider answered <status>` names the provider's status (404 means a wrong model or base URL, 401 a bad key, 429 a quota).
