@@ -161,8 +161,8 @@ export function AiAssistant() {
     <>
       {/* Sticky in the bottom-right corner of every app page: the HUME ring, large, with no disc behind it, and a small gold
           spark. A soft shade keeps the pale metal readable on the light theme. On a phone terminal it sits above the pinned
-          bar. While the panel is open the panel takes its place and the button steps out of the way. The ring turns a quarter
-          on hover or focus, 150 ms, none under reduced motion. */}
+          bar. While the panel is open the panel takes its place and the button steps out of the way. The ring grows a little
+          on hover or focus, 200 ms, none under reduced motion. */}
       <button
         type="button"
         aria-label="Ask HUME AI"
@@ -177,7 +177,7 @@ export function AiAssistant() {
           open ? "pointer-events-none opacity-0" : "opacity-100",
         )}
       >
-        <Image src={mark} alt="" className="h-14 w-auto drop-shadow-lg transition-transform duration-150 group-hover:rotate-90 group-focus-visible:rotate-90" />
+        <Image src={mark} alt="" className="h-14 w-auto drop-shadow-lg transition-[scale] duration-200 ease-out group-hover:scale-110 group-focus-visible:scale-110" />
         <svg aria-hidden="true" viewBox="0 0 24 24" className="absolute right-0 top-0 size-5 fill-gold drop-shadow-md">
           <path d={SPARK} />
         </svg>
