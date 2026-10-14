@@ -11,17 +11,16 @@ import { AiError, askAi, failureText, fmtSourceTime, isLimit, suggestions, type 
 
 const SPARK = "M12 2C12.8 8 16 11.2 22 12C16 12.8 12.8 16 12 22C11.2 16 8 12.8 2 12C8 11.2 11.2 8 12 2Z";
 
-/// The HUME ring in a small charcoal disc: the assistant's face beside each answer.
-function Avatar() {
-  return (
-    <span aria-hidden="true" className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-full bg-charcoal ring-1 ring-gold/60">
-      <Image src={mark} alt="" className="h-4 w-auto" />
-    </span>
-  );
+/// The HUME ring on its own, no disc behind it: the assistant's face beside each answer. The soft shade keeps the pale
+/// metal readable on the light theme.
+function Avatar({ large = false }: { large?: boolean }) {
+  return <Image src={mark} alt="" aria-hidden="true" className={cn("mt-0.5 w-auto shrink-0 drop-shadow-md", large ? "h-7" : "h-5")} />;
 }
 
 /// The panel's slide and the backdrop's fade last this long: the 200 ms ceiling of docs/UI_CONTRACT.md Section 8.
 const MOTION_MS = 200;
+
+const HEAD_BUTTON = "grid size-9 min-w-[44px] place-items-center rounded-full text-muted transition-colors duration-150 hover:bg-raised hover:text-text";
 
 /// "Ask HUME AI": a chat sheet, laid out like Gemini: a greeting and suggestion tiles when empty, the user's words in a
 /// soft pill on the right, answers as plain text beside the assistant's face with source chips under them, and a rounded
@@ -29,8 +28,11 @@ const MOTION_MS = 200;
 /// without a wallet (the not-connected state needs no handling: there is nothing here that signs or sends). Answers
 /// arrive whole, after a loading row; nothing is typed out. Every answer lists its sources with the time of the data.
 ///
-/// It opens with a short slide (up from the bottom on a phone, in from the right on a wide screen) and a fade, and closes
-/// the same way. Under reduced motion both collapse to nothing (globals.css).
+/// It opens as a mini panel in the bottom-right corner, about a third of the full height, and grows to the full panel
+/// (a full-height sheet on a phone, a tall card on a wide screen) with the expand button. The minimize button folds it
+/// back into the round button; the conversation stays. Nothing else on the page is dimmed or blurred, and the page stays
+/// usable behind it: only a shadow lifts the panel. Opening, closing and resizing take 200 ms; under reduced motion they
+/// collapse to nothing (globals.css).
 ///
 /// States: loading (the row), empty (greeting and suggested questions), error and limit reached (a sentence and a way
 /// on), success (the answer and its sources), and the line "Hume AI can make mistakes, not financial advice" which is always on screen.
@@ -43,6 +45,11 @@ export function AiAssistant() {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [shown, setShown] = useState(false);
+  // Mini is the default size; the choice is kept while the page stays open.
+  const [full, setFull] = useState(false);
+  // An answer arrived while the panel was minimized.
+  const [unread, setUnread] = useState(false);
+  const openRef = useRef(false);
   const closing = useRef<ReturnType<typeof setTimeout>>(undefined);
   // The conversation belongs to a market: opening another market starts a fresh one.
   const [chat, setChat] = useState<{ symbol: string; messages: AiMessage[] }>({ symbol, messages: [] });
@@ -60,10 +67,13 @@ export function AiAssistant() {
     clearTimeout(closing.current);
     setMounted(true);
     setOpen(true);
+    openRef.current = true;
+    setUnread(false);
     // Two frames: the closed look is painted first, so the change to the open look is a transition.
     requestAnimationFrame(() => requestAnimationFrame(() => setShown(true)));
   };
   const closeSheet = () => {
+    openRef.current = false;
     setOpen(false);
     setShown(false);
     closing.current = setTimeout(() => setMounted(false), MOTION_MS);
@@ -79,37 +89,34 @@ export function AiAssistant() {
     lastSymbol.current = symbol;
   }, [symbol]);
 
-  // Modal: focus moves in, Tab wraps, Escape closes and focus goes back to the button.
+  // Not a modal: the page behind stays live. Focus moves into the panel on open and back to the button on minimize, and
+  // Escape (pressed inside the panel) minimizes. Only the full sheet on a phone covers the page, so only it holds the scroll.
   useEffect(() => {
     if (!open) return;
     const opener = document.activeElement as HTMLElement | null;
     panel.current?.focus();
+    // Escape minimizes when focus is in the panel or nowhere (a disabled input drops it); a key pressed in the page's own
+    // fields is theirs.
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") return closeSheet();
-      if (event.key !== "Tab" || !panel.current) return;
-      const items = [...panel.current.querySelectorAll<HTMLElement>("button:not(:disabled), input:not(:disabled)")].filter((el) => el.offsetParent !== null);
-      const first = items[0];
-      const last = items[items.length - 1];
-      if (!first || !last) return;
       const here = document.activeElement;
-      if (event.shiftKey && (here === first || here === panel.current)) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && here === last) {
-        event.preventDefault();
-        first.focus();
-      }
+      if (event.key === "Escape" && (!here || here === document.body || panel.current?.contains(here))) closeSheet();
     };
     document.addEventListener("keydown", onKey);
-    const main = document.getElementById("main");
-    const previous = main?.style.overflow ?? "";
-    if (main) main.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", onKey);
-      if (main) main.style.overflow = previous;
       opener?.focus();
     };
   }, [open]);
+  useEffect(() => {
+    if (!open || !full) return;
+    const phone = window.matchMedia("(max-width: 1023px)").matches;
+    const main = document.getElementById("main");
+    const previous = main?.style.overflow ?? "";
+    if (phone && main) main.style.overflow = "hidden";
+    return () => {
+      if (main) main.style.overflow = previous;
+    };
+  }, [open, full]);
 
   useEffect(() => {
     end.current?.scrollIntoView({ block: "end" });
@@ -122,6 +129,7 @@ export function AiAssistant() {
     try {
       const { answer, sources } = await askAi(symbol, thread);
       setChat((current) => (!current.symbol || !symbol || current.symbol === symbol ? { symbol: current.symbol || symbol, messages: [...current.messages, { role: "assistant", content: answer, sources }] } : current));
+      if (!openRef.current) setUnread(true);
     } catch (caught) {
       setError(caught instanceof AiError ? caught : new AiError("unavailable"));
     } finally {
@@ -151,182 +159,192 @@ export function AiAssistant() {
 
   return (
     <>
-      {/* Sticky in the bottom-right corner of every app page, a round button with the HUME mark. It is charcoal in both
-          themes because the mark is pale metal. On a phone terminal it sits above the pinned bar; the order sheet (z-30)
-          and this sheet (z-50) both cover it. The ring turns a quarter on hover or focus, 150 ms, none under reduced motion. */}
+      {/* Sticky in the bottom-right corner of every app page: the HUME ring, large, with no disc behind it, and a small gold
+          spark. A soft shade keeps the pale metal readable on the light theme. On a phone terminal it sits above the pinned
+          bar. While the panel is open the panel takes its place and the button steps out of the way. The ring turns a quarter
+          on hover or focus, 150 ms, none under reduced motion. */}
       <button
         type="button"
         aria-label="Ask HUME AI"
         aria-haspopup="dialog"
+        aria-hidden={open}
+        tabIndex={open ? -1 : 0}
         title="Ask HUME AI"
         onClick={openSheet}
         className={cn(
-          "group fixed right-4 z-20 grid size-16 place-items-center rounded-full bg-charcoal shadow-accent-glow ring-1 ring-gold/70 transition-shadow duration-150 hover:ring-2 hover:ring-gold focus-visible:ring-2 focus-visible:ring-gold lg:bottom-6 lg:right-6",
+          "group fixed right-3 z-20 grid min-h-14 min-w-24 place-items-center rounded-full transition-opacity duration-200 ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold lg:bottom-6 lg:right-6",
           barBelow ? "bottom-20" : "bottom-4",
+          open ? "pointer-events-none opacity-0" : "opacity-100",
         )}
       >
-        <Image src={mark} alt="" className="h-9 w-auto transition-transform duration-150 group-hover:rotate-90 group-focus-visible:rotate-90" />
-        <svg aria-hidden="true" viewBox="0 0 24 24" className="absolute -right-0.5 -top-0.5 size-5 fill-gold">
+        <Image src={mark} alt="" className="h-14 w-auto drop-shadow-lg transition-transform duration-150 group-hover:rotate-90 group-focus-visible:rotate-90" />
+        <svg aria-hidden="true" viewBox="0 0 24 24" className="absolute right-0 top-0 size-5 fill-gold drop-shadow-md">
           <path d={SPARK} />
         </svg>
+        {unread ? <span aria-label="New answer" className="absolute left-1 top-1 size-3 rounded-full bg-gold ring-2 ring-ground" /> : null}
       </button>
       {mounted
         ? createPortal(
-            <div className="fixed inset-0 z-50 flex items-end lg:items-stretch lg:justify-end">
-              <button
-                type="button"
-                tabIndex={-1}
-                aria-label="Close HUME AI"
-                onClick={closeSheet}
-                className={cn("absolute inset-0 hidden cursor-default bg-ground/70 transition-opacity duration-200 ease-out lg:block", shown ? "opacity-100" : "opacity-0")}
-              />
-              <div
-                ref={panel}
-                tabIndex={-1}
-                role="dialog"
-                aria-modal="true"
-                aria-label="HUME AI"
-                className={cn(
-                  "relative flex h-dvh w-full flex-col bg-surface outline-none transition-[translate,opacity] duration-200 ease-out lg:m-3 lg:h-[calc(100dvh-1.5rem)] lg:w-[30rem] lg:rounded-panel lg:border lg:border-line",
-                  shown ? "max-lg:translate-y-0 lg:translate-x-0 lg:opacity-100" : "max-lg:translate-y-full lg:translate-x-6 lg:opacity-0",
-                )}
-              >
-                <div className="flex shrink-0 items-center justify-between gap-2 px-4 py-3">
-                  <div className="flex min-w-0 items-center gap-2.5">
-                    <Avatar />
-                    <div className="min-w-0">
-                      <h2 className="font-display text-lg font-semibold leading-tight">HUME AI</h2>
-                      <p className="truncate text-xs text-muted">{symbol ? `Reading ${symbol}-PERP` : "Any listed market"}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {empty ? null : (
-                      <Button variant="secondary" size="sm" onClick={newChat} disabled={pending}>
-                        New chat
-                      </Button>
-                    )}
-                    <button type="button" aria-label="Close HUME AI" onClick={closeSheet} className="grid size-9 min-w-[44px] place-items-center rounded-full text-muted transition-colors duration-150 hover:bg-raised hover:text-text">
-                      <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
-                        <path d="M6 6l12 12M18 6L6 18" />
-                      </svg>
-                    </button>
+            <div
+              ref={panel}
+              tabIndex={-1}
+              role="dialog"
+              aria-label="HUME AI"
+              className={cn(
+                "fixed z-50 flex flex-col bg-surface shadow-float outline-none transition-[height,width,right,bottom,translate,opacity] duration-200 ease-out",
+                full
+                  ? "bottom-0 right-0 h-dvh w-screen lg:bottom-3 lg:right-3 lg:h-[calc(100dvh-1.5rem)] lg:w-[30rem] lg:rounded-panel lg:border lg:border-line"
+                  : cn(
+                      "right-3 h-[max(21rem,calc(100dvh/3))] w-[calc(100vw-1.5rem)] rounded-panel border border-line lg:bottom-6 lg:right-6 lg:h-[max(21rem,calc((100dvh-1.5rem)/3))] lg:w-[24rem]",
+                      barBelow ? "bottom-20" : "bottom-4",
+                    ),
+                shown ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0",
+              )}
+            >
+              <div className="flex shrink-0 items-center justify-between gap-1 px-3 py-2.5">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <Avatar large />
+                  <div className="min-w-0">
+                    <h2 className="font-display text-lg font-semibold leading-tight">HUME AI</h2>
+                    <p className="truncate text-xs text-muted">{symbol ? `Reading ${symbol}-PERP` : "Any listed market"}</p>
                   </div>
                 </div>
+                <div className="flex shrink-0 items-center">
+                  {empty ? null : (
+                    <button type="button" aria-label="New chat" title="New chat" onClick={newChat} disabled={pending} className={cn(HEAD_BUTTON, "disabled:opacity-40")}>
+                      <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 5v14M5 12h14" />
+                      </svg>
+                    </button>
+                  )}
+                  <button type="button" aria-label={full ? "Make HUME AI smaller" : "Make HUME AI bigger"} title={full ? "Smaller" : "Bigger"} aria-pressed={full} onClick={() => setFull((value) => !value)} className={HEAD_BUTTON}>
+                    <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                      {full ? <path d="M10 4v6H4M14 20v-6h6" /> : <path d="M4 10V4h6M20 14v6h-6" />}
+                    </svg>
+                  </button>
+                  <button type="button" aria-label="Minimize HUME AI" title="Minimize" onClick={closeSheet} className={HEAD_BUTTON}>
+                    <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+                      <path d="M5 12h14" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
 
                 <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-3" aria-live="polite">
-                  {empty ? (
-                    <div className="flex min-h-full flex-col justify-center gap-6 py-6">
-                      <div>
+                {empty ? (
+                  <div className={cn("flex min-h-full flex-col justify-center", full ? "gap-6 py-6" : "gap-3 py-1")}>
+                    <div>
+                      {full ? (
                         <p className="flex items-center gap-2 font-display text-xl text-muted">
                           <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5 fill-gold">
                             <path d={SPARK} />
                           </svg>
                           Hello
                         </p>
-                        <h3 className="mt-1 font-display text-3xl font-semibold leading-tight">{symbol ? `What do you want to know about ${symbol}?` : "What do you want to know?"}</h3>
-                        <p className="mt-3 text-sm text-muted">Answers use Hume&apos;s own prices, charts and news, and say where each number came from.</p>
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        {suggestions(symbol || "this market").map((question) => (
-                          <button
-                            key={question}
-                            type="button"
-                            onClick={() => ask(question)}
-                            className="flex min-h-11 w-full items-center justify-between gap-3 whitespace-normal rounded-panel bg-raised px-4 py-3 text-left text-sm transition-colors duration-150 hover:bg-accent-soft hover:text-accent-hover"
-                          >
-                            {question}
-                            <svg aria-hidden="true" viewBox="0 0 24 24" className="size-4 shrink-0 text-muted" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M5 12h14M13 6l6 6-6 6" />
-                            </svg>
-                          </button>
-                        ))}
-                      </div>
+                      ) : null}
+                      <h3 className={cn("font-display font-semibold leading-tight", full ? "mt-1 text-3xl" : "text-base")}>{symbol ? `What do you want to know about ${symbol}?` : "What do you want to know?"}</h3>
+                      {full ? <p className="mt-3 text-sm text-muted">Answers use Hume&apos;s own prices, charts and news, and say where each number came from.</p> : null}
                     </div>
-                  ) : (
-                    <div className="flex flex-col gap-6 pt-2">
-                      {messages.map((message, index) =>
-                        message.role === "user" ? (
-                          <p key={index} className="ml-auto max-w-[85%] whitespace-pre-wrap break-words rounded-panel bg-raised px-4 py-2.5 text-sm">
-                            {message.content}
-                          </p>
-                        ) : (
-                          <div key={index} className="flex gap-3">
-                            <Avatar />
-                            <div className="min-w-0 flex-1">
-                              <p className="whitespace-pre-wrap break-words text-[0.95rem] leading-relaxed">{message.content}</p>
-                              {message.sources?.length ? (
-                                <>
-                                  <p className="mt-3 text-xs text-muted">Sources</p>
-                                  <ul className="mt-1 flex flex-wrap gap-1.5">
-                                    {message.sources.map((source) => (
-                                      <li key={`${source.tool}-${source.source}-${source.asOf}`} className="break-words rounded-control border border-line bg-raised px-2 py-1 text-xs text-muted">
-                                        {source.source} · {fmtSourceTime(source.asOf)}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </>
-                              ) : null}
-                            </div>
-                          </div>
-                        ),
-                      )}
-
-                      {pending ? (
-                        <div role="status" className="flex gap-3">
+                    <div className="flex flex-col gap-2">
+                      {suggestions(symbol || "this market").map((question) => (
+                        <button
+                          key={question}
+                          type="button"
+                          onClick={() => ask(question)}
+                          className={cn("flex min-h-11 w-full items-center justify-between gap-3 whitespace-normal rounded-panel bg-raised px-4 text-left text-sm transition-colors duration-150 hover:bg-accent-soft hover:text-accent-hover", full ? "py-3" : "py-2")}
+                        >
+                          {question}
+                          <svg aria-hidden="true" viewBox="0 0 24 24" className="size-4 shrink-0 text-muted" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M5 12h14M13 6l6 6-6 6" />
+                          </svg>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-6 pt-2">
+                    {messages.map((message, index) =>
+                      message.role === "user" ? (
+                        <p key={index} className="ml-auto max-w-[85%] whitespace-pre-wrap break-words rounded-panel bg-raised px-4 py-2.5 text-sm">
+                          {message.content}
+                        </p>
+                      ) : (
+                        <div key={index} className="flex gap-3">
                           <Avatar />
-                          <div className="min-w-0 flex-1 space-y-2.5 pt-1">
-                            <p className="text-sm text-muted">HUME AI is reading the market…</p>
-                            <Skeleton className="block h-3 w-full" />
-                            <Skeleton className="block h-3 w-5/6" />
-                            <Skeleton className="block h-3 w-2/3" />
+                          <div className="min-w-0 flex-1">
+                            <p className="whitespace-pre-wrap break-words text-[0.95rem] leading-relaxed">{message.content}</p>
+                            {message.sources?.length ? (
+                              <>
+                                <p className="mt-3 text-xs text-muted">Sources</p>
+                                <ul className="mt-1 flex flex-wrap gap-1.5">
+                                  {message.sources.map((source) => (
+                                    <li key={`${source.tool}-${source.source}-${source.asOf}`} className="break-words rounded-control border border-line bg-raised px-2 py-1 text-xs text-muted">
+                                      {source.source} · {fmtSourceTime(source.asOf)}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </>
+                            ) : null}
                           </div>
                         </div>
-                      ) : null}
+                      ),
+                    )}
 
-                      {error ? (
-                        <div role="alert" className="flex flex-col items-start gap-2 rounded-panel border border-down bg-down-soft px-4 py-3 text-sm">
-                          {isLimit(error.failure) ? <p className="font-medium">Limit reached</p> : null}
-                          <p>{failureText(error.failure, error.retryAfterSeconds)}</p>
-                          {stuck ? null : (
-                            <Button variant="secondary" size="sm" onClick={() => void run(messages)} disabled={pending}>
-                              Try again
-                            </Button>
-                          )}
+                    {pending ? (
+                      <div role="status" className="flex gap-3">
+                        <Avatar />
+                        <div className="min-w-0 flex-1 space-y-2.5 pt-1">
+                          <p className="text-sm text-muted">HUME AI is reading the market…</p>
+                          <Skeleton className="block h-3 w-full" />
+                          <Skeleton className="block h-3 w-5/6" />
+                          <Skeleton className="block h-3 w-2/3" />
                         </div>
-                      ) : null}
-                    </div>
-                  )}
-                  <div ref={end} />
-                </div>
+                      </div>
+                    ) : null}
 
-                <div className="shrink-0 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-1">
-                  <form onSubmit={onSubmit} className={cn(fieldBorder, "flex items-center gap-2 rounded-full border bg-raised py-1.5 pl-5 pr-1.5")}>
-                    <label className="sr-only" htmlFor="hume-ai-input">
-                      Your question
-                    </label>
-                    <input
-                      id="hume-ai-input"
-                      value={draft}
-                      onChange={(event) => setDraft(event.target.value)}
-                      maxLength={500}
-                      disabled={stuck}
-                      autoComplete="off"
-                      placeholder={stuck ? "Not available right now" : symbol ? `Ask about ${symbol}` : "Ask a question"}
-                      className="h-10 min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-faint disabled:opacity-60"
-                    />
-                    <button
-                      type="submit"
-                      aria-label="Ask"
-                      disabled={stuck || pending || draft.trim() === ""}
-                      className="grid size-10 min-w-[44px] shrink-0 place-items-center rounded-full bg-accent text-accent-ink transition-colors duration-150 hover:bg-accent-hover active:bg-accent-press disabled:cursor-not-allowed disabled:bg-line disabled:text-faint"
-                    >
-                      <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 19V5M5 12l7-7 7 7" />
-                      </svg>
-                    </button>
-                  </form>
-                  <p className="mt-2 text-center text-xs text-muted">Hume AI can make mistakes, not financial advice</p>
-                </div>
+                    {error ? (
+                      <div role="alert" className="flex flex-col items-start gap-2 rounded-panel border border-down bg-down-soft px-4 py-3 text-sm">
+                        {isLimit(error.failure) ? <p className="font-medium">Limit reached</p> : null}
+                        <p>{failureText(error.failure, error.retryAfterSeconds)}</p>
+                        {stuck ? null : (
+                          <Button variant="secondary" size="sm" onClick={() => void run(messages)} disabled={pending}>
+                            Try again
+                          </Button>
+                        )}
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+                <div ref={end} />
+              </div>
+
+              <div className="shrink-0 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-1">
+                <form onSubmit={onSubmit} className={cn(fieldBorder, "flex items-center gap-2 rounded-full border bg-raised py-1.5 pl-5 pr-1.5")}>
+                  <label className="sr-only" htmlFor="hume-ai-input">
+                    Your question
+                  </label>
+                  <input
+                    id="hume-ai-input"
+                    value={draft}
+                    onChange={(event) => setDraft(event.target.value)}
+                    maxLength={500}
+                    disabled={stuck}
+                    autoComplete="off"
+                    placeholder={stuck ? "Not available right now" : symbol ? `Ask about ${symbol}` : "Ask a question"}
+                    className="h-10 min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-faint disabled:opacity-60"
+                  />
+                  <button
+                    type="submit"
+                    aria-label="Ask"
+                    disabled={stuck || pending || draft.trim() === ""}
+                    className="grid size-10 min-w-[44px] shrink-0 place-items-center rounded-full bg-accent text-accent-ink transition-colors duration-150 hover:bg-accent-hover active:bg-accent-press disabled:cursor-not-allowed disabled:bg-line disabled:text-faint"
+                  >
+                    <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 19V5M5 12l7-7 7 7" />
+                    </svg>
+                  </button>
+                </form>
+                <p className="mt-2 text-center text-xs text-muted">Hume AI can make mistakes, not financial advice</p>
               </div>
             </div>,
             document.body,

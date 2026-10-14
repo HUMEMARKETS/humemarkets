@@ -142,6 +142,53 @@ for (const width of [375, 1440]) {
   if (SHOTS) await page.screenshot({ path: `${SHOTS}/ai-dark-375.png` });
   await context.close();
 }
+// 12. layout: mini size and corner, no dimming, shadow, expand, minimize, unread dot, logo without a disc
+for (const [width, height] of [[1440, 900], [375, 812]]) {
+  const { context, page, chip } = await open(width, "/perpetuals?market=NVDA");
+  let release;
+  await page.route("**/v1/ai/chat", async (route) => { await new Promise((r) => (release = r)); await route.fulfill(json(200, { answer: "Slow answer.\nRisk: x.", sources: SRC })); });
+  const fab = await chip.evaluate((el) => { const img = el.querySelector("img"); return { bg: getComputedStyle(el).backgroundColor, shadow: getComputedStyle(el).boxShadow, ring: getComputedStyle(el).borderTopWidth, imgH: img.getBoundingClientRect().height }; });
+  check(`${width}: button has no background colour, no ring, and a larger logo`, fab.bg === "rgba(0, 0, 0, 0)" && fab.shadow === "none" && fab.imgH >= 48, JSON.stringify(fab));
+  const bodyBefore = await page.evaluate(() => getComputedStyle(document.body).opacity + getComputedStyle(document.body).filter);
+  await chip.click();
+  await page.getByText("Reading NVDA-PERP").waitFor({ timeout: 60_000 });
+  await page.waitForTimeout(400);
+  const dialog = page.getByRole("dialog", { name: "HUME AI" });
+  const mini = await dialog.evaluate((el) => { const r = el.getBoundingClientRect(); return { h: r.height, w: r.width, right: window.innerWidth - r.right, bottom: window.innerHeight - r.bottom, shadow: getComputedStyle(el).boxShadow }; });
+  const ratio = mini.h / height;
+  check(`${width}: mini panel is about a third of the height`, ratio > 0.28 && ratio < 0.5, `${Math.round(mini.h)} px of ${height} (${ratio.toFixed(2)})`);
+  check(`${width}: mini panel sits in the bottom-right corner`, mini.right < 30 && mini.bottom < 100, `right ${Math.round(mini.right)}, bottom ${Math.round(mini.bottom)}`);
+  check(`${width}: panel has a shadow`, mini.shadow !== "none");
+  const covers = await page.evaluate(() => [...document.querySelectorAll("body *")].some((el) => { const css = getComputedStyle(el); const r = el.getBoundingClientRect(); return css.position === "fixed" && r.width >= innerWidth - 2 && r.height >= innerHeight - 2 && el.getAttribute("role") !== "dialog" && (css.backgroundColor !== "rgba(0, 0, 0, 0)" || css.backdropFilter !== "none"); }));
+  const after = await page.evaluate(() => getComputedStyle(document.body).opacity + getComputedStyle(document.body).filter);
+  check(`${width}: nothing behind the panel is dimmed or blurred`, !covers && after === bodyBefore);
+  const clicked = await page.getByRole("button", { name: "Add to watchlist" }).first().isEnabled().catch(() => false);
+  check(`${width}: the page behind stays usable`, clicked && (await page.evaluate(() => document.getElementById("main")?.style.overflow ?? "") !== "hidden"));
+  check(`${width}: no horizontal scroll (mini)`, await noSide(page));
+  // expand and shrink
+  await page.getByRole("button", { name: "Make HUME AI bigger" }).click();
+  await page.waitForTimeout(450);
+  const big = await dialog.evaluate((el) => { const r = el.getBoundingClientRect(); return { h: r.height, w: r.width }; });
+  check(`${width}: bigger makes it at least 2.2x taller`, big.h >= mini.h * 2.2, `${Math.round(mini.h)} to ${Math.round(big.h)}`);
+  if (width === 375) check("375: the full size covers the phone screen", big.w >= 374 && big.h >= 811);
+  check(`${width}: no horizontal scroll (full)`, await noSide(page));
+  await page.getByRole("button", { name: "Make HUME AI smaller" }).click();
+  await page.waitForTimeout(450);
+  check(`${width}: smaller goes back to mini`, Math.abs((await dialog.evaluate((el) => el.getBoundingClientRect().height)) - mini.h) < 3);
+  // ask, minimize while it is thinking, the unread dot shows when the answer lands
+  await ask(page, "slow one");
+  await page.waitForTimeout(300);
+  await page.getByRole("button", { name: "Minimize HUME AI" }).click();
+  await dialog.waitFor({ state: "detached" });
+  check(`${width}: minimize puts the round button back`, await chip.isVisible() && (await chip.evaluate((el) => el === document.activeElement)));
+  release();
+  await page.getByLabel("New answer").waitFor({ timeout: 5000 });
+  check(`${width}: a dot shows an answer arrived while minimized`, true);
+  await chip.click();
+  await page.getByText("Slow answer.").waitFor();
+  check(`${width}: reopening shows the chat and clears the dot`, (await page.getByLabel("New answer").count()) === 0);
+  await context.close();
+}
 await browser.close();
 console.log(failed ? `\n${failed} CHECK(S) FAILED` : "\nALL CHECKS PASS");
 process.exit(failed ? 1 : 0);
