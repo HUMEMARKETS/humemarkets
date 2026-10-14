@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { marketsForChain, ROBINHOOD_MAINNET_CHAIN_ID, type NewsFeed } from "@hume/config";
-import { buildMatchers, collectNews, dedupe, fmtAgo, hashId, matchTickers, parseFeed, plainText, safeUrl, type NewsItem } from "./news";
+import { buildMatchers, collectNews, dayLabel, dedupe, fmtAgo, groupByDay, hashId, initials, matchTickers, parseFeed, plainText, safeUrl, trending, type NewsItem } from "./news";
 
 const matchers = buildMatchers(marketsForChain(ROBINHOOD_MAINNET_CHAIN_ID));
 const tickers = (title: string) => matchTickers(title, matchers);
@@ -98,4 +98,22 @@ test("the per-category cap keeps the newest of each category, and Infinity lifts
   const capped = await collectNews(feeds, load, matchers, 2);
   assert.deepEqual(capped.items.map((row) => row.title), ["Busy 4", "Busy 3", "Quiet old"]);
   assert.equal((await collectNews(feeds, load, matchers, Infinity)).items.length, 6);
+});
+
+test("stories are grouped under Today, Yesterday and a date, in the order given", () => {
+  const at = (days: number, hour = 12) => new Date(2026, 9, 14 - days, hour).toISOString();
+  const now = new Date(2026, 9, 14, 15).getTime();
+  assert.equal(dayLabel(at(0, 1), now), "Today");
+  assert.equal(dayLabel(at(1, 23), now), "Yesterday");
+  assert.match(dayLabel(at(3), now), /^Sun, Oct 11$/);
+  const groups = groupByDay([{ publishedAt: at(0) }, { publishedAt: at(0, 3) }, { publishedAt: at(1) }, { publishedAt: at(5) }], now);
+  assert.deepEqual(groups.map((group) => [group.label, group.items.length]), [["Today", 2], ["Yesterday", 1], ["Fri, Oct 9", 1]]);
+});
+
+test("publisher initials and trending markets", () => {
+  assert.equal(initials("CNBC"), "C");
+  assert.equal(initials("South China Morning Post"), "SCM");
+  const items = [{ tickers: ["AAPL", "BTC"] }, { tickers: ["BTC"] }, { tickers: ["JD", "BTC", "AAPL"] }, { tickers: ["TSLA"] }];
+  assert.deepEqual(trending(items, (symbol) => symbol !== "JD", 2), [{ symbol: "BTC", count: 3 }, { symbol: "AAPL", count: 2 }]);
+  assert.deepEqual(trending(items, () => true).map((entry) => entry.symbol), ["BTC", "AAPL", "JD", "TSLA"]);
 });

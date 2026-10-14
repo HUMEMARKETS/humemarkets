@@ -6,7 +6,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useAccount } from "wagmi";
 import { useDismiss } from "@/hooks/useDismiss";
 import { APP_GUTTER, CHIP_LABEL, LANDING_FRAME } from "@/lib/frame";
-import { MORE_LINKS, NAV, isCurrent, type NavLink } from "@/lib/nav";
+import { MORE_LINKS, NAV, NEWS_LINK, isCurrent, type NavLink } from "@/lib/nav";
 import { X_URL } from "@/lib/social";
 import { chip, cn, interactive, menuItem } from "@hume/ui";
 import { ArrowIcon } from "./ArrowIcon";
@@ -95,6 +95,10 @@ export function Header() {
   // normal flow above content. The nav text carries no fill of its own, so the bar needs one soft,
   // even scrim behind everything to stay readable over whatever sits under it.
   const landing = pathname === "/";
+  // `/news` is a dedicated public page reached from the landing header, so it wears the landing header's
+  // links and frame (in the normal flow, not floating) instead of the app navigation.
+  const news = isCurrent(pathname, NEWS_LINK.href);
+  const publicBar = landing || news;
   const ref = useRef<HTMLElement>(null);
   const navRef = useRef<HTMLElement>(null);
   const close = useCallback(() => setOpen(false), []);
@@ -115,13 +119,13 @@ export function Header() {
         landing ? "absolute inset-x-0 top-0" : "relative",
       )}
     >
-      <div className={cn("flex items-center justify-between gap-3", landing ? `h-[96px] ${LANDING_FRAME}` : `h-20 ${APP_GUTTER}`)}>
+      <div className={cn("flex items-center justify-between gap-3", publicBar ? `h-[96px] ${LANDING_FRAME}` : `h-20 ${APP_GUTTER}`)}>
         <div className="flex h-full items-center gap-6">
           <Link href="/" aria-label="HUME home" className="flex h-full shrink-0 items-center">
             <Logo />
           </Link>
           <HeaderCa />
-          {landing ? null : (
+          {publicBar ? null : (
             <nav
               ref={navRef}
               aria-label="Primary"
@@ -145,7 +149,7 @@ export function Header() {
           )}
         </div>
         <div className="flex items-center gap-3 sm:gap-6">
-          {landing ? (
+          {publicBar ? (
             <nav aria-label="Landing" className="hidden items-center gap-6 text-sm xl:flex">
               <Link href="/how-it-works" className="inline-flex items-center gap-2 text-muted transition-colors duration-150 hover:text-text">
                 How It Works
@@ -155,12 +159,16 @@ export function Header() {
                 Features
                 <ArrowIcon />
               </Link>
-              <a href="#contracts" className="inline-flex items-center gap-2 text-muted transition-colors duration-150 hover:text-text">
+              <Link href={landing ? "#contracts" : "/#contracts"} className="inline-flex items-center gap-2 text-muted transition-colors duration-150 hover:text-text">
                 Contracts
                 <ArrowIcon />
-              </a>
+              </Link>
               <Link href="/markets" className="inline-flex items-center gap-2 text-muted transition-colors duration-150 hover:text-text">
                 Markets
+                <ArrowIcon />
+              </Link>
+              <Link href={NEWS_LINK.href} aria-current={news ? "page" : undefined} className={cn("inline-flex items-center gap-2 transition-colors duration-150 hover:text-text", news ? "text-text" : "text-muted")}>
+                {NEWS_LINK.label}
                 <ArrowIcon />
               </Link>
             </nav>
@@ -179,13 +187,13 @@ export function Header() {
           </a>
           {/* On a phone the wallet button lives at the bottom of the menu, which leaves the bar to the logo, X and the menu button — Trade goes with it, since "Markets"/"Perpetuals" in the sheet already cover that entry point on mobile. */}
           <div className="hidden items-center gap-3 xl:flex 2xl:gap-6">
-            {landing ? null : (
+            {publicBar ? null : (
               <Link href="/perpetuals" className={cn(tradeLink, "max-2xl:hidden")}>
                 Terminal
                 <ArrowIcon />
               </Link>
             )}
-            <WalletButton variant={landing ? "secondary" : "primary"} />
+            <WalletButton variant={publicBar ? "secondary" : "primary"} />
           </div>
           <button
             type="button"
@@ -208,7 +216,7 @@ export function Header() {
           className={cn(
             "absolute inset-x-0 top-full max-h-[calc(100dvh-7.125rem)] overflow-y-auto bg-ground xl:hidden",
             "md:inset-x-auto md:top-[calc(100%+0.5rem)] md:max-h-[calc(100dvh-8.5rem)] md:w-[26rem] md:rounded-panel md:border md:border-line md:bg-raised md:pb-2 md:shadow-lift",
-            landing ? "md:right-[clamp(40px,4.2vw,112px)]" : "md:right-6 lg:right-10",
+            publicBar ? "md:right-[clamp(40px,4.2vw,112px)]" : "md:right-6 lg:right-10",
           )}
         >
           <div className="md:grid md:grid-cols-2 md:gap-x-1">
@@ -235,7 +243,7 @@ export function Header() {
             <div className="md:border-l md:border-line md:pt-2">
               <div role="group" aria-label="More" className="pb-3 md:pb-1">
                 <p aria-hidden="true" className={sheetHeading}>More</p>
-                {MORE_LINKS.map((item) => (
+                {(publicBar ? [NEWS_LINK, ...MORE_LINKS] : MORE_LINKS).map((item) => (
                   <Link key={item.href} href={item.href} aria-current={isCurrent(pathname, item.href) ? "page" : undefined} className={sheetLink(isCurrent(pathname, item.href))}>
                     <NavIcon name={item.icon} />
                     {item.label}

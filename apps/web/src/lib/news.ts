@@ -176,3 +176,38 @@ export function fmtAgo(iso: string, now: number): string {
   if (minutes < 60 * 24) return `${Math.floor(minutes / 60)} h ago`;
   return `${Math.floor(minutes / (60 * 24))} d ago`;
 }
+
+/// "Today", "Yesterday", or "Mon, Oct 12", by the reader's own calendar.
+export function dayLabel(iso: string, now: number): string {
+  const date = new Date(iso);
+  const days = Math.round((new Date(now).setHours(0, 0, 0, 0) - new Date(date).setHours(0, 0, 0, 0)) / 86_400_000);
+  if (days <= 0) return "Today";
+  if (days === 1) return "Yesterday";
+  return date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+}
+
+/// Rows in the order given, grouped under their day. A day is a new group only when it changes, so a feed that is not
+/// perfectly sorted never splits one day into two.
+export function groupByDay<T extends { publishedAt: string }>(items: readonly T[], now: number): Array<{ label: string; items: T[] }> {
+  const groups: Array<{ label: string; items: T[] }> = [];
+  for (const item of items) {
+    const label = dayLabel(item.publishedAt, now);
+    const last = groups[groups.length - 1];
+    if (last?.label === label) last.items.push(item);
+    else groups.push({ label, items: [item] });
+  }
+  return groups;
+}
+
+/// Up to three capitals for a source with no picture: "South China Morning Post" is SCM, "CNBC" is C.
+export function initials(source: string): string {
+  const words = source.split(/\s+/).filter(Boolean);
+  return (words.length === 1 ? words[0]!.slice(0, 1) : words.slice(0, 3).map((word) => word[0]).join("")).toUpperCase();
+}
+
+/// The symbols most named across the headlines, most first, ties in alphabetical order. `keep` limits it to symbols worth showing.
+export function trending(items: readonly Pick<NewsItem, "tickers">[], keep: (symbol: string) => boolean, limit = 8): Array<{ symbol: string; count: number }> {
+  const counts = new Map<string, number>();
+  for (const item of items) for (const symbol of item.tickers) if (keep(symbol)) counts.set(symbol, (counts.get(symbol) ?? 0) + 1);
+  return [...counts].map(([symbol, count]) => ({ symbol, count })).sort((a, b) => b.count - a.count || a.symbol.localeCompare(b.symbol)).slice(0, limit);
+}

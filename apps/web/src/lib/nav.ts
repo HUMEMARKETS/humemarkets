@@ -10,7 +10,6 @@ const copyOn = process.env.NEXT_PUBLIC_FEATURE_COPY_TRADING === "true";
 
 export const NAV: NavEntry[] = [
   { label: "Markets", href: "/markets", icon: "markets" },
-  { label: "News", href: "/news", icon: "news" },
   {
     label: "Trade",
     items: [
@@ -24,6 +23,10 @@ export const NAV: NavEntry[] = [
   { label: "Social", items: [{ label: "Leaderboard", href: "/leaderboard", icon: "leaderboard" }, ...(copyOn ? [{ label: "Copy trading", href: "/copy", icon: "copy" as const }] : [])] },
   { label: "Portfolio", href: "/portfolio", icon: "portfolio" },
 ];
+
+/// The news page has no slot in the app bar: it is a dedicated public page, linked from the landing page header,
+/// and it keeps that header.
+export const NEWS_LINK: NavLink = { label: "News", href: "/news", icon: "news" };
 
 /// Pages with no slot in the bar. The footer lists them, and so does the mobile sheet, because the
 /// terminals have no footer.

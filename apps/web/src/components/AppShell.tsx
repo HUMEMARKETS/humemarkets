@@ -26,7 +26,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         Skip to content
       </a>
 
-      {pathname === "/" ? null : <LandingTicker />}
+      {pathname === "/" || pathname.startsWith("/news") ? null : <LandingTicker />}
       <div className="relative flex min-h-0 flex-1 flex-col">
         <Header />
         {env.rpcConfigured || pathname === "/" ? null : (

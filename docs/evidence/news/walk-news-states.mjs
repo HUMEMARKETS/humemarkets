@@ -9,7 +9,7 @@ const check = (name, ok, detail = "") => {
   console.log(`${ok ? "PASS" : "FAIL"} ${name}${detail ? ` (${detail})` : ""}`);
 };
 const good = await (await fetch(`${BASE}/api/news`)).json();
-const rows = (page) => page.locator("ul[aria-label=Headlines] li a");
+const rows = (page) => page.locator("[data-news-card] > a");
 const overflow = (page) => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 const answer = (route, mode) =>
   mode === "ok" ? route.fulfill({ json: good }) : mode === "empty" ? route.fulfill({ json: { items: [], updatedAt: good.updatedAt, failed: 0 } }) : route.fulfill({ status: 502, json: { error: "no feed could be read" } });
@@ -119,8 +119,8 @@ for (const [label, width, height] of [["1440", 1440, 900], ["375", 375, 812]]) {
     const theme = await page.evaluate(() => document.documentElement.dataset.theme);
     check(`@${label} dark theme applied`, theme === "dark", String(theme));
     const colours = await page.evaluate(() => {
-      const first = document.querySelector("ul[aria-label=Headlines] li a span span");
-      const panel = document.querySelector("ul[aria-label=Headlines]").closest("section");
+      const first = document.querySelector("[data-news-card] time");
+      const panel = document.querySelector("[data-news-card]");
       return { text: getComputedStyle(first).color, panel: getComputedStyle(panel).backgroundColor };
     });
     const lum = (rgb) => rgb.match(/\d+/g).slice(0, 3).map(Number).reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0);
