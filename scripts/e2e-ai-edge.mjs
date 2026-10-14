@@ -67,6 +67,10 @@ for (const width of [375, 1440]) {
     check(`${width}: Enter sends the lines as typed`, requests.at(-1).messages.at(-1).content === "first line\nsecond line");
     check(`${width}: the field shrinks back after sending`, (await box.evaluate((el) => el.getBoundingClientRect().height)) <= one + 1);
     check(`${width}: the sent lines show as lines`, (await page.getByText("first line").count()) >= 1 && (await page.locator("p", { hasText: "second line" }).first().evaluate((el) => getComputedStyle(el).whiteSpace)).includes("pre"));
+    // 2c. the send button is centred in the bar with one line, and its arrow in the button
+    await box.fill("");
+    const centred = await page.evaluate(() => { const f = document.querySelector("form"); const b = f.querySelector("button[type=submit]").getBoundingClientRect(); const fr = f.getBoundingClientRect(); const a = f.querySelector("button[type=submit] svg").getBoundingClientRect(); return [(b.top + b.height / 2) - (fr.top + fr.height / 2), (a.top + a.height / 2) - (b.top + b.height / 2), b.height]; });
+    check(`${width}: the send button is centred in the bar and at least 44 px`, Math.abs(centred[0]) < 0.6 && Math.abs(centred[1]) < 0.6 && centred[2] >= 44, centred.map((n) => n.toFixed(1)).join(" / "));
     // 3. empty / whitespace disables send
     await page.getByLabel("Your question").fill("   ");
     check(`${width}: whitespace-only input cannot be sent`, await page.getByRole("button", { name: "Ask", exact: true }).isDisabled());

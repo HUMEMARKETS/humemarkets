@@ -360,7 +360,7 @@ export function AiAssistant() {
                     type="submit"
                     aria-label="Ask"
                     disabled={stuck || pending || draft.trim() === ""}
-                    className="grid size-10 min-w-[44px] shrink-0 place-items-center rounded-full bg-accent text-accent-ink transition-colors duration-150 hover:bg-accent-hover active:bg-accent-press disabled:cursor-not-allowed disabled:bg-line disabled:text-faint"
+                    className="grid size-11 min-h-[44px] min-w-[44px] shrink-0 place-items-center rounded-full bg-accent text-accent-ink transition-colors duration-150 hover:bg-accent-hover active:bg-accent-press disabled:cursor-not-allowed disabled:bg-line disabled:text-faint"
                   >
                     <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
                       <path d="M12 19V5M5 12l7-7 7 7" />
