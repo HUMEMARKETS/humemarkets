@@ -93,9 +93,16 @@ export function AiAssistant({ symbol }: { symbol: string }) {
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className={cn(chip, "h-8 px-2.5 text-xs font-medium")}>
+      {/* Sticky in the bottom-right corner. Under 1024 px it sits above the pinned Long / Short bar; the order sheet
+          (z-30) and this sheet (z-50) both cover it. */}
+      <Button
+        variant="primary"
+        aria-haspopup="dialog"
+        onClick={() => setOpen(true)}
+        className="fixed bottom-20 right-4 z-20 h-11 px-5 shadow-accent-glow lg:bottom-6 lg:right-6"
+      >
         Ask HUME AI
-      </button>
+      </Button>
       {open
         ? createPortal(
             <div className="fixed inset-0 z-50 flex justify-end">
