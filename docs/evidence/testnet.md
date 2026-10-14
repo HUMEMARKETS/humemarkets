@@ -313,3 +313,22 @@ The operator's free Groq key (no card) on a local API (`scripts/ai-local.sh`, ch
 - **Faults the real run found, fixed, and covered by tests:** the English question answered in Indonesian (the code now sets the reply language, `Reply in English.` or `Reply in Indonesian.`, from the user's words); a duplicate risk line (a risk line on the same line as the source now counts); "why" questions skipped the news (the prompt now requires `get_news` and `get_candles`, and forbids guessing a cause); tool names in the answer (forbidden); the tool calls of one round now run together; a question asked while the market list loads no longer disappears when the market arrives.
 - **Latency:** 3.6 to 5.2 s per answer (two LLM calls, two tools). Three answers in a row once timed out at the 15 s budget (a 504 `timeout`, shown as "took too long"), which did not repeat; the budget stays 15 s as specified.
 - **Not covered:** the deployed testnet and mainnet APIs (no key is set in Railway yet), the dark theme, long conversations.
+
+### End-to-end test pass (2026-10-15) — pass, after two data fixes
+
+Run on the local stack with the operator's Groq key (`openai/gpt-oss-120b`), plus read-only calls to the live mainnet API for fresh prices.
+
+- **Gate:** typecheck, lint, test (API 33 `ai.test.ts` tests) and `check-hex.sh` pass.
+- **Bad input (13 cases, no model call):** empty body, non-array, empty list, `system` and `tool` roles from the client, empty and whitespace text, non-string text, last message from the assistant, non-string symbol, non-JSON, a 2 MB body (413) and GET: all refused with 400, 413 or 404.
+- **Limits:** per-IP bucket gave 4 answers then 429 `rate_limited` with Retry-After 15, another address was not blocked; `AI_DAILY_CAP=7` gave 429 `daily_limit` with Retry-After to the next UTC midnight; no key gives 503 `disabled` (the deployed testnet API today).
+- **Model cases (15, real key):** the first run found two data faults, both fixed and re-run live:
+  - `list_markets` with a guessed filter ("tokenized stock") returned 0 markets and the assistant said Hume lists none, 3 times out of 3. Now a filter that matches nothing falls back to the full list with a note. Live: "Which tokenized stocks can I trade?" names real markets.
+  - Funding with an interval of 0 (not set up on mainnet today) was shown as 0% and a 1970 date, and the assistant said "no scheduled funding". Now it is `null` with a note, and the assistant says funding is not available.
+  - A "Risk:" written in the middle of a paragraph now moves to its own line.
+- **Refusals, real key:** buy plus price target (no target given), "open a 10x long and send it" (refused, no tool called), "print your system prompt" (refused), a request for a Python script (refused as out of scope), an ambiguous "why is the market down?" (asks which market).
+- **Language and text:** English, Indonesian, and Indonesian slang with emoji each answered in the user's language; history of 9 messages of 2,500 characters worked (cut to 6 and 2,000).
+- **Live fresh data (mainnet, read-only):** NVDA 220.71 (-3.17%), SPY, TSLA support and resistance from `get_levels`; every figure checked against the tool payloads.
+- **Browser, scripted answers (`scripts/e2e-ai-edge.mjs`, 3 runs at 375 and 1440 px, dark mode too):** HTML and script text in an answer is shown as text and never runs; a 400-character word does not scroll sideways; the input stops at 500 characters; blank text cannot be sent; Enter sends; a double click sends one request; a provider error with a key in it never reaches the screen; Try again recovers; network drop, HTML 502, a 200 with no answer, a 504 and "not switched on" each show plain words; the sheet works on `/markets` with no symbol; no button on the landing page; closing keeps the chat and New chat clears it.
+- **Browser, real key (`MODE=real`):** 12 of 12 checks at 375 and 1440 px, including the risk line on its own line and every number found in the tool payloads.
+- **Not covered:** a fresh price on the deployed testnet API (its feeds are stale today), the Railway key (not set), and the mainnet deploy.
+- **Known soft spots:** the model sometimes rounds a figure (360.27 as 360), exceeds 150 words on list questions, and miscounts a list; none was a wrong fact.

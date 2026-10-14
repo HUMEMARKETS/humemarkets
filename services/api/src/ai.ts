@@ -245,6 +245,7 @@ export function makeTools(deps: ToolDeps): Tool[] {
           };
         }
 
+        const fundingSet = funding.status === 200 && Number(funding.body.fundingIntervalSeconds) > 0;
         const row = (stats.body as { marketId: string; change24hBps: number | null; changeWindowSeconds: number; underlyingVolumeUsd: string | null }[] | undefined)?.find((entry) => entry.marketId === marketId);
         const stamp = Number(prices.body.markPrice.timestamp);
         return {
@@ -258,9 +259,11 @@ export function makeTools(deps: ToolDeps): Tool[] {
             change24hPct: row?.change24hBps == null ? null : row.change24hBps / 100,
             changeWindowHours: row ? round(row.changeWindowSeconds / 3600) : null,
             underlyingVolumeUsd: row?.underlyingVolumeUsd ?? null,
-            fundingRatePct: funding.status === 200 ? Number(funding.body.currentFundingRateBps) / 100 : null,
-            fundingIntervalHours: funding.status === 200 ? Number(funding.body.fundingIntervalSeconds) / 3600 : null,
-            nextFundingAt: funding.status === 200 ? iso(Number(funding.body.nextFundingTimestamp)) : null,
+            // An interval of 0 means funding is not set up for this market: the rate and the time are then not data.
+            fundingRatePct: fundingSet ? Number(funding.body.currentFundingRateBps) / 100 : null,
+            fundingIntervalHours: fundingSet ? Number(funding.body.fundingIntervalSeconds) / 3600 : null,
+            nextFundingAt: fundingSet ? iso(Number(funding.body.nextFundingTimestamp)) : null,
+            ...(fundingSet ? {} : { fundingNote: "Funding is not available for this market." }),
             maxLeverage: market.maxLeverage,
           },
         };
@@ -335,14 +338,20 @@ export function makeTools(deps: ToolDeps): Tool[] {
     },
     {
       name: "list_markets",
-      description: "Search the markets Hume lists (symbol, name, group, tier). Filter by group or text; at most 40 rows.",
+      description: "List the markets Hume lists (symbol, name, group, tier), at most 40 rows. Leave both filters empty to list them. `group` is an exact group name; `query` is part of one ticker or company name, never a general word such as stocks.",
       parameters: { type: "object", properties: { group: { type: "string" }, query: { type: "string" } } },
       async run(args) {
         const query = typeof args.query === "string" ? args.query.toLowerCase() : "";
         const group = typeof args.group === "string" ? args.group : "";
         // ponytail: the mainnet list, which is also where testnet takes its groups from; it can list a market a testnet lacks.
-        const hits = marketsForChain(ROBINHOOD_MAINNET_CHAIN_ID).filter((market) => (!group || market.group === group) && (!query || `${market.symbol} ${market.name}`.toLowerCase().includes(query)));
-        return { source: "Hume market list", asOf: deps.now().toISOString(), data: { total: hits.length, markets: hits.slice(0, 40).map((market) => ({ symbol: market.symbol, name: market.name, group: market.group, tier: market.tier })) } };
+        const all = marketsForChain(ROBINHOOD_MAINNET_CHAIN_ID);
+        const hits = all.filter((market) => (!group || market.group === group) && (!query || `${market.symbol} ${market.name}`.toLowerCase().includes(query)));
+        const row = (market: (typeof all)[number]) => ({ symbol: market.symbol, name: market.name, group: market.group, tier: market.tier });
+        // A filter that matches nothing (the model guessed "tokenized stock") must not read as "Hume lists nothing".
+        if (hits.length === 0 && (group || query)) {
+          return { source: "Hume market list", asOf: deps.now().toISOString(), data: { total: 0, note: "No market matched this filter, so the markets below ignore it.", groups: [...new Set(all.map((market) => market.group))], totalListed: all.length, markets: all.slice(0, 40).map(row) } };
+        }
+        return { source: "Hume market list", asOf: deps.now().toISOString(), data: { total: hits.length, markets: hits.slice(0, 40).map(row) } };
       },
     },
   ];
@@ -433,8 +442,8 @@ const INDONESIAN = /\b(yang|dan|apa|kenapa|mengapa|bagaimana|saya|kamu|ini|itu|t
 
 /// The answer with a risk line, added when the model left it out. A rule the prompt asks for and the code enforces.
 export function withRiskLine(answer: string, userText: string): string {
-  // Any "Risk:" or "Risiko:" counts: the model sometimes puts it on the same line as its source.
-  if (/\b(risk|risiko):/i.test(answer)) return answer.trim();
+  // Any "Risk:" or "Risiko:" counts: the model sometimes puts it on the same line as its source, so it moves to its own line.
+  if (/\b(risk|risiko):/i.test(answer)) return answer.trim().replace(/[ \t]+(?=(?:risk|risiko):)/gi, "\n\n");
   return `${answer.trim()}\n\n${INDONESIAN.test(userText) ? RISK_LINE.id : RISK_LINE.en}`;
 }
 

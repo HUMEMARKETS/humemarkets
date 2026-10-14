@@ -171,6 +171,29 @@ test("no tool can write: the tool names are exactly the six read tools", () => {
   assert.deepEqual(makeTools(fakeDeps()).map((tool) => tool.name).sort(), ["explain_term", "get_candles", "get_levels", "get_market_snapshot", "get_news", "list_markets"]);
 });
 
+test("get_market_snapshot: funding with interval 0 is reported as unavailable, not as 0% and a 1970 date", async () => {
+  const snapshot = makeTools(fakeDeps()).find((tool) => tool.name === "get_market_snapshot")!;
+  const live = (await snapshot.run({ symbol: "NVDA" })).data as Record<string, unknown>;
+  assert.equal(live.fundingRatePct, 0.05);
+  assert.equal(live.fundingNote, undefined);
+  const base = fakeDeps();
+  const unset = makeTools(fakeDeps({ get: async (path) => (path === "/v1/perps/NVDA/funding" ? { status: 200, body: { currentFundingRateBps: "0", fundingIntervalSeconds: "0", nextFundingTimestamp: "3600" } } : base.get(path)) })).find((tool) => tool.name === "get_market_snapshot")!;
+  const data = (await unset.run({ symbol: "NVDA" })).data as Record<string, unknown>;
+  assert.deepEqual([data.fundingRatePct, data.fundingIntervalHours, data.nextFundingAt], [null, null, null]);
+  assert.match(String(data.fundingNote), /not available/);
+});
+
+test("list_markets: a filter that matches nothing falls back to the full list and says so", async () => {
+  const tool = makeTools(fakeDeps()).find((entry) => entry.name === "list_markets")!;
+  const guessed = (await tool.run({ query: "tokenized stock" })).data as { total: number; note?: string; markets: unknown[]; groups: string[] };
+  assert.equal(guessed.total, 0);
+  assert.ok(guessed.note && guessed.markets.length > 0 && guessed.groups.includes("us-equities"));
+  const exact = (await tool.run({ query: "nvda" })).data as { total: number; note?: string; markets: { symbol: string }[] };
+  assert.ok(exact.total >= 1 && exact.note === undefined && exact.markets.some((market) => market.symbol === "NVDA"));
+  const bareGroup = (await tool.run({ group: "us-equities" })).data as { total: number; note?: string };
+  assert.ok(bareGroup.total > 1 && bareGroup.note === undefined);
+});
+
 // ---------------------------------------------------------------------------------------------------------------
 // History and parsing
 
@@ -230,7 +253,8 @@ test("an answer with no risk line gets one, in the user's language", () => {
   const done = "NVDA fell.\nRisk: it can fall more.";
   assert.equal(withRiskLine(done, "Why?"), done);
   const inline = "NVDA fell. Source: Hume oracle. Risk: it can fall more.";
-  assert.equal(withRiskLine(inline, "Why?"), inline, "a risk line on the same line as the source is not added twice");
+  assert.equal(withRiskLine(inline, "Why?"), "NVDA fell. Source: Hume oracle.\n\nRisk: it can fall more.", "an inline risk line is not added twice, and moves to its own line");
+  assert.equal(withRiskLine("Harga turun. Risiko: bisa turun lagi.", "Kenapa?"), "Harga turun.\n\nRisiko: bisa turun lagi.");
 });
 
 // ---------------------------------------------------------------------------------------------------------------
