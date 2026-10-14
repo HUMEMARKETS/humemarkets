@@ -118,9 +118,10 @@ export function NewsView() {
         }
       >
         {news.data && (news.isError || !online) ? (
-          <p role="status" className="border-b border-line px-3 py-2 text-xs text-muted">
-            {online ? `Showing news from ${clock(news.data.updatedAt)}. The refresh failed, so this list may be old.` : `You are offline. Showing news from ${clock(news.data.updatedAt)}.`}
-          </p>
+          <div role="status" className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-3 py-1 text-xs text-muted">
+            <p>{online ? `Showing news from ${clock(news.data.updatedAt)}. The refresh failed, so this list may be old.` : `You are offline. Showing news from ${clock(news.data.updatedAt)}.`}</p>
+            {online ? retry : null}
+          </div>
         ) : null}
         <div className="flex flex-1 flex-col">
           {!online && !news.data ? (

@@ -33,7 +33,7 @@ async function load(feed: NewsFeed): Promise<RawItem[]> {
 }
 
 /// `GET /api/news` is every category. `GET /api/news?ticker=AAPL` is that market's headlines: its own feed plus the
-/// general feeds' headlines that name it. The ticker must be a listed market, so a request never chooses a feed address.
+/// general feeds' headlines that name it. (The per-category cap is lifted here: it would cut a ticker's own headlines behind busier general ones.) The ticker must be a listed market, so a request never chooses a feed address.
 export async function GET(request: Request) {
   const raw = new URL(request.url).searchParams.get("ticker")?.trim().toUpperCase();
   const listings = marketsForChain(ROBINHOOD_MAINNET_CHAIN_ID);
@@ -41,7 +41,7 @@ export async function GET(request: Request) {
   if (raw && !listing) return Response.json({ error: "unknown ticker" }, { status: 404, headers: { "Cache-Control": CDN } });
 
   const own = listing ? tickerFeed(listing) : undefined;
-  const { items, failed } = await collectNews(own ? [own, ...NEWS_FEEDS] : NEWS_FEEDS, load, buildMatchers(listings));
+  const { items, failed } = await collectNews(own ? [own, ...NEWS_FEEDS] : NEWS_FEEDS, load, buildMatchers(listings), listing ? Infinity : undefined);
   const shown: NewsItem[] = listing ? items.filter((item) => item.tickers.includes(listing.symbol) || item.source === own?.source).map((item) => (item.tickers.includes(listing.symbol) ? item : { ...item, tickers: [listing.symbol, ...item.tickers] })) : items;
 
   if (items.length === 0) return Response.json({ error: "no feed could be read" }, { status: 502, headers: { "Cache-Control": "no-store" } });

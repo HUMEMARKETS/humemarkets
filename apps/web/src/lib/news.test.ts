@@ -85,3 +85,17 @@ test("relative time", () => {
   assert.equal(fmtAgo("2026-10-13T07:00:00Z", now), "5 h ago");
   assert.equal(fmtAgo("2026-10-11T12:00:00Z", now), "2 d ago");
 });
+
+test("the per-category cap keeps the newest of each category, and Infinity lifts it", async () => {
+  const feeds: NewsFeed[] = [
+    { source: "Busy", url: "https://busy.example/rss", category: "crypto" },
+    { source: "Quiet", url: "https://quiet.example/rss", category: "china" },
+  ];
+  const load = async (feed: NewsFeed) =>
+    feed.source === "Busy"
+      ? Array.from({ length: 5 }, (_, index) => ({ title: `Busy ${index}`, url: `https://busy.example/${index}`, publishedAt: `2026-10-13T1${index}:00:00.000Z` }))
+      : [{ title: "Quiet old", url: "https://quiet.example/1", publishedAt: "2026-10-01T00:00:00.000Z" }];
+  const capped = await collectNews(feeds, load, matchers, 2);
+  assert.deepEqual(capped.items.map((row) => row.title), ["Busy 4", "Busy 3", "Quiet old"]);
+  assert.equal((await collectNews(feeds, load, matchers, Infinity)).items.length, 6);
+});
