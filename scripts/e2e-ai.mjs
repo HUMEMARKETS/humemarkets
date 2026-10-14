@@ -53,6 +53,8 @@ async function open(browser, size, name) {
   await page.goto(`${WEB}/perpetuals?market=NVDA`, { waitUntil: "domcontentloaded" });
   const chip = page.getByRole("button", { name: "Ask HUME AI" });
   await chip.waitFor({ timeout: 60_000 });
+  // The button is in the server-rendered page, so a click before React attaches does nothing: wait for hydration.
+  await chip.evaluate((el) => new Promise((resolve) => { const t = setInterval(() => { if (Object.keys(el).some((key) => key.startsWith("__reactProps"))) { clearInterval(t); resolve(); } }, 50); }));
   return { context, page, chip, name };
 }
 
@@ -77,6 +79,7 @@ async function states(browser, size) {
   await chip.click();
   const dialog = page.getByRole("dialog", { name: "HUME AI" });
   await dialog.waitFor();
+  await dialog.getByText("Reading NVDA-PERP").waitFor({ timeout: 60_000 });
   check(`${width}: sheet opens, focus moves into it`, await page.evaluate(() => document.activeElement?.closest('[role="dialog"]') !== null));
   check(`${width}: empty state shows three suggested questions`, (await dialog.getByRole("button", { name: /NVDA|funding rate/i }).count()) >= 3);
   check(`${width}: disclaimer is on screen`, await dialog.getByText("AI-generated, not financial advice").isVisible());
