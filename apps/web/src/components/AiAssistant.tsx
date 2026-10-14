@@ -189,7 +189,7 @@ export function AiAssistant() {
               ref={panel}
               tabIndex={-1}
               role="dialog"
-              aria-label="Walter"
+              aria-label="Ask Walter"
               className={cn(
                 "fixed z-50 flex flex-col bg-surface shadow-float outline-none transition-[height,width,right,bottom,translate,opacity] duration-200 ease-out",
                 full
@@ -205,7 +205,7 @@ export function AiAssistant() {
                 <div className="flex min-w-0 items-center gap-2.5">
                   <Avatar large />
                   <div className="min-w-0">
-                    <h2 className="font-display text-lg font-semibold leading-tight">Walter</h2>
+                    <h2 className="font-display text-lg font-semibold leading-tight">Ask Walter</h2>
                     <p className="truncate text-xs text-muted">{symbol ? `Reading ${symbol}-PERP` : "Any listed market"}</p>
                   </div>
                 </div>
