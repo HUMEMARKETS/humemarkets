@@ -10,6 +10,7 @@ import { symbolOf, tradeBlocker } from "@/lib/market";
 import { useTerminal } from "@/stores/terminal";
 import { useWatchlist } from "@/stores/watchlist";
 import { Change, fmtChange, useStatsFor } from "./Change";
+import { AiAssistant } from "./AiAssistant";
 import { Term } from "./Term";
 
 /// The watchlist star in the palette's gold: an outline when the market is not pinned, filled when it is.
@@ -103,6 +104,7 @@ export function MarketHeader() {
             {watching ? "Remove from watchlist" : "Add to watchlist"}
           </button>
         ) : null}
+        {symbol ? <AiAssistant symbol={symbol} /> : null}
         {symbol ? (
           <Link href={`/alerts?symbol=${encodeURIComponent(symbol)}`} className={cn(chip, "h-8 px-2.5 text-xs font-medium")}>
             Set alert

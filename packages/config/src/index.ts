@@ -16,3 +16,4 @@ export {
 export { ponsForChain, type PonsConfig } from "./pons.js";
 export { loadDotEnv, requireEnv } from "./env.js";
 export { NEWS_ARTICLE_DOMAINS, NEWS_CATEGORIES, NEWS_CATEGORY_LABEL, NEWS_FEEDS, NEWS_NAME_ALIASES, NEWS_NAME_STOPWORDS, categoryForGroup, tickerFeed, type NewsCategory, type NewsFeed } from "./news.js";
+export { GLOSSARY, type TermKey } from "./glossary.js";

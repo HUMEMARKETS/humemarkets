@@ -7,6 +7,7 @@ import { registerCors } from "./cors.js";
 import { resolveCreditPair } from "./credit.js";
 import { registerCopyRoutes } from "./routes/copy.js";
 import { registerCreditRoutes } from "./routes/credit.js";
+import { registerAiRoutes } from "./routes/ai.js";
 import { registerAlertRoutes } from "./routes/alerts.js";
 import { registerAdvancedRoutes } from "./routes/advanced.js";
 import { registerAnalyticsRoutes } from "./routes/analytics.js";
@@ -48,6 +49,7 @@ export function buildServer() {
     registerAnalyticsRoutes(instance);
     registerAdvancedRoutes(instance, hume);
     registerAlertRoutes(instance);
+    registerAiRoutes(instance);
     registerLeaderboardRoutes(instance, hume);
     registerCopyRoutes(instance, hume);
     registerCreditRoutes(instance, createPublicClient({ transport: http(rpcUrl) }), resolveCreditPair(hume.addresses, process.env.CREDIT_PAIR_ADDRESS));
