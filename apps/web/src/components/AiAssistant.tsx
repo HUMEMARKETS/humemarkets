@@ -7,6 +7,21 @@ import { createPortal } from "react-dom";
 import { useTerminal } from "@/stores/terminal";
 import { AiError, askAi, failureText, fmtSourceTime, isLimit, suggestions, type AiMessage } from "@/lib/ai";
 
+/// The HUME AI mark: a large four-point star (a price spark) with a small gold one beside it, the palette's own gold
+/// (the same as the watchlist star). A quarter turn on hover or focus, 150 ms, and none under reduced motion.
+function AiMark() {
+  const star = "M12 2C12.8 8 16 11.2 22 12C16 12.8 12.8 16 12 22C11.2 16 8 12.8 2 12C8 11.2 11.2 8 12 2Z";
+  return (
+    <svg aria-hidden="true" viewBox="0 0 30 26" overflow="visible" className="size-6 transition-transform duration-150 group-hover:rotate-90 group-focus-visible:rotate-90">
+      <g transform="translate(-1 1)">
+        <path d={star} fill="currentColor" />
+      </g>
+      <path d={star} transform="translate(19.5 -2.5) scale(0.5)" className="fill-gold" />
+      <path d={star} transform="translate(21.5 13) scale(0.3)" className="fill-gold" opacity="0.7" />
+    </svg>
+  );
+}
+
 /// "Ask HUME AI": a sheet that explains the open market from Hume's own data. It only reads, so it works without a
 /// wallet (the not-connected state needs no handling: there is nothing here that signs or sends). Answers arrive whole,
 /// after a loading row; nothing is typed out or animated. Every answer lists its sources with the time of the data.
@@ -105,8 +120,9 @@ export function AiAssistant() {
         variant="primary"
         aria-haspopup="dialog"
         onClick={() => setOpen(true)}
-        className={cn("fixed right-4 z-20 h-11 px-5 shadow-accent-glow lg:bottom-6 lg:right-6", barBelow ? "bottom-20" : "bottom-4")}
+        className={cn("group fixed right-4 z-20 h-11 gap-2 pl-3.5 pr-5 shadow-accent-glow ring-1 ring-gold/70 lg:bottom-6 lg:right-6", barBelow ? "bottom-20" : "bottom-4")}
       >
+        <AiMark />
         Ask HUME AI
       </Button>
       {open
