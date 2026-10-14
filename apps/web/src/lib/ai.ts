@@ -1,6 +1,6 @@
 import { env } from "./env";
 
-/// HUME AI, the browser half. It asks the API's `POST /v1/ai/chat` and nothing else: the assistant only reads, so it
+/// Ask Walter, the browser half. It asks the API's `POST /v1/ai/chat` and nothing else: the assistant only reads, so it
 /// needs no wallet and never reaches a signature. Pure helpers here, the sheet is `components/AiAssistant.tsx`.
 
 export interface AiSource {
@@ -37,17 +37,17 @@ export function failureText(failure: AiFailure, retryAfterSeconds?: number): str
     case "rate_limited":
       return `You are asking too fast.${wait}`;
     case "busy":
-      return `HUME AI is busy right now.${wait}`;
+      return `Walter is busy helping others right now.${wait}`;
     case "daily_limit":
-      return "HUME AI has reached its limit for today. Come back tomorrow, or read the market page and the news in the meantime.";
+      return "Walter has reached the limit for today. Come back tomorrow, or read the market page and the news in the meantime.";
     case "timeout":
-      return "HUME AI took too long to answer. Ask again, or ask something shorter.";
+      return "Walter took too long to answer. Ask again, or ask something shorter.";
     case "disabled":
-      return "HUME AI is not switched on yet. The rest of the app works as usual.";
+      return "Walter is not switched on yet. The rest of the app works as usual.";
     case "offline":
       return "You are offline. Reconnect and ask again.";
     default:
-      return "HUME AI could not answer right now. Try again soon.";
+      return "Walter could not answer right now. Try again soon.";
   }
 }
 

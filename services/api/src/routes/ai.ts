@@ -64,7 +64,7 @@ function depsFor(app: FastifyInstance): ToolDeps {
   };
 }
 
-/// `POST /v1/ai/chat`: HUME AI. Read-only by construction: the tools only read, and nothing in this file can sign,
+/// `POST /v1/ai/chat`: Ask Walter. Read-only by construction: the tools only read, and nothing in this file can sign,
 /// send or prepare a transaction. It needs no wallet. Free by construction too: the key comes from a provider account
 /// with no card, a per-IP bucket and a daily cap keep the traffic under that account's quota, and a provider 429 is
 /// shown as "busy", never passed through.
@@ -77,7 +77,7 @@ export function registerAiRoutes(app: FastifyInstance, options: AiRouteOptions =
 
   app.post<{ Body: unknown }>("/v1/ai/chat", async (request, reply) => {
     const llm = options.llm === undefined ? llmFromEnv() : options.llm;
-    if (!llm) return reply.code(503).send({ code: "disabled", error: "HUME AI is not switched on yet." });
+    if (!llm) return reply.code(503).send({ code: "disabled", error: "Walter is not switched on yet." });
 
     const parsed = parseChat(request.body);
     if ("error" in parsed) return reply.code(400).send({ code: "bad_request", error: parsed.error });
@@ -87,7 +87,7 @@ export function registerAiRoutes(app: FastifyInstance, options: AiRouteOptions =
     }
     if (!dailyCap.take()) {
       const wait = dailyCap.retryAfterSeconds();
-      return reply.code(429).header("retry-after", String(wait)).send({ code: "daily_limit", error: "HUME AI has reached its limit for today. Try again tomorrow.", retryAfterSeconds: wait });
+      return reply.code(429).header("retry-after", String(wait)).send({ code: "daily_limit", error: "Walter has reached the limit for today. Try again tomorrow.", retryAfterSeconds: wait });
     }
 
     try {
@@ -99,10 +99,10 @@ export function registerAiRoutes(app: FastifyInstance, options: AiRouteOptions =
       request.log.warn({ kind: error.kind }, "ai chat failed");
       if (error.kind === "busy") {
         const wait = error.retryAfter ?? 30;
-        return reply.code(503).header("retry-after", String(wait)).send({ code: "busy", error: "HUME AI is busy. Try again in a minute.", retryAfterSeconds: wait });
+        return reply.code(503).header("retry-after", String(wait)).send({ code: "busy", error: "Walter is busy. Try again in a minute.", retryAfterSeconds: wait });
       }
-      if (error.kind === "timeout") return reply.code(504).send({ code: "timeout", error: "HUME AI took too long to answer. Try again." });
-      return reply.code(502).send({ code: "unavailable", error: "HUME AI could not answer right now. Try again soon." });
+      if (error.kind === "timeout") return reply.code(504).send({ code: "timeout", error: "Walter took too long to answer. Try again." });
+      return reply.code(502).send({ code: "unavailable", error: "Walter could not answer right now. Try again soon." });
     }
   });
 }

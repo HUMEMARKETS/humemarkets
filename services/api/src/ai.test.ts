@@ -233,6 +233,9 @@ test("the system prompt carries every rule", () => {
     ["refuses transactions", /Refuse to execute, place, sign or prepare any transaction/],
     ["replies in the user's language, all of it", /Indonesian or English.*one language for the whole reply/s],
     ["a why question reads the news and never guesses a cause", /why a market moved.*get_news.*Never guess a cause/s],
+    ["is Walter, a personal and kind assistant", /You are Walter, the personal assistant.*cares about the person asking/s],
+    ["warmth is never advice, and the risk line stays last", /warmth is never a reason to give advice or a target.*risk line, which stays last/s],
+    ["says who it is when asked, an AI that only reads", /If asked who you are, say you are Walter.*an AI that only reads data/s],
   ];
   for (const [name, pattern] of rules) assert.match(SYSTEM_PROMPT, pattern, name);
 });

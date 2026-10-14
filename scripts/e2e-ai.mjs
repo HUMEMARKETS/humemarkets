@@ -1,4 +1,4 @@
-// Browser proof of HUME AI (the "Ask HUME AI" sheet). Two modes, one script.
+// Browser proof of Ask Walter (the "Ask Walter" sheet). Two modes, one script.
 //
 //   MODE=states  (default) The API answer is scripted in the browser, so every state of the sheet can be shown without
 //                a key: empty, loading, success with sources, error, busy, rate limit, daily limit, switched off.
@@ -62,7 +62,7 @@ async function open(browser, size, name) {
   const context = await browser.newContext({ viewport: size });
   const page = await context.newPage();
   await page.goto(`${WEB}/perpetuals?market=NVDA`, { waitUntil: "domcontentloaded" });
-  const chip = page.getByRole("button", { name: "Ask HUME AI" });
+  const chip = page.getByRole("button", { name: "Ask Walter" });
   await chip.waitFor({ timeout: 60_000 });
   // The button is in the server-rendered page, so a click before React attaches does nothing: wait for hydration.
   await chip.evaluate((el) => new Promise((resolve) => { const t = setInterval(() => { if (Object.keys(el).some((key) => key.startsWith("__reactProps"))) { clearInterval(t); resolve(); } }, 50); }));
@@ -89,7 +89,7 @@ async function states(browser, size) {
 
   const look = () => page.evaluate(() => { const el = document.querySelector('[role="dialog"]'); const css = el && getComputedStyle(el); return css ? `${css.translate} ${css.opacity}` : "none"; });
   await chip.click();
-  const dialog = page.getByRole("dialog", { name: "HUME AI" });
+  const dialog = page.getByRole("dialog", { name: "Walter" });
   await dialog.waitFor();
   await page.waitForTimeout(70);
   const midway = await look();
@@ -99,13 +99,14 @@ async function states(browser, size) {
   await dialog.getByText("Reading NVDA-PERP").waitFor({ timeout: 60_000 });
   check(`${width}: sheet opens, focus moves into it`, await page.evaluate(() => document.activeElement?.closest('[role="dialog"]') !== null));
   check(`${width}: empty state shows three suggested questions`, (await dialog.getByRole("button", { name: /NVDA|funding rate/i }).count()) >= 3);
-  check(`${width}: disclaimer is on screen`, await dialog.getByText("Hume AI can make mistakes, not financial advice").isVisible());
+  check(`${width}: Walter introduces himself`, (await dialog.getByText("Hello, I'm Walter").first().isVisible()) && (await dialog.getByText("What can I do for you").first().isVisible()));
+  check(`${width}: disclaimer is on screen`, await dialog.getByText("Walter can make mistakes, not financial advice").isVisible());
   check(`${width}: no horizontal scroll (empty)`, await noSideScroll(page));
   await shot(page, "empty", width);
 
   await dialog.getByRole("button", { name: "Why is NVDA moving today?" }).click();
   await dialog.getByRole("status").waitFor();
-  check(`${width}: loading row while waiting`, await dialog.getByText("HUME AI is reading the market").isVisible());
+  check(`${width}: loading row while waiting`, await dialog.getByText("Walter is reading the market").isVisible());
   await shot(page, "loading", width);
   await new Promise((resolve) => setTimeout(resolve, 50));
   release();
@@ -116,7 +117,7 @@ async function states(browser, size) {
 
   for (const [state, response, expected] of [
     ["error", reply(502, { code: "unavailable", error: "raw provider words" }), /could not answer right now/],
-    ["busy", reply(503, { code: "busy", error: "x", retryAfterSeconds: 30 }, { "retry-after": "30" }), /busy right now.*30 seconds/],
+    ["busy", reply(503, { code: "busy", error: "x", retryAfterSeconds: 30 }, { "retry-after": "30" }), /busy.*right now.*30 seconds/],
     ["rate", reply(429, { code: "rate_limited", error: "x", retryAfterSeconds: 15 }), /asking too fast/],
     ["daily", reply(429, { code: "daily_limit", error: "x", retryAfterSeconds: 3600 }), /limit for today/],
   ]) {
@@ -153,7 +154,7 @@ async function real(browser, size) {
     await route.fulfill({ response, headers: { ...response.headers(), "access-control-allow-origin": "*" } });
   });
   await chip.click();
-  const dialog = page.getByRole("dialog", { name: "HUME AI" });
+  const dialog = page.getByRole("dialog", { name: "Walter" });
   await dialog.getByText("Reading NVDA-PERP").waitFor({ timeout: 60_000 });
   await ask(page, QUESTION);
   await dialog.getByRole("status").waitFor();

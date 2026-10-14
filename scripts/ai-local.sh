@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Runs HUME AI on this machine: a scratch Postgres on :55432, the API on :4000 (testnet chain 46630, public RPC),
+# Runs Ask Walter on this machine: a scratch Postgres on :55432, the API on :4000 (testnet chain 46630, public RPC),
 # and the web dev server on :3000. The model key is read from YOUR shell, never from a file:
 #
 #   export LLM_API_KEY=...            # a free-tier key, no card (docs/AI_ASSISTANT.md)

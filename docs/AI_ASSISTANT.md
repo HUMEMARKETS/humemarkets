@@ -1,4 +1,4 @@
-# HUME AI, the market assistant
+# Ask Walter (HUME AI), the market assistant
 
 A read-only explainer. It answers from Hume's own data, cites each source with the time of the data, and has no tool
 that can write, sign or send. It needs no wallet. Cost: $0 by construction (free-tier key, no card, caps below).

@@ -1,4 +1,4 @@
-// UI edge cases for the HUME AI sheet (hostile text, limits, double send, bad API answers, dark). Scripted API answers: no model tokens.
+// UI edge cases for the Ask Walter sheet (hostile text, limits, double send, bad API answers, dark). Scripted API answers: no model tokens.
 // PLAYWRIGHT_DIR=<dir with node_modules/playwright> WEB_URL=http://localhost:3000 [SHOTS=<dir>] node scripts/e2e-ai-edge.mjs
 import { createRequire } from "node:module";
 const { chromium } = createRequire(`${process.env.PLAYWRIGHT_DIR ?? ""}/`)("playwright");
@@ -15,7 +15,7 @@ async function open(width, path = "/perpetuals?market=NVDA", scheme = "light") {
   const context = await browser.newContext({ viewport: { width, height: width < 500 ? 812 : 900 }, colorScheme: scheme });
   const page = await context.newPage();
   await page.goto(`${WEB}${path}`, { waitUntil: "domcontentloaded" });
-  const chip = page.getByRole("button", { name: "Ask HUME AI" });
+  const chip = page.getByRole("button", { name: "Ask Walter" });
   await chip.waitFor({ timeout: 60_000 });
   await chip.evaluate((el) => new Promise((r) => { const t = setInterval(() => { if (Object.keys(el).some((k) => k.startsWith("__reactProps"))) { clearInterval(t); r(); } }, 50); }));
   return { context, page, chip };
@@ -129,7 +129,7 @@ for (const width of [375, 1440]) {
 // 11. home page has no button; dark mode screenshot; button does not cover the phone bar
 {
   const { context, page } = await (async () => { const context = await browser.newContext({ viewport: { width: 375, height: 812 } }); const page = await context.newPage(); await page.goto(`${WEB}/`, { waitUntil: "domcontentloaded" }); await page.waitForTimeout(2500); return { context, page }; })();
-  check("375: landing page has no Ask HUME AI button", (await page.getByRole("button", { name: "Ask HUME AI" }).count()) === 0);
+  check("375: landing page has no Ask Walter button", (await page.getByRole("button", { name: "Ask Walter" }).count()) === 0);
   await context.close();
 }
 {
@@ -153,7 +153,7 @@ for (const [width, height] of [[1440, 900], [375, 812]]) {
   await chip.click();
   await page.getByText("Reading NVDA-PERP").waitFor({ timeout: 60_000 });
   await page.waitForTimeout(400);
-  const dialog = page.getByRole("dialog", { name: "HUME AI" });
+  const dialog = page.getByRole("dialog", { name: "Walter" });
   const mini = await dialog.evaluate((el) => { const r = el.getBoundingClientRect(); return { h: r.height, w: r.width, right: window.innerWidth - r.right, bottom: window.innerHeight - r.bottom, shadow: getComputedStyle(el).boxShadow }; });
   const ratio = mini.h / height;
   check(`${width}: mini panel is about a third of the height`, ratio > 0.28 && ratio < 0.5, `${Math.round(mini.h)} px of ${height} (${ratio.toFixed(2)})`);
@@ -166,19 +166,19 @@ for (const [width, height] of [[1440, 900], [375, 812]]) {
   check(`${width}: the page behind stays usable`, clicked && (await page.evaluate(() => document.getElementById("main")?.style.overflow ?? "") !== "hidden"));
   check(`${width}: no horizontal scroll (mini)`, await noSide(page));
   // expand and shrink
-  await page.getByRole("button", { name: "Make HUME AI bigger" }).click();
+  await page.getByRole("button", { name: "Make Walter bigger" }).click();
   await page.waitForTimeout(450);
   const big = await dialog.evaluate((el) => { const r = el.getBoundingClientRect(); return { h: r.height, w: r.width }; });
   check(`${width}: bigger makes it at least 2.2x taller`, big.h >= mini.h * 2.2, `${Math.round(mini.h)} to ${Math.round(big.h)}`);
   if (width === 375) check("375: the full size covers the phone screen", big.w >= 374 && big.h >= 811);
   check(`${width}: no horizontal scroll (full)`, await noSide(page));
-  await page.getByRole("button", { name: "Make HUME AI smaller" }).click();
+  await page.getByRole("button", { name: "Make Walter smaller" }).click();
   await page.waitForTimeout(450);
   check(`${width}: smaller goes back to mini`, Math.abs((await dialog.evaluate((el) => el.getBoundingClientRect().height)) - mini.h) < 3);
   // ask, minimize while it is thinking, the unread dot shows when the answer lands
   await ask(page, "slow one");
   await page.waitForTimeout(300);
-  await page.getByRole("button", { name: "Minimize HUME AI" }).click();
+  await page.getByRole("button", { name: "Minimize Walter" }).click();
   await dialog.waitFor({ state: "detached" });
   check(`${width}: minimize puts the round button back`, await chip.isVisible() && (await chip.evaluate((el) => el === document.activeElement)));
   release();

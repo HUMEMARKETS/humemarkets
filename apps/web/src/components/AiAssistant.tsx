@@ -22,7 +22,7 @@ const MOTION_MS = 200;
 
 const HEAD_BUTTON = "grid size-9 min-w-[44px] place-items-center rounded-full text-muted transition-colors duration-150 hover:bg-raised hover:text-text";
 
-/// "Ask HUME AI": a chat sheet, laid out like Gemini: a greeting and suggestion tiles when empty, the user's words in a
+/// "Ask Walter": a chat sheet, laid out like Gemini: a greeting and suggestion tiles when empty, the user's words in a
 /// soft pill on the right, answers as plain text beside the assistant's face with source chips under them, and a rounded
 /// input bar with a round send button. It explains the open market from Hume's own data. It only reads, so it works
 /// without a wallet (the not-connected state needs no handling: there is nothing here that signs or sends). Answers
@@ -35,7 +35,7 @@ const HEAD_BUTTON = "grid size-9 min-w-[44px] place-items-center rounded-full te
 /// collapse to nothing (globals.css).
 ///
 /// States: loading (the row), empty (greeting and suggested questions), error and limit reached (a sentence and a way
-/// on), success (the answer and its sources), and the line "Hume AI can make mistakes, not financial advice" which is always on screen.
+/// on), success (the answer and its sources), and the line "Walter can make mistakes, not financial advice" which is always on screen.
 export function AiAssistant() {
   // The market open in the terminal, if any; empty on a page that has none, and the assistant then answers about any market.
   const symbol = useTerminal((state) => state.symbol);
@@ -165,11 +165,11 @@ export function AiAssistant() {
           on hover or focus, 200 ms, none under reduced motion. */}
       <button
         type="button"
-        aria-label="Ask HUME AI"
+        aria-label="Ask Walter"
         aria-haspopup="dialog"
         aria-hidden={open}
         tabIndex={open ? -1 : 0}
-        title="Ask HUME AI"
+        title="Ask Walter"
         onClick={openSheet}
         className={cn(
           "group fixed right-3 z-20 grid min-h-14 min-w-24 place-items-center rounded-full transition-opacity duration-200 ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold lg:bottom-6 lg:right-6",
@@ -189,13 +189,13 @@ export function AiAssistant() {
               ref={panel}
               tabIndex={-1}
               role="dialog"
-              aria-label="HUME AI"
+              aria-label="Walter"
               className={cn(
                 "fixed z-50 flex flex-col bg-surface shadow-float outline-none transition-[height,width,right,bottom,translate,opacity] duration-200 ease-out",
                 full
                   ? "bottom-0 right-0 h-dvh w-screen lg:bottom-3 lg:right-3 lg:h-[calc(100dvh-1.5rem)] lg:w-[30rem] lg:rounded-panel lg:border lg:border-line"
                   : cn(
-                      "right-3 h-[max(21rem,calc(100dvh/3))] w-[calc(100vw-1.5rem)] rounded-panel border border-line lg:bottom-6 lg:right-6 lg:h-[max(21rem,calc((100dvh-1.5rem)/3))] lg:w-[24rem]",
+                      "right-3 h-[max(23rem,calc(100dvh/3))] w-[calc(100vw-1.5rem)] rounded-panel border border-line lg:bottom-6 lg:right-6 lg:h-[max(23rem,calc((100dvh-1.5rem)/3))] lg:w-[24rem]",
                       barBelow ? "bottom-20" : "bottom-4",
                     ),
                 shown ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0",
@@ -205,7 +205,7 @@ export function AiAssistant() {
                 <div className="flex min-w-0 items-center gap-2.5">
                   <Avatar large />
                   <div className="min-w-0">
-                    <h2 className="font-display text-lg font-semibold leading-tight">HUME AI</h2>
+                    <h2 className="font-display text-lg font-semibold leading-tight">Walter</h2>
                     <p className="truncate text-xs text-muted">{symbol ? `Reading ${symbol}-PERP` : "Any listed market"}</p>
                   </div>
                 </div>
@@ -217,12 +217,12 @@ export function AiAssistant() {
                       </svg>
                     </button>
                   )}
-                  <button type="button" aria-label={full ? "Make HUME AI smaller" : "Make HUME AI bigger"} title={full ? "Smaller" : "Bigger"} aria-pressed={full} onClick={() => setFull((value) => !value)} className={HEAD_BUTTON}>
+                  <button type="button" aria-label={full ? "Make Walter smaller" : "Make Walter bigger"} title={full ? "Smaller" : "Bigger"} aria-pressed={full} onClick={() => setFull((value) => !value)} className={HEAD_BUTTON}>
                     <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                       {full ? <path d="M10 4v6H4M14 20v-6h6" /> : <path d="M4 10V4h6M20 14v6h-6" />}
                     </svg>
                   </button>
-                  <button type="button" aria-label="Minimize HUME AI" title="Minimize" onClick={closeSheet} className={HEAD_BUTTON}>
+                  <button type="button" aria-label="Minimize Walter" title="Minimize" onClick={closeSheet} className={HEAD_BUTTON}>
                     <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
                       <path d="M5 12h14" />
                     </svg>
@@ -232,18 +232,16 @@ export function AiAssistant() {
 
                 <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-3" aria-live="polite">
                 {empty ? (
-                  <div className={cn("flex min-h-full flex-col justify-center", full ? "gap-6 py-6" : "gap-3 py-1")}>
+                  <div className={cn("flex min-h-full flex-col justify-center", full ? "gap-6 py-6" : "gap-2 py-0")}>
                     <div>
-                      {full ? (
-                        <p className="flex items-center gap-2 font-display text-xl text-muted">
-                          <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5 fill-gold">
-                            <path d={SPARK} />
-                          </svg>
-                          Hello
-                        </p>
-                      ) : null}
-                      <h3 className={cn("font-display font-semibold leading-tight", full ? "mt-1 text-3xl" : "text-base")}>{symbol ? `What do you want to know about ${symbol}?` : "What do you want to know?"}</h3>
-                      {full ? <p className="mt-3 text-sm text-muted">Answers use Hume&apos;s own prices, charts and news, and say where each number came from.</p> : null}
+                      <p className={cn("flex items-center gap-2 font-display text-muted", full ? "text-xl" : "text-sm")}>
+                        <svg aria-hidden="true" viewBox="0 0 24 24" className={cn("shrink-0 fill-gold", full ? "size-5" : "size-4")}>
+                          <path d={SPARK} />
+                        </svg>
+                        {full ? "Hello, I'm Walter" : "Hello, I'm Walter, your Hume personal assistant."}
+                      </p>
+                      <h3 className={cn("font-display font-semibold leading-tight", full ? "mt-1 text-3xl" : "mt-1 text-base")}>{symbol ? `What can I do for you on ${symbol} today?` : "What can I do for you today?"}</h3>
+                      {full ? <p className="mt-3 text-sm text-muted">I&apos;m your personal assistant here at Hume. I read Hume&apos;s own prices, charts and news, and I always tell you where a number came from. Ask me anything, big or small.</p> : null}
                     </div>
                     <div className="flex flex-col gap-2">
                       {suggestions(symbol || "this market").map((question) => (
@@ -251,7 +249,7 @@ export function AiAssistant() {
                           key={question}
                           type="button"
                           onClick={() => ask(question)}
-                          className={cn("flex min-h-11 w-full items-center justify-between gap-3 whitespace-normal rounded-panel bg-raised px-4 text-left text-sm transition-colors duration-150 hover:bg-accent-soft hover:text-accent-hover", full ? "py-3" : "py-2")}
+                          className={cn("flex min-h-11 w-full items-center justify-between gap-3 whitespace-normal rounded-panel bg-raised px-4 text-left text-sm transition-colors duration-150 hover:bg-accent-soft hover:text-accent-hover", full ? "py-3" : "py-1.5")}
                         >
                           {question}
                           <svg aria-hidden="true" viewBox="0 0 24 24" className="size-4 shrink-0 text-muted" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -294,7 +292,7 @@ export function AiAssistant() {
                       <div role="status" className="flex gap-3">
                         <Avatar />
                         <div className="min-w-0 flex-1 space-y-2.5 pt-1">
-                          <p className="text-sm text-muted">HUME AI is reading the market…</p>
+                          <p className="text-sm text-muted">Walter is reading the market…</p>
                           <Skeleton className="block h-3 w-full" />
                           <Skeleton className="block h-3 w-5/6" />
                           <Skeleton className="block h-3 w-2/3" />
@@ -344,7 +342,7 @@ export function AiAssistant() {
                     </svg>
                   </button>
                 </form>
-                <p className="mt-2 text-center text-xs text-muted">Hume AI can make mistakes, not financial advice</p>
+                <p className="mt-2 text-center text-xs text-muted">Walter can make mistakes, not financial advice</p>
               </div>
             </div>,
             document.body,
