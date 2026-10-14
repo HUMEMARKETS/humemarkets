@@ -1,12 +1,13 @@
 "use client";
 
 import { alertLabel, alertMessage, fmtAlertPrice, parseAlertValue, type AlertKind } from "@hume/sdk";
-import { Button, Panel, ReviewStep, Segmented, Skeleton, TextField, cn, fieldBorder } from "@hume/ui";
+import { Button, Panel, ReviewStep, Segmented, Skeleton, TextField, cn, menuItem } from "@hume/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAccount, useSignMessage } from "wagmi";
 import { usePerpMarket, usePerpMarketConfig, usePerpMarkets } from "@/hooks/queries";
+import { useDismiss } from "@/hooks/useDismiss";
 import { useAlertList } from "@/hooks/useAlerts";
 import { timeAgo, type AlertRow } from "@/lib/alerts";
 import { post } from "@/lib/copy";
@@ -32,6 +33,57 @@ function Cadence() {
     <OnMainnet otherwise="On testnet, alerts are checked about every 5 minutes, so one can arrive a few minutes after the price moves.">
       Alerts are checked about once a minute, so one can arrive a little after the price moves.
     </OnMainnet>
+  );
+}
+
+/// The market picker. A native `<select>` opens the browser's own white list, which ignores the theme, so this is a
+/// menu in the NetworkMenu style: raised fill, hairline border, accent tint on hover and on the chosen market. It opens
+/// in the flow of the form, because the panel clips anything that floats past its edge.
+function MarketMenu({ symbols, value, onChange }: { symbols: string[]; value: string; onChange: (symbol: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const close = useCallback(() => setOpen(false), []);
+  useDismiss(ref, open, close);
+
+  return (
+    <div ref={ref} className="relative">
+      <span id="alert-market-label" className="mb-1 block text-xs text-muted">
+        Market
+      </span>
+      <button
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-labelledby="alert-market-label alert-market-value"
+        onClick={() => setOpen((state) => !state)}
+        className="flex h-10 w-full items-center justify-between gap-2 rounded-md border border-line bg-raised px-3 text-sm font-medium text-text transition-colors duration-150 hover:border-accent hover:bg-accent-soft hover:text-accent-hover"
+      >
+        <span id="alert-market-value">{value ? `${value}-PERP` : "Choose a market"}</span>
+        <svg aria-hidden="true" viewBox="0 0 10 6" className={cn("h-1.5 w-2.5 shrink-0 fill-none stroke-current transition-transform duration-150", open && "rotate-180")} strokeWidth="1.5">
+          <path d="M1 1l4 4 4-4" />
+        </svg>
+      </button>
+      {open ? (
+        <div role="menu" className="mt-1 max-h-[min(16rem,50vh)] overflow-y-auto rounded-panel border border-line bg-raised py-1">
+          {symbols.map((symbol) => (
+            <button
+              key={symbol}
+              type="button"
+              role="menuitemradio"
+              aria-checked={symbol === value}
+              className={cn(menuItem, "flex min-h-11 w-full items-center justify-between px-3 text-left text-sm", symbol === value && "bg-accent-soft font-medium")}
+              onClick={() => {
+                onChange(symbol);
+                close();
+              }}
+            >
+              {symbol}-PERP
+              {symbol === value ? <span aria-hidden="true" className="size-1.5 rounded-full bg-accent" /> : null}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -136,19 +188,7 @@ function NewAlert({ wallet, initialSymbol }: { wallet: string; initialSymbol: st
 
   return (
     <div className="flex flex-col gap-3 p-4">
-      <label className="flex flex-col gap-1">
-        <span className="text-xs text-muted">Market</span>
-        <select value={symbol} onChange={(event) => setSymbol(event.target.value)} className={cn(fieldBorder, "h-10 rounded-md border bg-raised px-2 text-sm hover:bg-accent-soft")}>
-          {(markets ?? []).map((m) => {
-            const s = symbolOf(m.marketId);
-            return (
-              <option key={m.marketId} value={s}>
-                {s}-PERP
-              </option>
-            );
-          })}
-        </select>
-      </label>
+      <MarketMenu symbols={(markets ?? []).map((m) => symbolOf(m.marketId))} value={symbol} onChange={setSymbol} />
       <p className="text-sm text-muted" aria-live="polite">
         {paused ? "This market is paused. You can still set an alert; it waits until the market is back. " : ""}
         {price !== undefined ? `Price now ${fmtAlertPrice(price)}.` : isPending ? "Reading the price…" : noPrice ? "No price right now. Try again when the market is open." : ""}

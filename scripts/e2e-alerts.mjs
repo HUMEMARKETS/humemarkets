@@ -153,6 +153,13 @@ try {
   await connect(page);
   await page.getByText("New alert").first().waitFor();
   await page.getByText(/Price now \$/).waitFor({ timeout: 30_000 });
+  // The market picker is a themed menu, not the browser's own white list.
+  await page.getByRole("button", { name: /Market/ }).first().click();
+  await page.getByRole("menuitemradio").first().waitFor();
+  const menuBackground = await page.getByRole("menu").evaluate((el) => getComputedStyle(el).backgroundColor);
+  check("market picker menu uses the theme's raised fill, not white", menuBackground !== "rgb(255, 255, 255)" && menuBackground !== "rgba(0, 0, 0, 0)", menuBackground);
+  await page.screenshot({ path: join(SHOTS, "alerts-market-menu-1440.png") });
+  await page.getByRole("menuitemradio", { name: "NVDA-PERP" }).click();
   await page.getByLabel("Price (USD)").fill("200");
   await page.getByRole("button", { name: "Review" }).click();
   await page.getByRole("heading", { name: /Set alert: NVDA at or above \$200\.00/ }).waitFor();
@@ -252,6 +259,19 @@ try {
   const overflow = await p3.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   check("375 px: no horizontal page scroll", overflow <= 0, `${overflow}`);
   await p3.screenshot({ path: join(SHOTS, "alerts-375.png"), fullPage: true });
+  await p3.getByRole("button", { name: /Market/ }).first().click();
+  await p3.getByRole("menuitemradio").first().waitFor();
+  await p3.screenshot({ path: join(SHOTS, "alerts-market-menu-375.png") });
+  await p3.getByRole("menuitemradio").first().click();
+  // Dark theme: the same menu in the dark tokens.
+  await p3.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
+  await p3.getByRole("button", { name: /Market/ }).first().click();
+  await p3.getByRole("menuitemradio").first().waitFor();
+  const darkBackground = await p3.getByRole("menu").evaluate((el) => getComputedStyle(el).backgroundColor);
+  check("dark theme: the market menu is dark, not white", darkBackground === "rgb(28, 28, 27)", darkBackground);
+  await p3.screenshot({ path: join(SHOTS, "alerts-market-menu-dark-375.png") });
+  await p3.getByRole("menuitemradio").first().click();
+  await p3.evaluate(() => document.documentElement.setAttribute("data-theme", "light"));
   await p3.getByRole("button", { name: /^Price alerts/ }).click();
   await p3.getByRole("menuitem").first().waitFor();
   await p3.screenshot({ path: join(SHOTS, "alerts-bell-375.png") });
@@ -270,7 +290,7 @@ try {
   await p4.waitForURL(/\/alerts\?symbol=/);
   await connect(p4);
   await p4.getByText("New alert").first().waitFor();
-  const chosen = await p4.locator("label", { hasText: "Market" }).locator("select").inputValue();
+  const chosen = ((await p4.locator("#alert-market-value").textContent()) ?? "").replace("-PERP", "");
   check("the Set alert chip opens the form on that market", href === `/alerts?symbol=${chosen}`, `${href} -> ${chosen}`);
   await term.close();
 } finally {
