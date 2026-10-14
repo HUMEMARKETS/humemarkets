@@ -157,3 +157,57 @@ export const copyExecutions = pgTable(
   },
   (table) => [unique("copy_executions_follow_leader_position_key").on(table.followId, table.leaderPositionId)],
 );
+
+/// A wallet's price alert (`packages/sdk/src/alerts.ts` defines the kinds and the maths). `services/api` writes it
+/// after verifying the wallet's EIP-191 signature and reads it for `GET /v1/alerts/:wallet`; `services/indexer`'s
+/// `evaluateAlerts` is the only other writer, and only ever moves `active` to `triggered`. `target` is a price in
+/// 18-decimal fixed point for `price_above` / `price_below` and whole basis points for `pct_up` / `pct_down`;
+/// `base_price` is the index price at creation, which a percent is measured against. Amounts are `text` for the reason
+/// `markets` documents. `(wallet, issued_at)` is unique, so a captured signed request replayed inside its time window
+/// cannot create a second alert.
+export const priceAlerts = pgTable(
+  "price_alerts",
+  {
+    id: serial("id").primaryKey(),
+    wallet: text("wallet").notNull(),
+    symbol: text("symbol").notNull(),
+    kind: text("kind").notNull(),
+    target: text("target").notNull(),
+    basePrice: text("base_price").notNull(),
+    /// active | triggered | cancelled
+    status: text("status").notNull().default("active"),
+    triggerPrice: text("trigger_price"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    triggeredAt: timestamp("triggered_at", { withTimezone: true }),
+    issuedAt: bigint("issued_at", { mode: "bigint" }).notNull(),
+  },
+  (table) => [unique("price_alerts_wallet_issued_at_key").on(table.wallet, table.issuedAt), index("price_alerts_status_symbol_idx").on(table.status, table.symbol)],
+);
+
+/// A browser a wallet chose to receive Web Push on. Written by `services/api` (signed subscribe); read by
+/// `services/indexer` when an alert fires; deleted by the indexer when the push service answers 404 or 410. The
+/// endpoint is the browser's own address at its push service, so it is the key.
+export const pushSubscriptions = pgTable("push_subscriptions", {
+  endpoint: text("endpoint").primaryKey(),
+  wallet: text("wallet").notNull(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/// What a fired alert says, kept for the bell in the header. Written only by `services/indexer`, in the same
+/// transaction that claims the alert, and read by `services/api` (`GET /v1/notifications/:wallet`). `alert_id` is
+/// unique: an alert can produce one notification, ever. Rows older than the retention window are pruned.
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: serial("id").primaryKey(),
+    wallet: text("wallet").notNull(),
+    alertId: integer("alert_id").notNull().unique(),
+    title: text("title").notNull(),
+    body: text("body").notNull(),
+    symbol: text("symbol").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("notifications_wallet_id_idx").on(table.wallet, table.id)],
+);

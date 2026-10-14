@@ -49,6 +49,7 @@ const raw = {
   creditExampleMaxLtvBps: process.env.NEXT_PUBLIC_CREDIT_EXAMPLE_MAX_LTV_BPS,
   creditExampleLiquidationLtvBps: process.env.NEXT_PUBLIC_CREDIT_EXAMPLE_LIQ_LTV_BPS,
   featureCopyTrading: process.env.NEXT_PUBLIC_FEATURE_COPY_TRADING,
+  vapidPublicKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
 };
 
 /// A whole number from the environment, or `fallback` when it is unset, not a number or out of range.
@@ -158,6 +159,8 @@ export const env = {
   /// The trader profile and copy flow routes (`/traders/...`). Off unless set to `true`; while on before
   /// Phase 14 they are labelled shells with no data. The leaderboard's Copy action stays disabled either way.
   copyTrading: raw.featureCopyTrading === "true",
+  /// The public half of the Web Push key (the private half lives on the indexer). Without it the page offers in-app alerts only.
+  vapidPublicKey: raw.vapidPublicKey?.trim() || undefined,
   /// The lending pair (Phase 9). The environment wins; otherwise the deployment record's `creditPairTslaUsdg`,
   /// which the contracts lane adds to `@hume/config` once the credit stack is broadcast. Read through a loose
   /// record so this builds before and after that key exists. `undefined` until then: the page says so.

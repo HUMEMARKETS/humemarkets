@@ -12,6 +12,7 @@ export type NavIconName =
   | "copy"
   | "portfolio"
   | "activity"
+  | "alerts"
   | "docs"
   | "features"
   | "how";
@@ -96,6 +97,12 @@ const ICONS: Record<NavIconName, ReactNode> = {
     <>
       <path d="M1.5 8h3l2-4.5 3 9L11 8h1" />
       {node(13.6, 8)}
+    </>
+  ),
+  alerts: (
+    <>
+      <path d="M3.5 11V7a4.5 4.5 0 0 1 9 0v4L14 12.5H2zM6.5 14.5h3" />
+      {node(8, 8.5)}
     </>
   ),
   docs: (

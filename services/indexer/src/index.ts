@@ -11,6 +11,7 @@ import { allEventsAbi, contractNamesByAddress, watchedAddresses } from "./events
 import { blockBeforeFirstIndexed } from "./startBlock.js";
 import { serializeArgs } from "./serialize.js";
 import { runTraderStats, type LiveReader } from "./traderStatsJob.js";
+import { evaluateAlerts, webPushSender, type PushSender } from "./alerts.js";
 
 const POLL_INTERVAL_MS = Number(process.env.INDEXER_POLL_INTERVAL_MS ?? 5000);
 /// Free-plan mode: run one pass (tick, price sample, trader stats) and exit, so a Railway cron service
@@ -38,6 +39,13 @@ const TRADER_STATS_INTERVAL_MS = Number(process.env.LEADERBOARD_INTERVAL_MS ?? 6
 const LEADERBOARD_MAX_LIVE_POSITIONS = Number(process.env.LEADERBOARD_MAX_LIVE_POSITIONS ?? 200);
 /// An option with no close or exercise event this long after expiry is treated as expired worthless.
 const LEADERBOARD_OPTION_GRACE_SECONDS = Number(process.env.LEADERBOARD_OPTION_GRACE_HOURS ?? 24) * 3600;
+
+/// How often to check price alerts against the latest sampled prices. On the testnet cron (`*/5`) a pass is one run,
+/// so alerts there fire at that cadence.
+const ALERT_CHECK_INTERVAL_MS = Number(process.env.ALERT_CHECK_INTERVAL_MS ?? 60_000);
+/// A price older than this is a closed or stale market, and its alerts wait for a fresh one.
+const ALERT_MAX_PRICE_AGE_MS = Number(process.env.ALERT_MAX_PRICE_AGE_MS ?? 15 * 60_000);
+const NOTIFICATION_RETENTION_DAYS = Number(process.env.NOTIFICATION_RETENTION_DAYS ?? 30);
 
 const chainId = resolveChainId(process.env.CHAIN_ID);
 const addresses = resolveAddresses(chainId);
@@ -199,6 +207,22 @@ async function deriveTraderStats() {
   console.log(`indexer: trader stats refreshed for ${wallets} wallet(s)`);
 }
 
+let lastAlertsAt = 0;
+
+/// Web Push needs the VAPID pair. Without it alerts still fire and land in the in-app bell.
+const pushSender: PushSender | undefined =
+  process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY
+    ? webPushSender({ subject: process.env.VAPID_SUBJECT ?? "https://www.humemarkets.com", publicKey: process.env.VAPID_PUBLIC_KEY, privateKey: process.env.VAPID_PRIVATE_KEY })
+    : undefined;
+
+/// Fires the price alerts the latest prices have crossed. Runs after the price sample so it sees this pass's prices.
+async function checkAlerts() {
+  if (Date.now() - lastAlertsAt < ALERT_CHECK_INTERVAL_MS) return;
+  lastAlertsAt = Date.now();
+  const fired = await evaluateAlerts(getSql(), pushSender, { maxPriceAgeMs: ALERT_MAX_PRICE_AGE_MS, retentionDays: NOTIFICATION_RETENTION_DAYS });
+  if (fired > 0) console.log(`indexer: ${fired} price alert(s) fired`);
+}
+
 async function main() {
   console.log(`indexer: watching ${addressList.length} contracts on chain ${chainId}`);
   try {
@@ -216,6 +240,11 @@ async function main() {
       await sampleIndexPrices();
     } catch (error) {
       console.error("indexer: price sampling failed", error);
+    }
+    try {
+      await checkAlerts();
+    } catch (error) {
+      console.error("indexer: price alerts failed", error);
     }
     try {
       await deriveTraderStats();

@@ -15,6 +15,7 @@ import { Logo } from "./Logo";
 import { MenuIcon } from "./MenuIcon";
 import { NavIcon } from "./NavIcon";
 import { NetworkMenu } from "./NetworkMenu";
+import { NotificationBell } from "./NotificationBell";
 import { ThemeToggle } from "./ThemeToggle";
 import { WalletButton } from "./WalletButton";
 import { XIcon } from "./XIcon";
@@ -174,6 +175,7 @@ export function Header() {
             </nav>
           ) : null}
           <NetworkMenu />
+          <NotificationBell />
           {/* Below xl the bar has no room beside the logo; the toggle moves into the menu sheet. */}
           <ThemeToggle className="max-xl:hidden" />
           <a
@@ -181,7 +183,7 @@ export function Header() {
             target="_blank"
             rel="noreferrer"
             aria-label="HUME on X"
-            className={cn(chip, "size-11 shrink-0 justify-center rounded-control! max-xl:size-10")}
+            className={cn(chip, "size-11 shrink-0 justify-center rounded-control! max-xl:size-10 max-sm:hidden")}
           >
             <XIcon />
           </a>

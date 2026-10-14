@@ -104,6 +104,11 @@ export function MarketHeader() {
           </button>
         ) : null}
         {symbol ? (
+          <Link href={`/alerts?symbol=${encodeURIComponent(symbol)}`} className={cn(chip, "h-8 px-2.5 text-xs font-medium")}>
+            Set alert
+          </Link>
+        ) : null}
+        {symbol ? (
           <Link href={`/news?ticker=${encodeURIComponent(symbol)}`} className={cn(chip, "h-8 px-2.5 text-xs font-medium")}>
             News
           </Link>

@@ -176,3 +176,19 @@ export type { CreditNamespace, CreditStatus } from "./credit.js";
 export type { PonsNamespace } from "./pons.js";
 export { copyFollowMessage, copyUnfollowMessage, type CopyFollowTerms } from "./copy.js";
 export { fetchReferenceQuotes, parseReferenceQuote, REFERENCE_QUOTES_URL, type ReferenceQuote } from "./referenceQuotes.js";
+export {
+  ALERT_KINDS,
+  ALERT_WINDOW_SECONDS,
+  MAX_ACTIVE_ALERTS,
+  alertFires,
+  alertLabel,
+  alertMessage,
+  alertThreshold,
+  fmtAlertPrice,
+  isPercent,
+  notificationText,
+  parseAlertValue,
+  type AlertKind,
+  type AlertRequest,
+  type AlertTerms,
+} from "./alerts.js";

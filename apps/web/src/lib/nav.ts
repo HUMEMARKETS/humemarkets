@@ -33,6 +33,7 @@ export const NEWS_LINK: NavLink = { label: "News", href: "/news", icon: "news" }
 export const MORE_LINKS: NavLink[] = [
   { label: "How it works", href: "/how-it-works", icon: "how" },
   { label: "Activity", href: "/activity", icon: "activity" },
+  { label: "Alerts", href: "/alerts", icon: "alerts" },
   { label: "Docs", href: "/docs", icon: "docs" },
   { label: "Features", href: "/features", icon: "features" },
 ];

@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { env } from "@/lib/env";
+import { AlertToasts } from "./AlertToasts";
 import { ConnectExplainer } from "./ConnectExplainer";
 import { Header } from "./Header";
 import { LandingTicker } from "./LandingTicker";
@@ -41,6 +42,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <TxToasts />
       <ConnectExplainer />
       <TriggerAlerts />
+      <AlertToasts />
       <OptionExpiryAlerts />
     </div>
   );

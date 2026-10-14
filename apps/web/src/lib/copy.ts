@@ -25,7 +25,7 @@ export function capsProblem(o: { budget: bigint | undefined; maxTrade: bigint | 
   return undefined;
 }
 
-async function post(path: string, body: unknown): Promise<{ ok: true } | { ok: false; error: string }> {
+export async function post(path: string, body: unknown): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const response = await fetch(`${env.apiUrl}${path}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
     if (response.ok) return { ok: true };

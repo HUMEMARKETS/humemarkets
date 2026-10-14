@@ -29,5 +29,6 @@ export NEXT_PUBLIC_RPC_PROXY_URL_TESTNET="$NEXT_PUBLIC_RPC_PROXY_URL" NEXT_PUBLI
 export NEXT_PUBLIC_EXPLORER_URL_TESTNET="$NEXT_PUBLIC_EXPLORER_URL" NEXT_PUBLIC_EXPLORER_URL_MAINNET=https://robinhoodchain.blockscout.com
 export NEXT_PUBLIC_PROTOCOL_TOKEN_ADDRESS= NEXT_PUBLIC_PROTOCOL_TOKEN_SYMBOL= NEXT_PUBLIC_PROTOCOL_TOKEN_LIVE=
 export NEXT_PUBLIC_FEATURE_COPY_TRADING=true  # the testnet site on Vercel has it on
+export NEXT_PUBLIC_VAPID_PUBLIC_KEY="${NEXT_PUBLIC_VAPID_PUBLIC_KEY:-BAGyoMfHyzx6Arr57QRPjymJQiOEZoUDj2w64hrvDmMgb061xkK96OTLloBSDCyadII6sAFu0l2LGcNcSF1PrxM}"  # the public half of the Web Push key; the private half is on the indexer only
 
 exec pnpm --filter @hume/web "${1:?build, start or dev}"
