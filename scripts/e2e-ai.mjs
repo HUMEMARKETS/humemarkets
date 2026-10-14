@@ -99,7 +99,7 @@ async function states(browser, size) {
   await dialog.getByText("Reading NVDA-PERP").waitFor({ timeout: 60_000 });
   check(`${width}: sheet opens, focus moves into it`, await page.evaluate(() => document.activeElement?.closest('[role="dialog"]') !== null));
   check(`${width}: empty state shows three suggested questions`, (await dialog.getByRole("button", { name: /NVDA|funding rate/i }).count()) >= 3);
-  check(`${width}: disclaimer is on screen`, await dialog.getByText("AI-generated, not financial advice").isVisible());
+  check(`${width}: disclaimer is on screen`, await dialog.getByText("Hume AI can make mistakes, not financial advice").isVisible());
   check(`${width}: no horizontal scroll (empty)`, await noSideScroll(page));
   await shot(page, "empty", width);
 

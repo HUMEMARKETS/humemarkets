@@ -33,7 +33,7 @@ const MOTION_MS = 200;
 /// the same way. Under reduced motion both collapse to nothing (globals.css).
 ///
 /// States: loading (the row), empty (greeting and suggested questions), error and limit reached (a sentence and a way
-/// on), success (the answer and its sources), and the line "AI-generated, not financial advice" which is always on screen.
+/// on), success (the answer and its sources), and the line "Hume AI can make mistakes, not financial advice" which is always on screen.
 export function AiAssistant() {
   // The market open in the terminal, if any; empty on a page that has none, and the assistant then answers about any market.
   const symbol = useTerminal((state) => state.symbol);
@@ -325,7 +325,7 @@ export function AiAssistant() {
                       </svg>
                     </button>
                   </form>
-                  <p className="mt-2 text-center text-xs text-muted">AI-generated, not financial advice. HUME AI only explains; it cannot trade for you.</p>
+                  <p className="mt-2 text-center text-xs text-muted">Hume AI can make mistakes, not financial advice</p>
                 </div>
               </div>
             </div>,
