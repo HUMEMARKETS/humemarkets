@@ -1,26 +1,13 @@
 "use client";
 
 import { Button, Skeleton, chip, cn, fieldBorder } from "@hume/ui";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
+import mark from "@/assets/hume-mark.png";
 import { useTerminal } from "@/stores/terminal";
 import { AiError, askAi, failureText, fmtSourceTime, isLimit, suggestions, type AiMessage } from "@/lib/ai";
-
-/// The HUME AI mark: a large four-point star (a price spark) with a small gold one beside it, the palette's own gold
-/// (the same as the watchlist star). A quarter turn on hover or focus, 150 ms, and none under reduced motion.
-function AiMark() {
-  const star = "M12 2C12.8 8 16 11.2 22 12C16 12.8 12.8 16 12 22C11.2 16 8 12.8 2 12C8 11.2 11.2 8 12 2Z";
-  return (
-    <svg aria-hidden="true" viewBox="0 0 30 26" overflow="visible" className="size-6 transition-transform duration-150 group-hover:rotate-90 group-focus-visible:rotate-90">
-      <g transform="translate(-1 1)">
-        <path d={star} fill="currentColor" />
-      </g>
-      <path d={star} transform="translate(19.5 -2.5) scale(0.5)" className="fill-gold" />
-      <path d={star} transform="translate(21.5 13) scale(0.3)" className="fill-gold" opacity="0.7" />
-    </svg>
-  );
-}
 
 /// "Ask HUME AI": a sheet that explains the open market from Hume's own data. It only reads, so it works without a
 /// wallet (the not-connected state needs no handling: there is nothing here that signs or sends). Answers arrive whole,
@@ -114,17 +101,25 @@ export function AiAssistant() {
 
   return (
     <>
-      {/* Sticky in the bottom-right corner of every app page. On a phone terminal it sits above the pinned bar; the order sheet
-          (z-30) and this sheet (z-50) both cover it. */}
-      <Button
-        variant="primary"
+      {/* Sticky in the bottom-right corner of every app page, a round button with the HUME mark. It is charcoal in both
+          themes because the mark is pale metal. On a phone terminal it sits above the pinned bar; the order sheet (z-30)
+          and this sheet (z-50) both cover it. The ring turns a quarter on hover or focus, 150 ms, none under reduced motion. */}
+      <button
+        type="button"
+        aria-label="Ask HUME AI"
         aria-haspopup="dialog"
+        title="Ask HUME AI"
         onClick={() => setOpen(true)}
-        className={cn("group fixed right-4 z-20 h-11 gap-2 pl-3.5 pr-5 shadow-accent-glow ring-1 ring-gold/70 lg:bottom-6 lg:right-6", barBelow ? "bottom-20" : "bottom-4")}
+        className={cn(
+          "group fixed right-4 z-20 grid size-14 place-items-center rounded-full bg-charcoal shadow-accent-glow ring-1 ring-gold/70 transition-shadow duration-150 hover:ring-2 hover:ring-gold focus-visible:ring-2 focus-visible:ring-gold lg:bottom-6 lg:right-6",
+          barBelow ? "bottom-20" : "bottom-4",
+        )}
       >
-        <AiMark />
-        Ask HUME AI
-      </Button>
+        <Image src={mark} alt="" className="h-8 w-auto transition-transform duration-150 group-hover:rotate-90 group-focus-visible:rotate-90" />
+        <svg aria-hidden="true" viewBox="0 0 24 24" className="absolute -right-0.5 -top-0.5 size-4 fill-gold">
+          <path d="M12 2C12.8 8 16 11.2 22 12C16 12.8 12.8 16 12 22C11.2 16 8 12.8 2 12C8 11.2 11.2 8 12 2Z" />
+        </svg>
+      </button>
       {open
         ? createPortal(
             <div className="fixed inset-0 z-50 flex justify-end">
