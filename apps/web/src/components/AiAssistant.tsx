@@ -1,8 +1,10 @@
 "use client";
 
 import { Button, Skeleton, chip, cn, fieldBorder } from "@hume/ui";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
+import { useTerminal } from "@/stores/terminal";
 import { AiError, askAi, failureText, fmtSourceTime, isLimit, suggestions, type AiMessage } from "@/lib/ai";
 
 /// "Ask HUME AI": a sheet that explains the open market from Hume's own data. It only reads, so it works without a
@@ -11,7 +13,11 @@ import { AiError, askAi, failureText, fmtSourceTime, isLimit, suggestions, type 
 ///
 /// States: loading (the row), empty (suggested questions), error and limit reached (a sentence and a way on),
 /// success (the answer and its sources), and the line "AI-generated, not financial advice" which is always on screen.
-export function AiAssistant({ symbol }: { symbol: string }) {
+export function AiAssistant() {
+  // The market open in the terminal, if any; empty on a page that has none, and the assistant then answers about any market.
+  const symbol = useTerminal((state) => state.symbol);
+  // The two terminals pin a Long / Short (or option) bar to the bottom on a phone; the button rides above it.
+  const barBelow = /^\/(perpetuals|options)/.test(usePathname());
   const [open, setOpen] = useState(false);
   // The conversation belongs to a market: opening another market starts a fresh one.
   const [chat, setChat] = useState<{ symbol: string; messages: AiMessage[] }>({ symbol, messages: [] });
@@ -93,13 +99,13 @@ export function AiAssistant({ symbol }: { symbol: string }) {
 
   return (
     <>
-      {/* Sticky in the bottom-right corner. Under 1024 px it sits above the pinned Long / Short bar; the order sheet
+      {/* Sticky in the bottom-right corner of every app page. On a phone terminal it sits above the pinned bar; the order sheet
           (z-30) and this sheet (z-50) both cover it. */}
       <Button
         variant="primary"
         aria-haspopup="dialog"
         onClick={() => setOpen(true)}
-        className="fixed bottom-20 right-4 z-20 h-11 px-5 shadow-accent-glow lg:bottom-6 lg:right-6"
+        className={cn("fixed right-4 z-20 h-11 px-5 shadow-accent-glow lg:bottom-6 lg:right-6", barBelow ? "bottom-20" : "bottom-4")}
       >
         Ask HUME AI
       </Button>

@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { env } from "@/lib/env";
+import { AiAssistant } from "./AiAssistant";
 import { AlertToasts } from "./AlertToasts";
 import { ConnectExplainer } from "./ConnectExplainer";
 import { Header } from "./Header";
@@ -39,6 +40,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           {children}
         </main>
       </div>
+      {pathname === "/" ? null : <AiAssistant />}
       <TxToasts />
       <ConnectExplainer />
       <TriggerAlerts />
