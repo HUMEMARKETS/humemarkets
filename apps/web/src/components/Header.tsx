@@ -245,7 +245,7 @@ export function Header() {
             <div className="md:border-l md:border-line md:pt-2">
               <div role="group" aria-label="More" className="pb-3 md:pb-1">
                 <p aria-hidden="true" className={sheetHeading}>More</p>
-                {(publicBar ? [NEWS_LINK, ...MORE_LINKS] : MORE_LINKS).map((item) => (
+                {MORE_LINKS.map((item) => (
                   <Link key={item.href} href={item.href} aria-current={isCurrent(pathname, item.href) ? "page" : undefined} className={sheetLink(isCurrent(pathname, item.href))}>
                     <NavIcon name={item.icon} />
                     {item.label}

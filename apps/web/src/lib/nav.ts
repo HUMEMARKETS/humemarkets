@@ -3,6 +3,10 @@ import type { NavIconName } from "@/components/NavIcon";
 export type NavLink = { label: string; href: string; icon: NavIconName };
 export type NavEntry = NavLink | { label: string; items: NavLink[] };
 
+/// The news page is a dedicated public page: it keeps the landing header's frame on `/news`, and is also a slot
+/// in the app bar (NAV below) so it is reachable from every page.
+export const NEWS_LINK: NavLink = { label: "News", href: "/news", icon: "news" };
+
 /// The primary navigation. A group is a disclosure menu in the header and a titled section in the mobile
 /// sheet. The route paths are unchanged: only the grouping is new. Copy trading joins Social when its
 /// route exists.
@@ -22,11 +26,8 @@ export const NAV: NavEntry[] = [
   { label: "Capital", items: [{ label: "Lending", href: "/lending", icon: "lending" }] },
   { label: "Social", items: [{ label: "Leaderboard", href: "/leaderboard", icon: "leaderboard" }, ...(copyOn ? [{ label: "Copy trading", href: "/copy", icon: "copy" as const }] : [])] },
   { label: "Portfolio", href: "/portfolio", icon: "portfolio" },
+  NEWS_LINK,
 ];
-
-/// The news page has no slot in the app bar: it is a dedicated public page, linked from the landing page header,
-/// and it keeps that header.
-export const NEWS_LINK: NavLink = { label: "News", href: "/news", icon: "news" };
 
 /// Pages with no slot in the bar. The footer lists them, and so does the mobile sheet, because the
 /// terminals have no footer.
