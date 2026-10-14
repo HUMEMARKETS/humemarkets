@@ -1,4 +1,4 @@
-import { NEWS_NAME_ALIASES, NEWS_NAME_STOPWORDS, type MarketListing, type NewsCategory, type NewsFeed } from "@hume/config";
+import { NEWS_ARTICLE_DOMAINS, NEWS_NAME_ALIASES, NEWS_NAME_STOPWORDS, type MarketListing, type NewsCategory, type NewsFeed } from "@hume/config";
 
 /// Market News, the pure half: RSS/Atom parsing, de-duplication and ticker matching. The route handler fetches,
 /// this file only reads text. A headline is kept as plain text and a link; article bodies are never copied.
@@ -210,4 +210,38 @@ export function trending(items: readonly Pick<NewsItem, "tickers">[], keep: (sym
   const counts = new Map<string, number>();
   for (const item of items) for (const symbol of item.tickers) if (keep(symbol)) counts.set(symbol, (counts.get(symbol) ?? 0) + 1);
   return [...counts].map(([symbol, count]) => ({ symbol, count })).sort((a, b) => b.count - a.count || a.symbol.localeCompare(b.symbol)).slice(0, limit);
+}
+
+/// Whether an article address may be opened to read its preview image: https, on a site in `NEWS_ARTICLE_DOMAINS`.
+export function isArticleUrl(raw: string): boolean {
+  try {
+    const url = new URL(raw);
+    return url.protocol === "https:" && !url.username && !url.password && NEWS_ARTICLE_DOMAINS.some((domain) => url.hostname === domain || url.hostname.endsWith(`.${domain}`));
+  } catch {
+    return false;
+  }
+}
+
+const PREVIEW_KEYS = ["og:image", "og:image:secure_url", "og:image:url", "twitter:image", "twitter:image:src", "parsely-image-url"];
+
+/// The preview image an article page names in its `<head>` (`og:image`, else `twitter:image`), as an https address, or undefined.
+/// Only these meta tags are read; nothing of the article's text is.
+export function findPreviewImage(html: string, pageUrl: string): string | undefined {
+  const found = new Map<string, string>();
+  for (const tag of html.match(/<meta\b[^>]*>/gi) ?? []) {
+    const key = (attr(tag, "property") ?? attr(tag, "name"))?.toLowerCase();
+    const content = attr(tag, "content");
+    if (key && content && PREVIEW_KEYS.includes(key) && !found.has(key)) found.set(key, content);
+  }
+  for (const key of PREVIEW_KEYS) {
+    const content = found.get(key);
+    if (!content) continue;
+    try {
+      const safe = safeUrl(new URL(plainText(content), pageUrl).toString(), true);
+      if (safe) return safe;
+    } catch {
+      // A content value that is not an address: try the next key.
+    }
+  }
+  return undefined;
 }

@@ -22,7 +22,7 @@ for (const [label, width, height] of [["1440", 1440, 900], ["375", 375, 812]]) {
     const page = await context.newPage();
     if (fakeClock) await page.clock.install();
     const state = { mode };
-    await page.route("**/api/news**", async (route) => {
+    await page.route((url) => url.pathname === "/api/news", async (route) => {
       if (wait) await new Promise((resolve) => setTimeout(resolve, wait));
       await answer(route, state.mode);
     });
@@ -102,7 +102,7 @@ for (const [label, width, height] of [["1440", 1440, 900], ["375", 375, 812]]) {
   {
     const page = await context.newPage();
     await page.addInitScript(() => Object.defineProperty(navigator, "onLine", { get: () => false }));
-    await page.route("**/api/news**", (route) => route.abort());
+    await page.route((url) => url.pathname === "/api/news", (route) => route.abort());
     await show(page);
     await page.getByText("You are offline, so the news cannot load").waitFor({ timeout: 20000 });
     check(`@${label} offline, no data: one sentence and Try again`, await page.getByRole("button", { name: "Try again" }).isVisible());

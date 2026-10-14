@@ -34,6 +34,19 @@ for (const [label, width, height] of [["1440", 1440, 900], ["375", 375, 812]]) {
   await rows.first().waitFor();
   check(`@${label} page loads with rows`, (await rows.count()) > 0, `${await rows.count()} rows`);
 
+  // Pictures: every story shows one (its feed's, else its article page's), and the images really load.
+  await page.waitForFunction(() => !document.querySelector("[data-thumb=waiting]"), null, { timeout: 90000 });
+  const kinds = await page.locator("[data-thumb]").evaluateAll((boxes) => boxes.map((box) => box.getAttribute("data-thumb")));
+  const noPicture = kinds.filter((kind) => kind !== "picture").length;
+  check(`@${label} every story has a picture`, kinds.length > 0 && noPicture === 0, `${kinds.length - noPicture}/${kinds.length}`);
+  await page.locator("[data-news-card] img").evaluateAll(async (imgs) => { for (const img of imgs) { img.scrollIntoView(); await new Promise((r) => setTimeout(r, 60)); } });
+  await page.waitForTimeout(4000);
+  const broken = await page.locator("[data-news-card] img").evaluateAll((imgs) => imgs.filter((img) => !(img.complete && img.naturalWidth > 0)).length);
+  const total = await page.locator("[data-news-card] img").count();
+  check(`@${label} the pictures load`, total > 0 && broken <= Math.ceil(total * 0.05), `${total - broken}/${total} loaded`);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.locator("main").evaluate((main) => main.scrollTo(0, 0));
+
   const first = rows.first();
   check(`@${label} first row href is an API item url`, (await first.getAttribute("href")) === api.items[0].url);
   check(`@${label} link opens a new tab safely`, (await first.getAttribute("target")) === "_blank" && /noopener/.test(await first.getAttribute("rel")) && /noreferrer/.test(await first.getAttribute("rel")));
@@ -91,6 +104,8 @@ for (const [label, width, height] of [["1440", 1440, 900], ["375", 375, 812]]) {
   const aaplCards = await page.locator("[data-news-card]").count();
   const aaplBadges = await page.locator('[data-news-card] a[href="/perpetuals?market=AAPL"]').count();
   check(`@${label} ?ticker=AAPL: every card has an AAPL badge`, aaplCards > 0 && aaplBadges === aaplCards, `${aaplBadges}/${aaplCards}`);
+  await page.waitForFunction(() => !document.querySelector("[data-thumb=waiting]"), null, { timeout: 90000 });
+  await page.waitForTimeout(2500);
   await page.screenshot({ path: `${OUT}/news-ticker-${label}.png` });
   if (label === "1440") {
     await page.locator('[data-news-card] a[href="/perpetuals?market=AAPL"]').first().click();

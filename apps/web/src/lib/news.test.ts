@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { marketsForChain, ROBINHOOD_MAINNET_CHAIN_ID, type NewsFeed } from "@hume/config";
-import { buildMatchers, collectNews, dayLabel, dedupe, fmtAgo, groupByDay, hashId, initials, matchTickers, parseFeed, plainText, safeUrl, trending, type NewsItem } from "./news";
+import { buildMatchers, collectNews, dayLabel, dedupe, fmtAgo, groupByDay, hashId, initials, isArticleUrl, findPreviewImage, matchTickers, parseFeed, plainText, safeUrl, trending, type NewsItem } from "./news";
 
 const matchers = buildMatchers(marketsForChain(ROBINHOOD_MAINNET_CHAIN_ID));
 const tickers = (title: string) => matchTickers(title, matchers);
@@ -116,4 +116,26 @@ test("publisher initials and trending markets", () => {
   const items = [{ tickers: ["AAPL", "BTC"] }, { tickers: ["BTC"] }, { tickers: ["JD", "BTC", "AAPL"] }, { tickers: ["TSLA"] }];
   assert.deepEqual(trending(items, (symbol) => symbol !== "JD", 2), [{ symbol: "BTC", count: 3 }, { symbol: "AAPL", count: 2 }]);
   assert.deepEqual(trending(items, () => true).map((entry) => entry.symbol), ["BTC", "AAPL", "JD", "TSLA"]);
+});
+
+test("only https article pages on a listed site may be opened for a preview image", () => {
+  assert.ok(isArticleUrl("https://www.cnbc.com/2026/10/14/a.html"));
+  assert.ok(isArticleUrl("https://finance.yahoo.com/video/a.html?.tsrc=rss"));
+  assert.ok(!isArticleUrl("http://www.cnbc.com/a"));
+  assert.ok(!isArticleUrl("https://cnbc.com.evil.example/a"));
+  assert.ok(!isArticleUrl("https://evilcnbc.com/a"));
+  assert.ok(!isArticleUrl("https://www.yahoo.com/a"));
+  assert.ok(!isArticleUrl("https://user:pw@www.cnbc.com/a"));
+  assert.ok(!isArticleUrl("https://127.0.0.1/a"));
+  assert.ok(!isArticleUrl("javascript:alert(1)"));
+});
+
+test("the preview image comes from og:image, else twitter:image, as an https address", () => {
+  const page = "https://www.cnbc.com/2026/10/14/a.html";
+  assert.equal(findPreviewImage('<head><meta property="og:image" itemProp="image" content="https://img.cnbcfm.com/a.jpeg?v=1&amp;w=1920"/></head>', page), "https://img.cnbcfm.com/a.jpeg?v=1&w=1920");
+  assert.equal(findPreviewImage('<meta name="twitter:image" content="https://img.example.com/t.png">', page), "https://img.example.com/t.png");
+  assert.equal(findPreviewImage('<meta content="/media/rel.jpg" property="og:image">', page), "https://www.cnbc.com/media/rel.jpg");
+  assert.equal(findPreviewImage('<meta property="og:image" content="http://img.example.com/insecure.jpg"><meta name="twitter:image" content="https://img.example.com/ok.jpg">', page), "https://img.example.com/ok.jpg");
+  assert.equal(findPreviewImage('<meta property="og:image" content="javascript:alert(1)">', page), undefined);
+  assert.equal(findPreviewImage("<html>no meta here</html>", page), undefined);
 });

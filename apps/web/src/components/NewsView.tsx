@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, Skeleton, Tabs, chip, cn, pill } from "@hume/ui";
-import { marketForSymbol, NEWS_CATEGORIES, NEWS_CATEGORY_LABEL, ROBINHOOD_MAINNET_CHAIN_ID, type NewsCategory } from "@hume/config";
+import { logoForSymbol, marketForSymbol, NEWS_CATEGORIES, NEWS_CATEGORY_LABEL, ROBINHOOD_MAINNET_CHAIN_ID, type NewsCategory } from "@hume/config";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -43,19 +43,40 @@ const clock = (iso: string) => new Date(iso).toLocaleTimeString("en-US", { hour:
 /// A market with a perpetual. A display-only market (PDD, JD) has no terminal to open, so it earns no badge.
 const hasPerp = (symbol: string) => marketForSymbol(ROBINHOOD_MAINNET_CHAIN_ID, symbol)?.tier === "tradeable";
 
-/// The picture's box is fixed, so a late or failed image moves nothing. Without a picture it shows the publisher's initials.
-/// Only an https address ever gets here.
-function Thumb({ src, source, className }: { src?: string; source: string; className?: string }) {
+/// The picture of a story. The feed's own image comes first; a story whose feed has none asks `/api/news/thumb` for the
+/// preview image of its article page (the CDN holds the answer for a day). With neither, the logo of the first market it
+/// names, then the publisher's initials. The box is fixed at 16:9 from the first paint, so no picture arriving, late or
+/// not at all, moves anything. Only an https address ever gets here.
+function Thumb({ item, className }: { item: NewsItem; className?: string }) {
   const [broken, setBroken] = useState(false);
-  const picture = Boolean(src) && !broken;
+  const lazy = useQuery({
+    queryKey: ["news-thumb", item.url],
+    queryFn: async (): Promise<string | null> => {
+      const response = await fetch(`/api/news/thumb?url=${encodeURIComponent(item.url)}`);
+      return response.ok ? ((await response.json()) as { image: string | null }).image : null;
+    },
+    enabled: !item.thumbnail,
+    staleTime: Infinity,
+    retry: 1,
+  });
+  const picture = item.thumbnail ?? lazy.data ?? undefined;
+  const market = item.tickers.find(hasPerp);
+  const logo = market ? logoForSymbol(market) : undefined;
+  const waiting = !picture && !item.thumbnail && lazy.isPending;
+  const shows = picture && !broken ? "picture" : waiting ? "waiting" : logo ? "logo" : "initials";
   return (
-    <span className={cn("relative block w-full overflow-hidden bg-raised", picture ? "aspect-[16/9]" : "aspect-[16/5]", className)}>
-      {picture ? (
+    <span data-thumb={shows} className={cn("relative block aspect-[16/9] w-full overflow-hidden bg-raised", className)}>
+      {picture && !broken ? (
         // eslint-disable-next-line @next/next/no-img-element -- publisher images, many hosts, no loader
-        <img src={src} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setBroken(true)} className="absolute inset-0 size-full object-cover" />
+        <img src={picture} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setBroken(true)} className="absolute inset-0 size-full object-cover" />
+      ) : waiting ? (
+        <span aria-hidden="true" className="absolute inset-0 animate-pulse bg-raised" />
+      ) : logo ? (
+        // eslint-disable-next-line @next/next/no-img-element -- market logo from the config, one small image
+        <img src={logo} alt="" loading="lazy" referrerPolicy="no-referrer" className="absolute left-1/2 top-1/2 size-20 -translate-x-1/2 -translate-y-1/2 rounded-panel bg-ground object-contain p-2" />
       ) : (
         <span aria-hidden="true" className="absolute inset-0 flex items-center justify-center font-display text-[2rem] font-bold tracking-[-0.03em] text-faint">
-          {initials(source)}
+          {initials(item.source)}
         </span>
       )}
     </span>
@@ -101,7 +122,7 @@ function Lead({ item, now }: { item: NewsItem; now: number }) {
   return (
     <article data-news-card className="overflow-hidden rounded-panel border border-line/70 bg-surface md:grid md:grid-cols-[3fr_2fr]">
       <a href={item.url} target="_blank" rel="noopener noreferrer" aria-label={`${item.title} (opens ${item.source})`} className="group block md:contents">
-        <Thumb src={item.thumbnail} source={item.source} className="md:row-span-2 md:aspect-auto md:h-full md:min-h-72" />
+        <Thumb item={item} className="md:row-span-2 md:aspect-auto md:h-full md:min-h-72" />
         <span className="flex flex-col gap-3 p-4 pb-2 md:p-8 md:pb-2 md:self-center">
           <span className="text-[11px] font-medium uppercase tracking-[0.28em] text-accent">Top story</span>
           <span className="font-display text-[1.5rem] font-bold leading-[1.12] tracking-[-0.03em] group-hover:underline group-hover:underline-offset-4 sm:text-[2rem]">{item.title}</span>
@@ -118,7 +139,7 @@ function Card({ item, now }: { item: NewsItem; now: number }) {
     <li className="flex">
       <article data-news-card className="flex w-full flex-col overflow-hidden rounded-panel border border-line/70 bg-surface transition-colors duration-150 hover:border-accent-line">
         <a href={item.url} target="_blank" rel="noopener noreferrer" aria-label={`${item.title} (opens ${item.source})`} className="group flex flex-1 flex-col">
-          <Thumb src={item.thumbnail} source={item.source} />
+          <Thumb item={item} />
           <span className="flex flex-1 flex-col gap-2 p-4 pb-2">
             <Meta item={item} now={now} />
             <span className="line-clamp-4 font-display text-lg font-semibold leading-snug tracking-[-0.02em] group-hover:underline group-hover:underline-offset-4">{item.title}</span>
@@ -163,10 +184,7 @@ export function NewsView() {
   const news = useQuery(newsQuery(asked));
   const inTab = (news.data?.items ?? []).filter((item) => tab === "all" || item.category === tab);
   const items = symbol ? inTab.filter((item) => item.tickers.some((ticker) => ticker.includes(symbol))) : inTab;
-  // The top story is the newest of the first ten that has a picture, so the page opens on an image, not on initials.
-  const leadAt = Math.max(0, items.slice(0, 10).findIndex((item) => item.thumbnail));
-  const lead = items[leadAt];
-  const rest = items.filter((_, index) => index !== leadAt);
+  const [lead, ...rest] = items;
   const days = groupByDay(rest.slice(0, shown), now || Date.now());
   const hot = trending(inTab, hasPerp);
 

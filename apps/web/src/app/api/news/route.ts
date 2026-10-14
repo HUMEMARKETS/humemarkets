@@ -1,5 +1,5 @@
 import { marketForSymbol, marketsForChain, NEWS_FEEDS, ROBINHOOD_MAINNET_CHAIN_ID, tickerFeed, type NewsFeed } from "@hume/config";
-import { buildMatchers, collectNews, parseFeed, type NewsItem, type RawItem } from "@/lib/news";
+import { buildMatchers, collectNews, isArticleUrl, parseFeed, type NewsItem, type RawItem } from "@/lib/news";
 
 /// Market News: headlines from public publisher RSS feeds, normalised to one shape. No key, no database, no scraping, and
 /// nothing is stored beyond a short in-memory copy per feed. Vercel's CDN serves almost every request from the
@@ -23,7 +23,8 @@ async function load(feed: NewsFeed): Promise<RawItem[]> {
     if (!response.ok) throw new Error(`status ${response.status}`);
     const text = await response.text();
     if (text.length > MAX_BYTES) throw new Error("feed too large");
-    const items = parseFeed(text);
+    const parsed = parseFeed(text);
+    const items = feed.listedSitesOnly ? parsed.filter((item) => isArticleUrl(item.url)) : parsed;
     cache.set(feed.url, { at: Date.now(), items });
     return items;
   } catch (error) {
