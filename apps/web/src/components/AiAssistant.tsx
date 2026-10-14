@@ -3,7 +3,7 @@
 import { Button, Skeleton, cn, fieldBorder } from "@hume/ui";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { createPortal } from "react-dom";
 import mark from "@/assets/hume-mark.png";
 import { useTerminal } from "@/stores/terminal";
@@ -19,6 +19,10 @@ function Avatar({ large = false }: { large?: boolean }) {
 
 /// The panel's slide and the backdrop's fade last this long: the 200 ms ceiling of docs/UI_CONTRACT.md Section 8.
 const MOTION_MS = 200;
+
+/// The question field grows with its text up to this height, then scrolls. The API keeps 2,000 characters a message.
+const FIELD_MAX_PX = 160;
+const QUESTION_CHARS = 2000;
 
 const HEAD_BUTTON = "grid size-9 min-w-[44px] place-items-center rounded-full text-muted transition-colors duration-150 hover:bg-raised hover:text-text";
 
@@ -58,6 +62,9 @@ export function AiAssistant() {
   const [draft, setDraft] = useState("");
   const panel = useRef<HTMLDivElement>(null);
   const end = useRef<HTMLDivElement>(null);
+  const field = useRef<HTMLTextAreaElement>(null);
+  // More than one line: the bar's corners soften so a tall field does not become a pill.
+  const [tall, setTall] = useState(false);
   // Another market starts a fresh conversation. The market list arriving (empty symbol to NVDA) does not: a question asked
   // while it loads stays.
   const sameMarket = !chat.symbol || !symbol || chat.symbol === symbol;
@@ -142,6 +149,21 @@ export function AiAssistant() {
     if (!question || pending) return;
     setDraft("");
     void run([...messages, { role: "user", content: question }]);
+  };
+  // The field is as tall as its text (one row to FIELD_MAX_PX), the way chat apps do it.
+  useLayoutEffect(() => {
+    const el = field.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, FIELD_MAX_PX)}px`;
+    setTall(el.scrollHeight > 52);
+  }, [draft, mounted, full]);
+  // Enter sends and Shift + Enter starts a new line. On a touch screen Enter is the keyboard's new line (the round button
+  // sends), and Enter while an input method is composing text (Chinese, Japanese) only confirms the text.
+  const onFieldKey = (event: ReactKeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing || window.matchMedia("(pointer: coarse)").matches) return;
+    event.preventDefault();
+    ask(draft);
   };
   const onSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -317,19 +339,22 @@ export function AiAssistant() {
               </div>
 
               <div className="shrink-0 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-1">
-                <form onSubmit={onSubmit} className={cn(fieldBorder, "flex items-center gap-2 rounded-full border bg-raised py-1.5 pl-5 pr-1.5")}>
+                <form onSubmit={onSubmit} className={cn(fieldBorder, "flex items-end gap-2 border bg-raised py-1.5 pl-5 pr-1.5 transition-[border-radius] duration-150", tall ? "rounded-feature" : "rounded-full")}>
                   <label className="sr-only" htmlFor="hume-ai-input">
                     Your question
                   </label>
-                  <input
+                  <textarea
                     id="hume-ai-input"
+                    ref={field}
+                    rows={1}
                     value={draft}
                     onChange={(event) => setDraft(event.target.value)}
-                    maxLength={500}
+                    onKeyDown={onFieldKey}
+                    maxLength={QUESTION_CHARS}
                     disabled={stuck}
                     autoComplete="off"
                     placeholder={stuck ? "Not available right now" : symbol ? `Ask about ${symbol}` : "Ask a question"}
-                    className="h-10 min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-faint disabled:opacity-60"
+                    className="min-h-[44px] min-w-0 flex-1 resize-none self-center bg-transparent py-2.5 text-base leading-6 outline-none placeholder:text-faint disabled:opacity-60"
                   />
                   <button
                     type="submit"

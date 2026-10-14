@@ -39,10 +39,34 @@ for (const width of [375, 1440]) {
     check(`${width}: html/script in an answer is text, not executed`, (await page.evaluate(() => window.__pwned)) === undefined && (await page.locator("dialog img[src='x'], [role=dialog] img[src='x']").count()) === 0);
     check(`${width}: 400-char unbroken word does not scroll sideways`, await noSide(page));
     check(`${width}: user html is escaped in the pill`, (await page.getByText("hello <b>x</b>").count()) >= 1);
-    // 2. input limits
-    await page.getByLabel("Your question").fill("a".repeat(900));
+    // 2. input limits: 2,000 characters, the API's own cap
+    await page.getByLabel("Your question").fill("a".repeat(2500));
     const len = await page.getByLabel("Your question").inputValue().then((v) => v.length);
-    check(`${width}: input stops at 500 characters`, len === 500, `len ${len}`);
+    check(`${width}: input stops at 2,000 characters`, len === 2000, `len ${len}`);
+    // 2b. the field grows with the text, then scrolls, and Shift + Enter makes a new line without sending
+    const box = page.getByLabel("Your question");
+    await box.fill("");
+    const one = await box.evaluate((el) => el.getBoundingClientRect().height);
+    const sentBefore = requests.length;
+    await box.pressSequentially("line one");
+    await page.keyboard.press("Shift+Enter");
+    await box.pressSequentially("line two");
+    await page.keyboard.press("Shift+Enter");
+    await box.pressSequentially("line three");
+    const three = await box.evaluate((el) => el.getBoundingClientRect().height);
+    check(`${width}: Shift + Enter adds a line and does not send`, (await box.inputValue()) === "line one\nline two\nline three" && requests.length === sentBefore);
+    check(`${width}: the field grows with its lines`, three > one + 30, `${Math.round(one)} px then ${Math.round(three)} px`);
+    await box.fill(Array.from({ length: 14 }, (_, i) => `row ${i}`).join("\n"));
+    const capped = await box.evaluate((el) => ({ h: el.getBoundingClientRect().height, scrolls: el.scrollHeight > el.clientHeight }));
+    check(`${width}: a very long text stops growing at 160 px and scrolls inside the field`, capped.h <= 161 && capped.h >= 150 && capped.scrolls, `${Math.round(capped.h)} px`);
+    check(`${width}: no horizontal scroll with a tall field`, await noSide(page));
+    // the multi-line text is sent as typed, and the field shrinks back
+    await box.fill("first line\nsecond line");
+    await page.keyboard.press("Enter");
+    await page.waitForTimeout(500);
+    check(`${width}: Enter sends the lines as typed`, requests.at(-1).messages.at(-1).content === "first line\nsecond line");
+    check(`${width}: the field shrinks back after sending`, (await box.evaluate((el) => el.getBoundingClientRect().height)) <= one + 1);
+    check(`${width}: the sent lines show as lines`, (await page.getByText("first line").count()) >= 1 && (await page.locator("p", { hasText: "second line" }).first().evaluate((el) => getComputedStyle(el).whiteSpace)).includes("pre"));
     // 3. empty / whitespace disables send
     await page.getByLabel("Your question").fill("   ");
     check(`${width}: whitespace-only input cannot be sent`, await page.getByRole("button", { name: "Ask", exact: true }).isDisabled());
@@ -54,7 +78,7 @@ for (const width of [375, 1440]) {
     check(`${width}: Enter sends the question`, requests.length === before + 1);
     // 5. history sent: roles only user/assistant, <= 6
     const last = requests.at(-1);
-    check(`${width}: request carries symbol and history without sources`, last.symbol === "NVDA" && last.messages.length === 3 && last.messages.every((m) => Object.keys(m).sort().join() === "content,role"), JSON.stringify({ symbol: last.symbol, roles: last.messages.map((m) => m.role) }));
+    check(`${width}: request carries symbol and history without sources`, last.symbol === "NVDA" && last.messages.length === 5 && last.messages.every((m) => Object.keys(m).sort().join() === "content,role"), JSON.stringify({ symbol: last.symbol, roles: last.messages.map((m) => m.role) }));
     // 6. close and reopen keeps the chat; New chat clears
     await page.keyboard.press("Escape");
     await page.waitForTimeout(350);
