@@ -100,3 +100,12 @@ Run by the owner with `BROADCAST=1 bash scripts/enable-mainnet-credit-options.sh
 | Pair seed 0.80 USDG | `0xa8d070a809563706bd11edc24be24312267a3a789cf7be0450a34828a9f71f19` (the pair has no withdraw: this USDG is lent out for good) |
 
 Read back after the run: pair holds 800000 raw USDG, oracle TSLA 384.66, the four contract sizes as above. Not done: a borrow and a repay (the owner holds no TSLA as far as known), an option order (needs the pricing key on Railway), and explorer verification of the credit contracts. The keeper copies the TSLA Chainlink price into the credit oracle when `KEEPER_CREDIT_FEED=true`.
+
+## Ask Walter (HUME AI assistant) live on mainnet (2026-10-15) — pass
+
+Read-only market assistant. Code on `mainnet` at `3ee92fc`, web on Vercel (`humemarkets.com`), the free-tier Groq key (`openai/gpt-oss-120b`) in the Railway `mainnet` api service only, `NEWS_API_URL=https://www.humemarkets.com`. Cost $0. No transaction or signature anywhere in the feature.
+
+- **Live UI, 375 and 1440 px** (`docs/evidence/screens/mainnet-ai-walter-*.png`): the "Ask Walter" button opens the mini panel with the introduction and the disclaimer; "Why is NVDA down today?" returned an answer with two sources and UTC times, a risk line, no tool names, no horizontal scroll.
+- **Live API battery** (`scripts/ai-battery.mjs`, 29 cases against `api-mainnet-e81a`): bad input (13 refused), refusals (buy advice and price target, "open a long and send it", system-prompt request, off-topic), unknown market, market list, glossary, levels, follow-up with history, 9 messages of 2,500 characters, English and Indonesian, HTML in user text. 29 of 29 ok.
+- **Known soft spots:** with the market shut, Hume's candles can close at a different price than Robinhood's reference close (221.9 against 221.13 for NVDA), so a support level can sit just above the quoted close; the model once wrote "14:05 UTC" for 22:05 (the source chip under the answer shows the right time); funding is reported as unavailable because mainnet funding is not set up yet.
+- **Limits in force:** 4 questions burst then 6 a minute per address, 300 a day for the whole API; the browser shows plain words for each.

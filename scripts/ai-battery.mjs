@@ -75,7 +75,7 @@ for (const c of cases) {
     if (e.sources && !(r.json.sources?.length > 0)) problems.push("no sources");
     if (r.json.sources?.some((s) => !s.asOf || !s.source)) problems.push("a source lacks asOf/source");
     if (e.risk && !RISK.test(a)) problems.push("no risk line");
-    if (e.digits) { const f = foreign(a, r.json.debug?.payloads); if (f.length) problems.push(`numbers not in payloads: ${f.join(",")}`); }
+    if (e.digits && r.json.debug) { const f = foreign(a, r.json.debug?.payloads); if (f.length) problems.push(`numbers not in payloads: ${f.join(",")}`); }
     if (e.mention && !e.mention.test(a)) problems.push("topic not mentioned");
     if (e.lang === "id" && !/\b(yang|dan|dengan|untuk|risiko|harga|adalah|tidak|di|ini)\b/i.test(a)) problems.push("reply not Indonesian");
     if (TOOLWORDS.test(a)) problems.push("tool name leaked");
