@@ -28,8 +28,8 @@ const HEAD_BUTTON = "grid size-9 min-w-[44px] place-items-center rounded-full te
 /// without a wallet (the not-connected state needs no handling: there is nothing here that signs or sends). Answers
 /// arrive whole, after a loading row; nothing is typed out. Every answer lists its sources with the time of the data.
 ///
-/// It opens as a mini panel in the bottom-right corner, about a third of the full height, and grows to the full panel
-/// (a full-height sheet on a phone, a tall card on a wide screen) with the expand button. The minimize button folds it
+/// It opens as the full panel (a full-height sheet on a phone, a tall card on a wide screen) and shrinks to a mini panel in
+/// the bottom-right corner, about a third of the height, with the size button. The minimize button folds it
 /// back into the round button; the conversation stays. Nothing else on the page is dimmed or blurred, and the page stays
 /// usable behind it: only a shadow lifts the panel. Opening, closing and resizing take 200 ms; under reduced motion they
 /// collapse to nothing (globals.css).
@@ -45,8 +45,8 @@ export function AiAssistant() {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [shown, setShown] = useState(false);
-  // Mini is the default size; the choice is kept while the page stays open.
-  const [full, setFull] = useState(false);
+  // The full size is the default; the mini size is one tap away, and the choice is kept while the page stays open.
+  const [full, setFull] = useState(true);
   // An answer arrived while the panel was minimized.
   const [unread, setUnread] = useState(false);
   const openRef = useRef(false);

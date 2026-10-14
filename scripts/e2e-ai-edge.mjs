@@ -154,6 +154,10 @@ for (const [width, height] of [[1440, 900], [375, 812]]) {
   await page.getByText("Reading NVDA-PERP").waitFor({ timeout: 60_000 });
   await page.waitForTimeout(400);
   const dialog = page.getByRole("dialog", { name: "Walter" });
+  const opened = await dialog.evaluate((el) => el.getBoundingClientRect().height);
+  check(`${width}: it opens at the full size by default`, opened >= height * 0.9, `${Math.round(opened)} px of ${height}`);
+  await page.getByRole("button", { name: "Make Walter smaller" }).click();
+  await page.waitForTimeout(450);
   const mini = await dialog.evaluate((el) => { const r = el.getBoundingClientRect(); return { h: r.height, w: r.width, right: window.innerWidth - r.right, bottom: window.innerHeight - r.bottom, shadow: getComputedStyle(el).boxShadow }; });
   const ratio = mini.h / height;
   check(`${width}: mini panel is about a third of the height`, ratio > 0.28 && ratio < 0.5, `${Math.round(mini.h)} px of ${height} (${ratio.toFixed(2)})`);
