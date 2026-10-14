@@ -76,9 +76,15 @@ async function states(browser, size) {
     await route.fulfill(next());
   });
 
+  const look = () => page.evaluate(() => { const el = document.querySelector('[role="dialog"]'); const css = el && getComputedStyle(el); return css ? `${css.translate} ${css.opacity}` : "none"; });
   await chip.click();
   const dialog = page.getByRole("dialog", { name: "HUME AI" });
   await dialog.waitFor();
+  await page.waitForTimeout(70);
+  const midway = await look();
+  await page.waitForTimeout(450);
+  const settled = await look();
+  check(`${width}: the sheet opens with a slide, not a jump (200 ms)`, midway !== settled && (await dialog.evaluate((el) => getComputedStyle(el).transitionDuration)) === "0.2s", `${midway} then ${settled}`);
   await dialog.getByText("Reading NVDA-PERP").waitFor({ timeout: 60_000 });
   check(`${width}: sheet opens, focus moves into it`, await page.evaluate(() => document.activeElement?.closest('[role="dialog"]') !== null));
   check(`${width}: empty state shows three suggested questions`, (await dialog.getByRole("button", { name: /NVDA|funding rate/i }).count()) >= 3);
